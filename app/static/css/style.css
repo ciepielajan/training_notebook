@@ -1,0 +1,54 @@
+:root { --bg:#fff; --ink:#111; --ink2:#666; --line:#e6e6e6; }
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink);}
+header{position:sticky;top:0;background:#f7f7f7;border-bottom:1px solid var(--line);padding:.6rem .9rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
+header h1{font-size:1rem;font-weight:600;margin:0 .5rem 0 0;color:var(--ink2)}
+button,label.btn{border:1px solid var(--line);background:white;border-radius:8px;padding:.45rem .7rem;cursor:pointer;font-size:.95rem}
+button:active{transform:translateY(1px)}
+#holder{max-width:1200px;margin:18px auto;padding:0 14px}
+.cdx-block {
+  max-width: 1200px;      /* możesz dać np. 1000px albo nawet 100% */
+  width: 100%;           /* żeby blok używał całej dostępnej szerokości */
+  margin: 0 auto;        /* wyśrodkowanie */
+}
+
+.ce-block__content {
+  max-width: 90% !important;   
+  width: 90% !important;       
+}
+
+.ce-toolbar {
+  right: 5% !important;   /* odpowiada (100% - 90%) / 2 */
+}
+
+/* przykład: content ma 90% szerokości → odstęp po bokach = (100% - 90%) / 2 = 5% */
+.ce-toolbar.ce-toolbar--opened {
+  margin-right: 5% !important;
+}
+
+/* jeśli content ma max-width (np. 1200px) i chcesz "mieszać" procent i px:
+   obliczamy odstęp jako połowę z (100% - min(1200px, 90%))
+   (współczesne przeglądarki obsługują min() w calc) */
+.ce-toolbar.ce-toolbar--opened {
+  margin-right: calc((100% - min(1200px, 90%)) / 2) !important;
+}
+
+
+.quickbar {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  justify-content: center;  /* wyrównanie przycisków do środka */
+  margin: 0;
+}
+
+.hint{font-size:.9rem;color:var(--ink2);margin:.2rem 0 0}
+#editor {
+  margin-bottom: 10px;   /* dla spójności */
+}
+
+.codex-editor__redactor {
+  padding-bottom: 10px !important; /* quickbar 10px pod ostatnim elementem */
+}
+
+.wt-wrap{border:1px dashed var(--line);padding:.8rem;border-radius:10px;background:#fafafa}
+.wt-wrap p{margin:.2rem 0 .6rem;color:var(--ink2)}

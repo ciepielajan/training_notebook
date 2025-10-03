@@ -1,0 +1,230 @@
+{
+  "time": 1759513192696,
+  "blocks": [
+    {
+      "id": "W3cyU54g0z",
+      "type": "paragraph",
+      "data": {
+        "text": "TEMPO 20.10.2025 (poniedziałek) 15:00<br>AWF stadion - pogoda pochmurna 20 stopni<br>Jan Ciepiela, Jakub Krzewina, Radek Czyż"
+      }
+    },
+    {
+      "id": "YnjfyYQa1l",
+      "type": "paragraph",
+      "data": {
+        "text": "<b>Rozgrzewka</b>"
+      }
+    },
+    {
+      "id": "PTHY-ES_EC",
+      "type": "paragraph",
+      "data": {
+        "text": "20 min&nbsp; truchtu<br>20 min dynamiczne rozciąganie we własnym zakresie&nbsp;"
+      }
+    },
+    {
+      "id": "ifUfYWZ2ua",
+      "type": "paragraph",
+      "data": {
+        "text": "20m Skip A&nbsp; + 40m bieg<br>20m Skip B +&nbsp; 40m bieg<br>20m Skip D + 20m Skip A + 20m bieg"
+      }
+    },
+    {
+      "id": "84u-G4A5rU",
+      "type": "table",
+      "data": {
+        "withHeadings": false,
+        "content": [
+          [
+            "20",
+            "m",
+            "SkipA",
+            "+",
+            "40",
+            "m&nbsp;",
+            "bieg",
+            "&nbsp;",
+            "&nbsp;",
+            "&nbsp;",
+            "&nbsp;",
+            "&nbsp;",
+            "&nbsp;",
+            "&nbsp;",
+            "",
+            "",
+            ""
+          ],
+          [
+            "20",
+            "m",
+            "SkipB",
+            "+",
+            "40",
+            "m&nbsp;",
+            "bieg",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "20",
+            "m",
+            "SkipD",
+            "+&nbsp;",
+            "20",
+            "m",
+            "SkipA",
+            "+&nbsp;",
+            "20",
+            "m",
+            "bieg",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ]
+        ]
+      }
+    },
+    {
+      "id": "AbAN6UgRr0",
+      "type": "paragraph",
+      "data": {
+        "text": "<b>Trening właściwy&nbsp;</b>"
+      }
+    },
+    {
+      "id": "msjrGAZJuQ",
+      "type": "table",
+      "data": {
+        "withHeadings": false,
+        "content": [
+          [
+            "500",
+            "m",
+            "1:40",
+            "min",
+            "-P",
+            "5",
+            "min",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "300",
+            "m",
+            "45:00",
+            "sec",
+            "-P",
+            "8",
+            "min",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "500",
+            "m",
+            "1:35",
+            "min",
+            "-P",
+            "5",
+            "min",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "300",
+            "m",
+            "40:00",
+            "sek",
+            "-P",
+            "9",
+            "min",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "500",
+            "m",
+            "1:30",
+            "&nbsp;min",
+            "-P",
+            "5",
+            "min",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "300",
+            "m",
+            "35:00",
+            "sec",
+            "-P",
+            "10",
+            "min",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ]
+        ]
+      }
+    }
+  ],
+  "version": "2.30.7"
+}

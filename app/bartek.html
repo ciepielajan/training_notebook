@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Editor.js – demo z tabelą treningową</title>
+  <style>
+    :root { --bg:#fff; --ink:#111; --ink2:#666; --line:#e6e6e6; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink);}
+    header{position:sticky;top:0;background:#f7f7f7;border-bottom:1px solid var(--line);padding:.6rem .9rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
+    header h1{font-size:1rem;font-weight:600;margin:0 .5rem 0 0;color:var(--ink2)}
+    button,label.btn{border:1px solid var(--line);background:white;border-radius:8px;padding:.45rem .7rem;cursor:pointer;font-size:.95rem}
+    button:active{transform:translateY(1px)}
+    #holder{max-width:900px;margin:18px auto;padding:0 14px}
+    .quickbar{display:flex;gap:.5rem;flex-wrap:wrap;margin:8px 0 12px}
+    .hint{font-size:.9rem;color:var(--ink2);margin:.2rem 0 0}
+    #editor{min-height:280px;}
+    .wt-wrap{border:1px dashed var(--line);padding:.8rem;border-radius:10px;background:#fafafa}
+    .wt-wrap p{margin:.2rem 0 .6rem;color:var(--ink2)}
+  </style>
+  <!-- Editor.js + narzędzia z CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.7/dist/editorjs.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.6/dist/paragraph.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/table@2.3.0/dist/table.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Demo editor.js</h1>
+    <button id="exportBtn">Eksportuj JSON</button>
+    <label class="btn" for="importFile">Wczytaj JSON</label>
+    <input id="importFile" type="file" accept="application/json" hidden />
+  </header>
+
+  <main id="holder">
+    <div id="editor"></div>
+    <div class="quickbar">
+      <button id="addText">+ Tekst</button>
+      <button id="addTable">+ Tabela</button>
+      <button id="addWorkout">+ Tabela treningowa</button>
+    </div>
+  </main>
+
+  <script>
+    /** Narzędzie “Tabela treningowa” – widoczne w plusie */
+    class WorkoutTableTool {
+    static get toolbox() {
+      return {
+        title: 'Tabela treningowa',
+        icon: '<svg width="17" height="17" viewBox="0 0 24 24"><path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm0 3v3h16V8H4zm0 5v4h16v-4H4z" fill="currentColor"/></svg>'
+      };
+    }
+
+    constructor({ api }) {
+      this.api = api;
+      this.template = {
+        withHeadings: true,
+        content: [
+          ['Ćwiczenie', 'Powtórzenia', 'Kg'],
+          ['1/2 przysiad', '10/8/6', '100/110/120 kg']
+        ]
+      };
+    }
+
+    render() {
+      // Tworzymy pusty, niewidoczny element tylko po to, żeby Editor.js był zadowolony.
+      const phantom = document.createElement('div');
+      phantom.style.display = 'none';
+
+      // Po tym jak blok pojawi się w DOM, natychmiast go PODMIENIAMY na tabelę.
+      // requestAnimationFrame gwarantuje, że indeks bieżącego bloku jest prawidłowy.
+      requestAnimationFrame(() => {
+        const idx = this.api.blocks.getCurrentBlockIndex();
+        // replace = true => nasz blok zostanie ZASTĄPIONY tabelą
+        this.api.blocks.insert('table', this.template, {}, idx, true);
+        this.api.caret.setToBlock(idx, 'end');
+      });
+
+      return phantom;
+    }
+
+    // Ten blok nic nie zapisuje – i tak jest od razu zastąpiony tabelą.
+    save() { return {}; }
+  }
+
+    // Inicjalizacja
+    const editor = new EditorJS({
+  holder: 'editor',
+  autofocus: true,
+  tools: {
+    paragraph: { class: Paragraph, inlineToolbar: true, config: { placeholder: 'Napisz coś…' } },
+    table: { class: Table, inlineToolbar: true },
+    workoutTable: { class: WorkoutTableTool }
+  }
+});
+
+    // Szybkie przyciski
+    document.getElementById('addText').onclick = () => {
+      const i = editor.blocks.getBlocksCount();
+      editor.blocks.insert('paragraph', { text: '' }, {}, i, true);
+    };
+    document.getElementById('addTable').onclick = () => {
+      const i = editor.blocks.getBlocksCount();
+      editor.blocks.insert('table', { withHeadings: true, content: [['Heading','Heading','Heading'],['','','']] }, {}, i, true);
+    };
+    document.getElementById('addWorkout').onclick = () => {
+      const i = editor.blocks.getBlocksCount();
+      // bezpośrednio wstawiamy gotową tabelę (szybciej niż “makro”)
+      editor.blocks.insert('table', {
+        withHeadings: true,
+        content: [['Ćwiczenie','Powtórzenia','Kg'],['1/2 przysiad','10/8/6','100/110/120 kg']]
+      }, {}, i, true);
+    };
+
+    // Eksport
+    document.getElementById('exportBtn').addEventListener('click', async () => {
+      try {
+        const data = await editor.save();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = Object.assign(document.createElement('a'), {
+          href: url,
+          download: `editorjs-${new Date().toISOString().replace(/[:.]/g,'-')}.json`
+        });
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      } catch (e) { alert('Nie udało się zapisać: ' + e.message); console.error(e); }
+    });
+
+    // --- SANITYZACJA DANYCH PRZED WCZYTANIEM ---
+  function sanitizeData(data) {
+    if (!data || !Array.isArray(data.blocks)) {
+      return { time: Date.now(), blocks: [] };
+    }
+
+    const TRAINING_TEMPLATE = {
+      withHeadings: true,
+      content: [
+        ['Ćwiczenie', 'Powtórzenia', 'Kg'],
+        ['1/2 przysiad', '10/8/6', '100/110/120 kg']
+      ]
+    };
+
+    const blocks = data.blocks.map((b) => {
+      // 1) Zamień ewentualne makro na zwykłą tabelę
+      if (b.type === 'workoutTable') {
+        return { type: 'table', data: { ...TRAINING_TEMPLATE } };
+      }
+
+      // 2) Wyrównaj wiersze tabel (unikamy “dodatkowej kolumny”)
+      if (b.type === 'table' && b.data && Array.isArray(b.data.content)) {
+        const rows = b.data.content;
+        const minCols = 1;
+        const maxCols = Math.max(minCols, ...rows.map(r => Array.isArray(r) ? r.length : 0));
+        const fixed = rows.map(r => {
+          const row = Array.isArray(r) ? r.slice(0, maxCols) : [];
+          while (row.length < maxCols) row.push('');
+          return row;
+        });
+        return { ...b, data: { ...b.data, content: fixed } };
+      }
+
+      return b;
+    });
+
+    return { ...data, blocks };
+  }
+
+  // --- IMPORT (podmień istniejący listener) ---
+  document.getElementById('importFile').addEventListener('change', async (ev) => {
+    const file = ev.target.files?.[0];
+    if (!file) return;
+    try {
+      const txt = await file.text();
+      const json = JSON.parse(txt);
+      const clean = sanitizeData(json);        // <— ważne
+      await editor.isReady;
+      await editor.render(clean);
+    } catch (e) {
+      alert('Niepoprawny JSON Editor.js lub błąd wczytywania.');
+      console.error(e);
+    } finally {
+      ev.target.value = '';
+    }
+  });
+  </script>
+</body>
+</html>
