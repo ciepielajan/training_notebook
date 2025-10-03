@@ -5,7 +5,7 @@ uvicorn app.main:app --reload
 
 
 ```
-my_project/
+training_notebook/
 │── app/
 │   ├── main.py              # punkt wejścia FastAPI
 │   ├── api/                 # backendowe endpointy (np. import/export JSON)
