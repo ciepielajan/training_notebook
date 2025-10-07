@@ -1,8 +1,12 @@
+poetry env activate
+
+source /Users/...
+
 Serwer run
+
 ```
 uvicorn app.main:app --reload
 ```
-
 
 ```
 training_notebook/

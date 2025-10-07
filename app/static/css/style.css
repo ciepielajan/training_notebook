@@ -11,9 +11,9 @@ button:active{transform:translateY(1px)}
   margin: 0 auto;        /* wyśrodkowanie */
 }
 
-.ce-block__content {
+.ce-block__content, .ce-toolbar__content  {
   max-width: 90% !important;   
-  width: 90% !important;       
+  width: 90% !important;
 }
 
 .ce-toolbar {
@@ -52,3 +52,56 @@ button:active{transform:translateY(1px)}
 
 .wt-wrap{border:1px dashed var(--line);padding:.8rem;border-radius:10px;background:#fafafa}
 .wt-wrap p{margin:.2rem 0 .6rem;color:var(--ink2)}
+
+
+
+/* workout-table */
+.workout-table {margin-top: 0!important;}
+.workout-table .tc-add-row {display: none;}/* usunięcie dodawania nowego row w tabeli  */
+
+.workout-table .tc-add-column {
+  position: relative;
+}
+
+.workout-column-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  display: none;
+  flex-direction: column;
+  gap: .2rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(17, 17, 17, 0.14);
+  padding: .35rem;
+  min-width: 160px;
+  z-index: 20;
+}
+
+.workout-column-menu.is-open {
+  display: flex;
+}
+
+.workout-column-menu__item {
+  border: none;
+  background: transparent;
+  padding: .35rem .5rem;
+  border-radius: 6px;
+  text-align: left;
+  font-size: .9rem;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.workout-column-menu__item:hover,
+.workout-column-menu__item:focus {
+  background: #f4f4f4;
+  outline: none;
+}
+
+/* usunięcie odstępu nad tabelą workout  */
+/* .cdx-block {margin: 0; padding: 0;} */
+/* .workout-table .tc-table:before {display: none;} */
+
+.ce-paragraph {margin:20px 0}
