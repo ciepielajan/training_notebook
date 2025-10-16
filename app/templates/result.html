@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wynik formularza</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <h1>Otrzymane dane</h1>
+    <p><strong>Główne pole:</strong> {{ main_text }}</p>
+
+    <h2>Dodane pola</h2>
+    {% if pairs %}
+      <ul>
+      {% for text, num in pairs %}
+        <li>Tekst: {{ text|e }} — Liczba: {{ num if num is not none else 'brak' }}</li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p>Brak dodatkowych pól.</p>
+    {% endif %}
+
+    <p><a href="{{ url_for('index') }}">Wróć</a></p>
+  </main>
+</body>
+</html>

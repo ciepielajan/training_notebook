@@ -1,7 +1,68 @@
-{% extends "base.html" %}
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Demo dynamicznych formularzy</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+  <!-- HTMX (CDN) - bardzo mała biblioteka -->
+  <script src="https://unpkg.com/htmx.org"></script>
+</head>
+<body>
+  <main class="container">
+    <h1>Demo: Dodawanie pól nad przyciskiem (HTMX)</h1>
 
-{% block title %}Editor.js – Demo{% endblock %}
+    <form id="demo-form" method="post" action="/submit">
+      <!-- kontener pól (tu będą wstawiane fragmenty) -->
+      <div id="fields-container">
+        <div class="field-row">
+          <label>
+            <input type="text" name="main_text" placeholder="Data treningu">
+          </label>
+        </div>
+      </div>
 
-{% block content %}
-  {% include "includes/main.html" %}
-{% endblock %}
+      <div class="controls">
+        <!-- przycisk robi hx-get do endpointu zwracającego fragment,
+             hx-target wskazuje kontener nad przyciskiem -> beforeend -> dodaje na końcu kontenera (czyli nad przyciskiem) -->
+        <button type="button"
+                id="add-button"
+                hx-get="/field-fragment"
+                hx-target="#fields-container"
+                hx-swap="beforeend">
+          Dodaj pole tekstowe + liczbowe
+        </button>
+
+        <button type="submit">Wyślij formularz</button>
+      </div>
+    </form>
+  </main>
+
+  <!-- Fallback: jeśli HTMX się nie załaduje, proste dodawanie pól w vanilla JS -->
+  <script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var addBtn = document.getElementById("add-button");
+    addBtn.addEventListener("click", function(e) {
+      if (window.htmx) return; // gdy HTMX jest obecne nie dodajemy JS fallbacku
+      const container = document.getElementById("fields-container");
+      const row = document.createElement("div");
+      row.className = "field-row";
+
+      const textInput = document.createElement("input");
+      textInput.type = "text";
+      textInput.name = "extra_text";
+      textInput.placeholder = "Pole tekstowe (dodane)";
+
+      const numberInput = document.createElement("input");
+      numberInput.type = "number";
+      numberInput.name = "extra_number";
+      numberInput.placeholder = "Pole liczbowe (dodane)";
+
+      row.appendChild(textInput);
+      row.appendChild(numberInput);
+      container.appendChild(row);
+    });
+  });
+  </script>
+</body>
+</html>

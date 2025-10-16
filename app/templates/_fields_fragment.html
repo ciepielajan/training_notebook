@@ -1,0 +1,29 @@
+<div class="field-row">
+  
+
+   <!-- przycisk po lewej: dodaje nowy wiersz poniżej -->
+  <button type="button"
+          class="add-icon"
+          title="Dodaj nowy wiersz"
+          hx-get="/field-fragment"
+          hx-swap="afterend"
+          hx-target="closest .field-row">
+    +
+  </button>
+
+  <input type="number" name="extra_number" placeholder="" min="0" step="any">
+  <input type="text" name="extra_text" placeholder="m">
+  <input type="text" name="extra_text" placeholder="czas">
+  <input type="text" name="extra_text" placeholder="sec">
+
+    <!-- przycisk dodający pole wewnątrz wiersza -->
+  <button type="button"
+          class="add-column"
+          title="Dodaj pole"
+          hx-get="/single-input"
+          hx-target="closest .add-column"
+          hx-swap="beforebegin">
+    +
+  </button>
+
+</div>
