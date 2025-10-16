@@ -13,3 +13,9 @@ training_notebook/
 │       └── index.html
 └── README.md
 ```
+
+Zbuduj CSS (jednorazowo lub z watch)
+Podczas pracy (auto-build po każdej zmianie):
+```
+npx tailwindcss -i ./app/static/input.css -o ./app/static/style.css --watch
+```

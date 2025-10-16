@@ -6,23 +6,28 @@
   <title>Wynik formularza</title>
   <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
-<body>
-  <main class="container">
-    <h1>Otrzymane dane</h1>
-    <p><strong>Główne pole:</strong> {{ main_text }}</p>
+<body class="bg-base-200 min-h-screen flex items-center justify-center">
+  <main class="card w-full max-w-2xl bg-base-100 shadow-xl p-8">
+    <h1 class="text-2xl font-bold mb-6 text-center">Wynik formularza</h1>
 
-    <h2>Dodane pola</h2>
-    {% if pairs %}
-      <ul>
-      {% for text, num in pairs %}
-        <li>Tekst: {{ text|e }} — Liczba: {{ num if num is not none else 'brak' }}</li>
-      {% endfor %}
-      </ul>
-    {% else %}
-      <p>Brak dodatkowych pól.</p>
-    {% endif %}
+    <div class="space-y-4">
+      <p><strong>Data treningu:</strong> {{ main_text }}</p>
 
-    <p><a href="{{ url_for('index') }}">Wróć</a></p>
+      <div>
+        <h2 class="text-lg font-semibold mb-2">Dodatkowe pola:</h2>
+        {% if pairs %}
+          <ul class="list-disc list-inside space-y-1">
+          {% for text, num in pairs %}
+            <li><strong>{{ text|e }}</strong> — {{ num if num is not none else 'brak' }}</li>
+          {% endfor %}
+          </ul>
+        {% else %}
+          <p>Brak dodatkowych pól.</p>
+        {% endif %}
+      </div>
+
+      <a href="{{ url_for('index') }}" class="btn btn-outline btn-primary mt-4">Wróć</a>
+    </div>
   </main>
 </body>
 </html>

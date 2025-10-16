@@ -1,29 +1,24 @@
-<div class="field-row">
-  
-
-   <!-- przycisk po lewej: dodaje nowy wiersz poniżej -->
+<div class="form-control flex flex-row items-center gap-2 mb-2">
   <button type="button"
-          class="add-icon"
+          class="btn btn-circle btn-sm btn-accent"
           title="Dodaj nowy wiersz"
           hx-get="/field-fragment"
           hx-swap="afterend"
-          hx-target="closest .field-row">
+          hx-target="closest .form-control">
     +
   </button>
 
-  <input type="number" name="extra_number" placeholder="" min="0" step="any">
-  <input type="text" name="extra_text" placeholder="m">
-  <input type="text" name="extra_text" placeholder="czas">
-  <input type="text" name="extra_text" placeholder="sec">
+  <input type="number" name="extra_number" placeholder="0" min="0" step="any" class="input input-bordered w-24">
+  <input type="text" name="extra_text" placeholder="m" class="input input-bordered w-24">
+  <input type="text" name="extra_text" placeholder="czas" class="input input-bordered w-24">
+  <input type="text" name="extra_text" placeholder="sec" class="input input-bordered w-24">
 
-    <!-- przycisk dodający pole wewnątrz wiersza -->
   <button type="button"
-          class="add-column"
+          class="btn btn-circle btn-sm btn-secondary"
           title="Dodaj pole"
           hx-get="/single-input"
-          hx-target="closest .add-column"
+          hx-target="closest .btn-secondary"
           hx-swap="beforebegin">
     +
   </button>
-
 </div>

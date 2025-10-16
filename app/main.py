@@ -24,6 +24,12 @@ async def single_input(request: Request):
     return '<input type="text" name="extra_text" placeholder="nowe pole">'
 
 
+@app.get("/test-ui", response_class=HTMLResponse)
+async def test_ui(request: Request):
+    return templates.TemplateResponse("test_ui.html", {"request": request})
+
+
+
 @app.post("/submit", response_class=HTMLResponse)
 async def submit(request: Request):
     form = await request.form()

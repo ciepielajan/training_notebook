@@ -1,0 +1,24 @@
+{
+  "name": "training_notebook",
+  "version": "1.0.0",
+  "description": "Serwer run ``` uvicorn app.main:app --reload ```",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ciepielajan/training_notebook.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ciepielajan/training_notebook/issues"
+  },
+  "homepage": "https://github.com/ciepielajan/training_notebook#readme",
+  "devDependencies": {
+    "daisyui": "5.3.7",
+    "tailwindcss": "3.3.4"
+  }
+}
