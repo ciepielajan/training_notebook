@@ -1,0 +1,4 @@
+# Unnecessary python files
+__pycache__/
+**/.pyc
+data
