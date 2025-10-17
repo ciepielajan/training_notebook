@@ -13,3 +13,12 @@ training_notebook/
 │       └── index.html
 └── README.md
 ```
+
+TODO:
+- 
+1. w zakładce test.html jest responsywny element. na jego podstawie zrob przykładowe warianty treningu 
+- odcinki 
+- cwiczenie z wieloma powtorzeniami (siłownia )
+- łączone cwiczenia np skipA+skipB+przebieżka
+- odcinek, tetno, przerwa
+2. kub szablon bootstrap5 i na nim bedziemy budować całosć

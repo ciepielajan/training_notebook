@@ -45,3 +45,23 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
 .add-icon:hover, .add-column:hover {
   background: #0056b3;
 }
+
+
+.scroll-container {
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.scroll-container .input-group {
+    flex-wrap: nowrap;
+    min-width: max-content;
+}
+
+.form-floating input {
+    min-width: 20px; /* lub więcej, zależnie od treści */
+    width:100px;
+}
+
+.input-group-text {
+    white-space: nowrap;
+}
