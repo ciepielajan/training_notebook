@@ -12,6 +12,10 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/test", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("test.html", {"request": request})
+
 
 @app.get("/field-fragment", response_class=HTMLResponse)
 async def field_fragment(request: Request):
