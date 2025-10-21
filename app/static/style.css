@@ -65,3 +65,21 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
 .input-group-text {
     white-space: nowrap;
 }
+
+/* Stylizacja dla pionowego układu grupy wejściowej */
+
+.input-group-vertical {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group-vertical .input-group:not(:last-child) .form-control {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.input-group-vertical .input-group:not(:first-child) .form-control {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top: 0;
+}
