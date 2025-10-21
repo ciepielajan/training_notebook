@@ -6,7 +6,7 @@
   <title>Test styli</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=2">
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=10">
 
 </head>
 <body class="p-4">
@@ -214,140 +214,51 @@
 
 
 
-        <div class="card">
-            <div class="card-body">
-                <div class="scroll-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                            <th scope="col">
+    <div class="card">
+        <div class="card-body">
+            <div class="scroll-container">
+                <table class="table">
+                    <tr>
+                        <td>
+                             <div class="input-group-vertical">
                                 <div class="input-group">
                                     <div class="form-floating">
-                                        <input type="text" class="form-control" value="Bieg">
+                                        <input type="text" class="form-control" value="1/2 Przysiad">
                                         <label>Ćwiczenie</label>
                                     </div>
                                 </div>
-                            </th>
-                            <th scope="col">Przerwa</th>
-                            <th scope="col">Tętno</th>
-                            <th scope="col">Laps</th>
-                            </tr>
-                        </thead>
-                        <tr>
-                            <td>
-                                <div class="input-group-vertical">
-                                    <div class="input-group">
-                                        <div class="form-floating">
-                                            <input type="text" class="form-control" value="60">
-                                            <label>Ciężar [kg]</label>
-                                            <input type="text" class="form-control" value="70">
-                                            <input type="text" class="form-control" value="80">
-                                            <input type="text" class="form-control" value="90">
-                                        </div>
-                                    </div>
-                                    <div class="input-group">
-                                        <div class="form-floating">
-                                            <input type="text" class="form-control" value="10">
-                                            <label>Powtórzenia [x]</label>
-                                            <input type="text" class="form-control" value="8">
-                                            <input type="text" class="form-control" value="6">
-                                            <input type="text" class="form-control" value="4">
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
                                 <div class="input-group">
                                     <div class="form-floating">
-                                        <input type="text" class="form-control" value="marsz">
-                                        <label>5 min</label>
+                                        <input type="text" class="form-control" value="10">
+                                        <label>Powtórzenia [x]</label>
                                     </div>
+                                    <div class="form-floating"><input type="text" class="form-control" value="8"></div>
+                                    <div class="form-floating"><input type="text" class="form-control" value="6"></div>
+                                    <div class="form-floating"><input type="text" class="form-control" value="4"></div>
+                                    <div class="form-floating"><input type="text" class="form-control" value="2"></div>
+                                    <div class="form-floating"><input type="text" class="form-control" value="1"></div>
                                 </div>
-                            </td>
-                            <td>
                                 <div class="input-group">
                                     <div class="form-floating">
-                                        <input type="text" class="form-control" value="198">
-                                        <label>po odcinku</label>
+                                        <input type="text" class="form-control" value="60">
+                                        <label>Ciężar [kg]</label>
                                     </div>
+                                    <div class="form-floating"><input type="text" class="form-control" value="70"></div>
+                                    <div class="form-floating"><input type="text" class="form-control" value="80"></div>
+                                    <div class="form-floating"><input type="text" class="form-control" value="90"></div>
+                                    <div class="form-floating"><input type="text" class="form-control" value="100"></div>
+                                    <div class="form-floating"><input type="text" class="form-control" value="110"></div>
                                 </div>
-                            </td>
-                            <td>
-                                <div class="input-group">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" value="50">
-                                        <label>metr</label>
-                                    </div>
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" value="5:50">
-                                        <label>Czas [sec]</label>
-                                    </div>
-                                </div>
-                            </td>                        
-                        </tr>
-                        <tr>
-                            <td>
-                            
-                            </td>
-                            <td>
-                            </td>
-                            <td>
-                                <div class="input-group">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" value="135">
-                                        <label>po 5 min</label>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="input-group">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" value="100">
-                                        <label>metr</label>
-                                    </div>
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" value="10:50">
-                                        <label>Czas [sec]</label>
-                                    </div>
-                                </div>
-                            </td>                           
-                        </tr>
-                        <tr>
-                            <td>
-                            
-                            </td>
-                            <td>
-                            
-                            </td>
-                            <td>
-                                <div class="input-group">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" value="95">
-                                        <label>po 10 min</label>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="input-group">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" value="150">
-                                        <label>metr</label>
-                                    </div>
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" value="15:20">
-                                        <label>Czas [sec]</label>
-                                    </div>
-                                </div>
-                            </td>                             
-                        </tr>
-            
-                    </table>
-                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
             </div>
+        </div>
     </div>
 
 
-    <div class="input-group-vertical">
+    <!-- <div class="input-group-vertical">
         <div class="input-group">
             <input type="text" class="form-control" placeholder="Username" aria-label="Username">
             <input type="text" class="form-control" placeholder="Server" aria-label="Server">
@@ -356,11 +267,7 @@
             <input type="text" class="form-control" placeholder="Username" aria-label="Username">
             <input type="text" class="form-control" placeholder="Server" aria-label="Server">
         </div>
-    </div>
-
-
-
-
+    </div> -->
 </div>
 </body>
 </html>

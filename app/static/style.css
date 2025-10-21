@@ -59,7 +59,7 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
 
 .form-floating input {
     min-width: 120px; /* lub więcej, zależnie od treści */
-    width:120px;
+    /* width:120px; */
 }
 
 .input-group-text {
