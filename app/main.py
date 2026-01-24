@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+import secrets
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
@@ -21,7 +22,8 @@ async def field_fragment(request: Request):
 
 @app.get("/single-input", response_class=HTMLResponse)
 async def single_input(request: Request):
-    return '<input type="text" name="extra_text" placeholder="nowe pole">'
+    field_id = secrets.token_hex(4)
+    return f'<input type="text" id="{field_id}" name="extra_text" placeholder="nowe pole">'
 
 
 @app.post("/submit", response_class=HTMLResponse)
