@@ -1,7 +1,38 @@
-<div class="form-floating">
+<div class="form-floating position-relative">
     <input type="hidden" name="detail">
     <input type="text" class="form-control" name="value" value="{{ values.value }}">
     <input type="hidden" name="type" value="{{ values.type }}">
     <input type="hidden" name="label" value="{{ values.label }}">
     <label>{{ values.label }}</label>
+
+
+
+    <div class="dropdown position-absolute top-0 end-0 mt-2 me-2 z-3">
+        <button class="btn btn-sm btn-link text-secondary p-0 text-decoration-none" type="button"
+            data-bs-toggle="dropdown" aria-expanded="false" data-bs-popper-config='{"strategy":"fixed"}'>
+            <i class="bi bi-three-dots-vertical fs-5"></i>
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end shadow">
+            {% for key, label in [('distance', 'Dystans'), ('time', 'Czas'), ('quantity', 'Powtórzenia'), ('weight',
+            'Ciężar')] %}
+            <li>
+                <button class="dropdown-item" type="button" hx-get="/input?type={{ key }}"
+                    hx-target="closest .form-floating" hx-swap="outerHTML">
+                    {{ label }}
+                </button>
+            </li>
+            {% endfor %}
+            <li>
+                <hr class="dropdown-divider">
+            </li>
+            <li>
+                <button class="dropdown-item text-danger" type="button"
+                    onclick="this.closest('.form-floating').remove()">
+                    <i class="bi bi-trash"></i> Usuń
+                </button>
+            </li>
+        </ul>
+
+    </div>
 </div>

@@ -1,5 +1,12 @@
 <div class="form-floating">
-    <input type="text" class="form-control" name="head" value="{{ values.value }}">
+    <select class="form-select" name="head">
+        <option value="" {% if not values.value %}selected{% endif %}>- Wybierz -</option>
+        {% for opt in options %}
+            <option value="{{ opt }}" {% if opt==values.value %}selected{% endif %}>
+                {{ opt }}
+            </option>
+        {% endfor %}
+    </select>
     <label>{{ values.label }}</label>
     <input type="hidden" name="label" value="{{ values.label }}">
     <input type="hidden" name="details">

@@ -33,7 +33,7 @@
 
         <div id="fields-container" class="container">
         {% for card in cards_list %}
-            {% with type=card.type, unique_id=card.unique_id, data=card.data %}
+            {% with type=card.type, unique_id=card.unique_id, data=card.data, options=card.options %}
                 {% include "_card.html" %}
             {% endwith %}
         {% endfor %}
@@ -48,6 +48,20 @@
             </button>
             <button type="button" class="btn btn-outline-secondary" hx-get="/card?type=gym">
                 + Siłownia
+            </button>
+            <button type="button" class="btn btn-outline-secondary" 
+                    hx-get="/card?type=text&size=fs-1">
+                + Nagłówek H1
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary" 
+                    hx-get="/card?type=text&size=fs-2">
+                + Nagłówek H2
+            </button>
+
+            <button type="button" class="btn btn-outline-secondary" 
+                    hx-get="/card?type=text&size=fs-4">
+                + Nagłówek H4
             </button>
         </div>
 

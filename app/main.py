@@ -10,6 +10,14 @@ import secrets
 import json
 from pathlib import Path
 
+# Lista dostępnych opcji dla selecta, w zależności od typu karty
+ACTIVITY_OPTIONS = {
+    "running": ["Bieg", "Sprint", "Trucht", "Marszobieg", "Interwały"],
+    "exercise": ["Wieloskok", "Pompki", "Przysiady", "Brzuszki", "Burpees"],
+    # Domyślna lista, jakby typ nie pasował
+    "default": ["Inne"],
+}
+
 
 # --- KONFIGURACJA DOMYŚLNA ---
 DEFAULT_CARDS = [
@@ -62,6 +70,7 @@ async def index(request: Request):
 @app.get("/card", response_class=HTMLResponse)
 async def field_fragment(
     request: Request,
+    size: str = "",
     type: str = "running",
     value: str = "",
     label: str = "",
@@ -77,22 +86,29 @@ async def field_fragment(
             "data": {
                 "activity": {"value": value, "label": label},
                 "details": [],
+                "size": size,
             },
+            "options": ACTIVITY_OPTIONS.get(type, ACTIVITY_OPTIONS["default"]),
         },
     )
 
 
 @app.get("/input", response_class=HTMLResponse)
-async def field_fragment(request: Request, type: str = "distance"):
-    unique_id = secrets.token_hex(4)
-    mapping = {
+async def add_input(request: Request, type: str):
+    # Mapa etykiet
+    labels_map = {
         "distance": "Dystans [m]",
         "time": "Czas [s]",
         "quantity": "Liczba powtórzeń",
         "weight": "Ciężar [kg]",
     }
+
     return templates.TemplateResponse(
-        "exercises/_input.html", {"request": request, "unique_id": unique_id, "type": mapping[type]}
+        "inputs/detail.html",
+        {
+            "request": request,
+            "values": {"value": "", "type": type, "label": labels_map.get(type, type)},
+        },
     )
 
 
@@ -217,6 +233,7 @@ async def index(request: Request):
                 "type": card_type,
                 "unique_id": secrets.token_hex(4),
                 "data": card_data,
+                "options": ACTIVITY_OPTIONS.get(card_type, ACTIVITY_OPTIONS["default"]),
             }
         )
 
@@ -276,6 +293,7 @@ async def load(request: Request, file: UploadFile = File(...)):
                 "unique_id": unique_id,
                 "type": card_type,
                 "data": values_for_template,
+                "options": ACTIVITY_OPTIONS.get(card_type, ACTIVITY_OPTIONS["default"]),
             }
 
             rendered_card = card_template.render(context)

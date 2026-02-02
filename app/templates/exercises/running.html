@@ -9,7 +9,7 @@
         {% endwith %}
     </div>
 
-    <div class="input-group">
+    <div class="input-group" id="details-container-{{ unique_id }}">
         {% for item in data.details  %}
             {% with values = item %}
                 {% include "inputs/detail.html" %}
@@ -18,3 +18,4 @@
     </div>
 
 </div>
+{% include "buttons/details_inputs.html" %}
