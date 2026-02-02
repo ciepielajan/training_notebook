@@ -10,6 +10,7 @@ packages = [{include = "app"}]
 python = "3.11.8"
 uvicorn = {version = "0.23.2", extras = ["standard"]}
 fastapi = "0.104.1"
+python-multipart = "^0.0.22"
 
 
 [tool.poetry.group.dev.dependencies]

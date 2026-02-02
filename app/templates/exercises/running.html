@@ -1,0 +1,20 @@
+<input type="hidden" name="type" value="running">
+<input type="hidden" name="data" >
+<div class="input-group-vertical">
+    
+
+    <div class="input-group">
+        {% with values = data.activity %}
+            {% include "inputs/activity.html" %}
+        {% endwith %}
+    </div>
+
+    <div class="input-group">
+        {% for item in data.details  %}
+            {% with values = item %}
+                {% include "inputs/detail.html" %}
+            {% endwith %}
+        {% endfor %}
+    </div>
+
+</div>

@@ -13,21 +13,22 @@
     <script src="https://unpkg.com/htmx.org"></script>
 </head>
 
-<body class="p-4">
-    <div id="fields-container" class="container">
-        {% include "_card.html" %}
-    </div>
-    <div class="container controls" hx-target="#fields-container" hx-swap="beforeend">
-        <button type="button" hx-get="/card?type=running">
-            bieganie
-        </button>
-        <button type="button" hx-get="/card?type=exercise">
-            ćwiczenie
-        </button>
-        <button type="button" hx-get="/card?type=gym">
-            siłownia
-        </button>
-    </div>
+<body>
+    <form id="form" action="/save" method="post">
+        <div id="fields"></div>
+
+        <button type="button" hx-post="/add-input/text" hx-target="#fields" hx-swap="beforeend">+ text</button>
+        <button type="button" hx-post="/add-input/number" hx-target="#fields" hx-swap="beforeend">+ number</button>
+
+        <button type="submit">Zapisz</button>
+    </form>
+
+    <!-- Wczytywanie -->
+    <form hx-post="/load" hx-target="#fields" hx-swap="innerHTML" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".json">
+        <button type="submit">Wczytaj</button>
+    </form>
+
 
 </body>
 

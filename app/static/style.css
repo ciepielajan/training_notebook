@@ -83,3 +83,31 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
   border-top-right-radius: 0;
   border-top: 0;
 }
+/* Kontener paska bocznego */
+.card-actions-left {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 40px; /* Szerokość paska */
+    background-color: rgba(0, 0, 0, 0.03); /* Bardzo delikatne szare tło */
+    border-right: 1px solid rgba(0,0,0,0.05);
+    z-index: 10; /* Musi być nad tabelą */
+}
+
+/* Klasa ukrywania (taka sama jak wcześniej) */
+@media (hover: hover) {
+    .fade-hover {
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease-in-out;
+        transform: translateX(-10px); /* Efekt wsuwania z lewej */
+    }
+
+    /* Gdy najedziesz na kartę -> pokaż pasek */
+    .card:hover .fade-hover {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(0);
+    }
+}

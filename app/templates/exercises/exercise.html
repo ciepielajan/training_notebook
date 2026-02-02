@@ -1,0 +1,36 @@
+<input type="hidden" name="type" value="exercise">
+<input type="hidden" name="data" >
+<div class="input-group-vertical">
+    
+
+    <div class="input-group">
+        {% with values = data.activity %}
+            {% include "inputs/activity.html" %}
+        {% endwith %}
+        {% for item in data.details %}
+            {% with values = item %}
+                {% include "inputs/detail.html" %}
+            {% endwith %}
+        {% endfor %}
+    </div>
+
+
+</div>
+<div class="dropdown">
+    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+        aria-expanded="false" data-bs-popper-config='{"strategy":"fixed"}'>
+        <i class="bi bi-list"></i> Opcje
+    </button>
+
+    <ul class="dropdown-menu shadow" hx-target="#c-{{ unique_id }} .input-group" hx-swap="beforeend">
+
+        {% for key, label in [('distance', 'Dystans'), ('time', 'Czas'), ('quantity', 'Powtórzenia'), ('weight',
+        'Ciężar')] %}
+        <li>
+            <button class="dropdown-item" type="button" hx-get="/input?type={{ key }}">
+                {{ label }}
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
