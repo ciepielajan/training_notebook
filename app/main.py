@@ -21,6 +21,7 @@ ACTIVITY_OPTIONS = {
 
 # --- KONFIGURACJA DOMYŚLNA ---
 DEFAULT_CARDS = [
+    ("text", {"head": "Trening Tempowy", "size": "fs-4"}),
     (
         "running",
         {
@@ -215,6 +216,10 @@ async def save(request: Request):
                     if "data" in current_card:
                         current_card["data"][key] = val
 
+        elif key == "size":
+            if current_card and "data" in current_card:
+                current_card["data"]["size"] = val
+
     # --- Zapis do pliku ---
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
     with open(tmp.name, "w", encoding="utf-8") as f:
@@ -284,8 +289,13 @@ async def load(request: Request, file: UploadFile = File(...)):
 
             # TRANSFORMACJA DANYCH
             values_for_template = {
+                # 1. Dla kart typu Running/Exercise (zagnieżdżone)
                 "activity": {"value": raw_data.get("head", ""), "label": raw_data.get("label", "Aktywność")},
                 "details": raw_data.get("details", []),
+                # 2. Dla kart typu Text (płaskie)
+                # Szablon text.html używa {{ data.head }} i {{ data.size }}
+                "head": raw_data.get("head", ""),
+                "size": raw_data.get("size", "fs-2"),
             }
 
             context = {
