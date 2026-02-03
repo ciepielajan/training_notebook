@@ -25,6 +25,7 @@ TODO:
 - wczytywanie i zapisywanie wszystkich elementów poza gym
 
 #### todo:
+- dane demo powinny mieć strukture taka jak w json. 
 - przycisk obok kazdego card (przyciskin nowych card, usunięcie, zmiana obecnego, kopiowanie i wklejanie całego card)
 - config zczytywnay z yaml  a nie z klasy python (żeby można było dodawać wartości własne etykiety i później je wczytywać)
 - możliwosć własnej etykiety w detail ( czyli poprostu możliwość napisania własnego label - to tak naprawde też jednostka np metry , sekundy itd)
