@@ -1,0 +1,11 @@
+<div class="position-relative mb-2">
+    <input type="text" class="form-control pt-4 pb-2 shadow-none border-secondary-subtle" style="height: 3.5rem;"
+        name="custom_values" placeholder="Wartość..." required>
+
+    <input type="text" class="form-control-plaintext position-absolute top-0 start-0 ps-3 pt-2 fw-bold text-secondary"
+        style="height: 2rem; font-size: 0.85rem; z-index: 5; outline: none;" name="custom_labels" value="Nowe pole"
+        onclick="this.select()" placeholder="Nazwa pola">
+
+    <button type="button" class="btn-close position-absolute top-50 end-0 translate-middle me-2 small"
+        aria-label="Close" onclick="this.parentElement.remove()"></button>
+</div>

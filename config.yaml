@@ -1,0 +1,26 @@
+#config.yaml
+
+system:
+  app_name: "Dziennik Treningowy"
+  version: 1.0
+
+activities:
+  running:
+    - Bieg
+    - Sprint
+    - Trucht
+    - Marszobieg
+    - Interwały
+    - Bieg z przeszkodami
+
+  exercise:
+    - Wieloskok
+    - Pompki
+    - Przysiady
+    - Brzuszki
+    - Burpees
+    - Podciąganie
+
+  gym:
+    - Wyciskanie
+    - Martwy ciąg

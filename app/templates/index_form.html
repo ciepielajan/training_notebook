@@ -39,31 +39,7 @@
         {% endfor %}
         </div>
 
-        <div class="container controls mt-3" hx-target="#fields-container" hx-swap="beforeend">
-            <button type="button" class="btn btn-outline-secondary" hx-get="/card?type=running&value=Sprint_z_przycisku&label=aktywnosc">
-                + Bieganie
-            </button>
-            <button type="button" class="btn btn-outline-secondary" hx-get="/card?type=exercise&label=ćwiczenie">
-                + Ćwiczenie
-            </button>
-            <button type="button" class="btn btn-outline-secondary" hx-get="/card?type=gym">
-                + Siłownia
-            </button>
-            <button type="button" class="btn btn-outline-secondary" 
-                    hx-get="/card?type=text&size=fs-1">
-                + Nagłówek H1
-            </button>
 
-            <button type="button" class="btn btn-outline-secondary" 
-                    hx-get="/card?type=text&size=fs-2">
-                + Nagłówek H2
-            </button>
-
-            <button type="button" class="btn btn-outline-secondary" 
-                    hx-get="/card?type=text&size=fs-4">
-                + Nagłówek H4
-            </button>
-        </div>
 
         <div class="mt-4">
             <button type="submit" class="btn btn-success btn-lg">Zapisz cały trening</button>

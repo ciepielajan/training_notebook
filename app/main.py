@@ -1,4 +1,5 @@
 from collections import defaultdict
+from pprint import pprint
 import tempfile
 from fastapi import UploadFile, File
 from fastapi.responses import FileResponse
@@ -9,19 +10,26 @@ from fastapi.staticfiles import StaticFiles
 import secrets
 import json
 from pathlib import Path
+import yaml
 
-# Lista dostępnych opcji dla selecta, w zależności od typu karty
-ACTIVITY_OPTIONS = {
-    "running": ["Bieg", "Sprint", "Trucht", "Marszobieg", "Interwały"],
-    "exercise": ["Wieloskok", "Pompki", "Przysiady", "Brzuszki", "Burpees"],
-    # Domyślna lista, jakby typ nie pasował
-    "default": ["Inne"],
-}
+
+def load_settings(path):
+    """Wczytuje opcje z pliku YAML. Jeśli błąd, zwraca domyślne."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    except FileNotFoundError:
+        print(f"⚠️ Plik {path} nie istnieje.")
+    except:
+        print("⚠️ Nieznany błąd")
+
+
+SETTINGS = load_settings(path="config.yaml")
 
 
 # --- KONFIGURACJA DOMYŚLNA ---
 DEFAULT_CARDS = [
-    ("text", {"head": "Trening Tempowy", "size": "fs-4"}),
+    ("text", {"head": "Trening Tempowy", "size": "fs-4 fw-bold"}),
     (
         "running",
         {
@@ -78,6 +86,9 @@ async def field_fragment(
 ):
     unique_id = secrets.token_hex(4)
 
+    activities = SETTINGS.get("activities", {})
+    options_list = activities.get(type) or []
+
     return templates.TemplateResponse(
         "_card.html",
         {
@@ -89,7 +100,7 @@ async def field_fragment(
                 "details": [],
                 "size": size,
             },
-            "options": ACTIVITY_OPTIONS.get(type, ACTIVITY_OPTIONS["default"]),
+            "options": options_list,
         },
     )
 
@@ -111,6 +122,11 @@ async def add_input(request: Request, type: str):
             "values": {"value": "", "type": type, "label": labels_map.get(type, type)},
         },
     )
+
+
+@app.get("/card/custom_field", response_class=HTMLResponse)
+async def custom_field(request: Request):
+    return templates.TemplateResponse("inputs/custom_detail.html", {"request": request})
 
 
 @app.get("/single-input", response_class=HTMLResponse)
@@ -238,7 +254,7 @@ async def index(request: Request):
                 "type": card_type,
                 "unique_id": secrets.token_hex(4),
                 "data": card_data,
-                "options": ACTIVITY_OPTIONS.get(card_type, ACTIVITY_OPTIONS["default"]),
+                "options": SETTINGS.get("activities", {}).get(card_type, []),
             }
         )
 
@@ -303,7 +319,7 @@ async def load(request: Request, file: UploadFile = File(...)):
                 "unique_id": unique_id,
                 "type": card_type,
                 "data": values_for_template,
-                "options": ACTIVITY_OPTIONS.get(card_type, ACTIVITY_OPTIONS["default"]),
+                "options": SETTINGS.get("activities", {}).get(card_type, []),
             }
 
             rendered_card = card_template.render(context)
