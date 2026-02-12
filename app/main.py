@@ -125,13 +125,19 @@ async def add_input(request: Request, type: str):
 
 
 @app.get("/card/custom_field", response_class=HTMLResponse)
-async def custom_field(request: Request):
-    return templates.TemplateResponse("inputs/custom_detail.html", {"request": request})
+async def custom_field(request: Request, label: str = ""):
+    return templates.TemplateResponse(
+        "inputs/custom_detail.html",
+        {
+            "request": request,
+            "values": {"value": "", "label": label},
+        },
+    )
 
 
-@app.get("/single-input", response_class=HTMLResponse)
-async def single_input(request: Request):
-    return '<input type="text" name="extra_text" placeholder="nowe pole">'
+# @app.get("/single-input", response_class=HTMLResponse)
+# async def single_input(request: Request):
+#     return '<input type="text" name="extra_text" placeholder="nowe pole">'
 
 
 @app.get("/test_form", response_class=HTMLResponse)
@@ -306,12 +312,12 @@ async def load(request: Request, file: UploadFile = File(...)):
             # TRANSFORMACJA DANYCH
             values_for_template = {
                 # 1. Dla kart typu Running/Exercise (zagnieżdżone)
-                "activity": {"value": raw_data.get("head", ""), "label": raw_data.get("label", "Aktywność")},
+                "activity": {"value": raw_data.get("head", ""), "label": raw_data.get("label", "")},
                 "details": raw_data.get("details", []),
                 # 2. Dla kart typu Text (płaskie)
                 # Szablon text.html używa {{ data.head }} i {{ data.size }}
                 "head": raw_data.get("head", ""),
-                "size": raw_data.get("size", "fs-2"),
+                "size": raw_data.get("size", ""),
             }
 
             context = {

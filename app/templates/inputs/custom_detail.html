@@ -1,11 +1,51 @@
-<div class="position-relative mb-2">
-    <input type="text" class="form-control pt-4 pb-2 shadow-none border-secondary-subtle" style="height: 3.5rem;"
-        name="custom_values" placeholder="Wartość..." required>
+<div class="form-floating position-relative">
+    <input type="hidden" name="detail">
+    
+    <input type="text" class="form-control shadow-none border-secondary-subtle pe-5"
+        style="padding-top: 1.625rem; padding-bottom: 0.625rem; height: calc(3.5rem + 2px); line-height: 1.25;"
+        name="value" value="{{ values.value }}" placeholder="Wartość..." required>
+        
+    <input type="hidden" name="label" value="{{ values.label }}">
+    
+    <input type="text" class="form-control-plaintext position-absolute top-0 start-0 text-secondary" 
+        style="font-size: 0.85rem; 
+               z-index: 5; 
+               outline: none; 
+               background: transparent; 
+               padding: 0 !important;
+               margin-top: -13px; 
+               padding-left: 0.75rem !important;
+               height: auto; 
+               line-height: 1;
+               opacity: 1;" 
+        name="label" value="{{ values.label }}" onclick="this.select()"
+        placeholder="Nazwa pola">
 
-    <input type="text" class="form-control-plaintext position-absolute top-0 start-0 ps-3 pt-2 fw-bold text-secondary"
-        style="height: 2rem; font-size: 0.85rem; z-index: 5; outline: none;" name="custom_labels" value="Nowe pole"
-        onclick="this.select()" placeholder="Nazwa pola">
+    <div class="dropdown position-absolute top-0 end-0 mt-2 me-2" style="z-index: 100;">
+        <button class="btn btn-sm btn-link text-secondary p-0 text-decoration-none" type="button"
+            data-bs-toggle="dropdown" aria-expanded="false" data-bs-popper-config='{"strategy":"fixed"}'>
+            <i class="bi bi-three-dots-vertical fs-5"></i>
+        </button>
 
-    <button type="button" class="btn-close position-absolute top-50 end-0 translate-middle me-2 small"
-        aria-label="Close" onclick="this.parentElement.remove()"></button>
+        <ul class="dropdown-menu dropdown-menu-end shadow">
+            {% for label in ["Dystans", "Czas", 'Powtórzenia', 'Ciężar'] %}
+            <li>
+                <button class="dropdown-item" type="button" hx-get="/card/custom_field?label={{ label }}"
+                    hx-target="closest .form-floating" hx-swap="outerHTML">
+                    {{ label }}
+                </button>
+            </li>
+            {% endfor %}
+            <li>
+                <hr class="dropdown-divider">
+            </li>
+            <li>
+                <button class="dropdown-item text-danger" type="button"
+                    onclick="this.closest('.form-floating').remove()">
+                    <i class="bi bi-trash"></i> Usuń
+                </button>
+            </li>
+        </ul>
+
+    </div>
 </div>

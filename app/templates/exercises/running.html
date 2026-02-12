@@ -17,7 +17,7 @@
     <div class="input-group" id="details-container-{{ unique_id }}">
         {% for item in data.details  %}
             {% with values = item %}
-                {% include "inputs/detail.html" %}
+                {% include "inputs/custom_detail.html" %}
             {% endwith %}
         {% endfor %}
     </div>

@@ -43,19 +43,17 @@ TODO:
 - wczytywanie i zapisywanie wszystkich elementów poza gym
 - config zczytywnay z yaml  a nie z klasy python (żeby można było dodawać wartości własne etykiety i później je wczytywać)
 - przycisk obok kazdego card (przyciskin nowych card, usunięcie)
+- przycisk custom label (custom_detail.html) ( TODO mozna usunac app/templates/inputs/detail.html bo już jest tylko custom)
 
 #### todo:
-- dane demo powinny mieć strukture taka jak w json. 
+- przycisk dodający nowe sekcje np tętno , laps (chyba tez jako zdefiniowane i jeden custom)
 - przycisk obok kazdego card (kopiowanie i wklejanie całego card)
+- dane demo powinny mieć strukture taka jak w json. 
 - możliwosć własnej etykiety w detail ( czyli poprostu możliwość napisania własnego label - to tak naprawde też jednostka np metry , sekundy itd)
-- PWA
 - lista treningów
 - kopiowanie treningów
 - przyciski typu number , time (na mobile super to działa)
-- przycisk custom label (custom_detail.html)  [INPROGRESS]
-- - style do poprawy (brak pogrubienia i obramowanie)
-- - zapisaywanie do pliku i wczytywanie
-- przycisk dodający nowe sekcje np tętno , laps (chyba tez jako zdefiniowane i jeden custom)
+- PWA
 
 
 #### błedy:
