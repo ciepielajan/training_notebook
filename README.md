@@ -48,7 +48,8 @@ TODO:
 
 #### todo:
 - przycisk dodający nowe sekcje np tętno , laps (chyba tez jako zdefiniowane i jeden custom) [NIEE - to nipotrzebne kombinowanie. juz teraz moga to dodawać sobie jak chcą . ] - trzeba edytować przycisk dodanie serii ze albo w doł albo w prawo . trzeba wtedy zdefiniować nowe szablony i wstrzebić w nie dane . moze być potrzebne nowe pojęcie hx-swap-oob="true". 
-- przycisk obok kazdego card (kopiowanie i wklejanie całego card)
+- przycisk który przesunie w lewo albo w prawo dany castom_field
+przycisk obok kazdego card (kopiowanie i wklejanie całego card)
 - lista treningów
 - kopiowanie treningów
 - przyciski typu number , time (na mobile super to działa)
