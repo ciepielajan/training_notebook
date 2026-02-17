@@ -31,21 +31,79 @@
 
     <form id="form" action="/save" method="post">
 
-        <div id="fields-container" class="container">
-        {% for card in cards_list %}
+        <div id="fields-container" class="container node">
+            {% for card in cards_list %}
             {% with type=card.type, unique_id=card.unique_id, data=card.data, options=card.options %}
-                {% include "_card.html" %}
+            {% include "_card.html" %}
             {% endwith %}
-        {% endfor %}
+            {% endfor %}
         </div>
 
-
+        <input type="hidden" name="json_body" id="hidden-json-input">
 
         <div class="mt-4">
             <button type="submit" class="btn btn-success btn-lg">Zapisz cały trening</button>
         </div>
     </form>
 
+    <script>
+        function htmlTreeToJson(element) {
+            let data = {};
+            let items = [];
+
+            // KROK 1: Zbieramy dane (inputy)
+            const allInputs = element.querySelectorAll('input, select, textarea');
+
+            allInputs.forEach(input => {
+                const ownerNode = input.closest('.node');
+                if (ownerNode === element) {
+                    if (input.name && input.name !== 'json_body') {
+                        data[input.name] = input.value;
+                    }
+                }
+            });
+
+            // KROK 2: Szukamy dzieci
+            const allNodes = element.querySelectorAll('.node');
+
+            allNodes.forEach(node => {
+                const parentNode = node.parentElement.closest('.node');
+                if (parentNode === element) {
+                    items.push(htmlTreeToJson(node));
+                }
+            });
+
+            // KROK 3: Zapisujemy dzieci pod odpowiednią nazwą
+            if (items.length > 0) {
+                // NOWOŚĆ: Sprawdzamy czy w HTML zdefiniowano nazwę klucza dla dzieci.
+                // Jeśli nie, domyślnie używamy 'items'.
+                let keyName = element.dataset.childrenKey || 'items';
+
+                data[keyName] = items;
+            }
+
+            return data;
+        }
+
+        // Obsługa submit (bez zmian)
+        document.getElementById('form').addEventListener('submit', function (e) {
+            const rootElement = document.getElementById('fields-container');
+            const structure = htmlTreeToJson(rootElement);
+            const jsonString = JSON.stringify(structure);
+            document.getElementById('hidden-json-input').value = jsonString;
+            console.log("WYGENEROWANY JSON:", JSON.stringify(structure, null, 2));
+
+        });
+
+        document.body.addEventListener('htmx:configRequest', function (evt) {
+            if (evt.detail.path.includes('/card/repetition/')) {
+                const rootElement = document.getElementById('fields-container');
+                const structure = htmlTreeToJson(rootElement);
+                // Wysyłamy cały JSON, tak jak przy zapisie
+                evt.detail.parameters['json_body'] = JSON.stringify(structure);
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -1,0 +1,85 @@
+{
+    "items": [
+        {
+            "id": "2b0f1bc3",
+            "type": "text",
+            "data": "",
+            "head": "Trening Tempowy",
+            "size": "fs-4 fw-bold"
+        },
+        {
+            "id": "685756ef",
+            "items": [
+                {
+                    "type": "running",
+                    "head": "Bieg",
+                    "label": "",
+                    "details": [
+                        {
+                            "detail": "",
+                            "value": "200",
+                            "label": "Dystans [m]"
+                        },
+                        {
+                            "detail": "",
+                            "value": "20:43",
+                            "label": "Czas [sec]"
+                        },
+                        {
+                            "detail": "",
+                            "value": "5:12",
+                            "label": "Tempo [min/km]"
+                        },
+                        {
+                            "detail": "",
+                            "value": "150",
+                            "label": "Śr. tętno [bpm]"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "c90b3344",
+            "items": [
+                {
+                    "type": "exercise",
+                    "head": "Brzuszki",
+                    "label": "ćwiczenie",
+                    "details": ""
+                }
+            ]
+        },
+        {
+            "id": "71eb78ca",
+            "items": [
+                {
+                    "type": "running",
+                    "head": "Marszobieg",
+                    "label": "aktywnosc",
+                    "details": [
+                        {
+                            "detail": "",
+                            "value": "1",
+                            "label": "godizna"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "727af3a9",
+            "type": "text",
+            "data": "",
+            "head": "FastAPI korzysta głównie z dwóch kluczowych bibliotek na literę „S” oraz „P”: Starlette do obsługi części internetowej (asynchroniczność, routing) oraz Pydantic do walidacji danych. To połączenie zapewnia wysoką wydajność, porównywalną z Node.js czy Go.  Kluczowe biblioteki i technologie: Starlette: Lekki framework ASGI (Asynchronous Server Gateway Interface), który zapewnia obsługę asynchronicznego programowania (async/await). Pydantic: Biblioteka do walidacji danych i zarządzania ustawieniami za pomocą typów w Pythonie. Uvicorn: Chociaż nie zaczyna się na \"S\", to jest to najpopularniejszy serwer ASGI używany do uruchamiania aplikacji FastAPI (często instalowany razem z fastapi[all]).  Dzięki temu FastAPI pozwala na automatyczną dokumentację (Swagger UI/OpenAPI) i szybkie przetwarzanie żądań. ",
+            "size": "fs-6"
+        },
+        {
+            "id": "d3546539",
+            "type": "text",
+            "data": "",
+            "head": "koniec treningu :)",
+            "size": "fs-4 fw-bold"
+        }
+    ]
+}

@@ -1,97 +1,164 @@
-{# <div style="background: red; color: white; font-size: 10px; padding: 2px;">
+<!-- {# <div style="background: red; color: white; font-size: 10px; padding: 2px;">
     CARD WIDZI: {{ options }}
-</div> #}
+</div> #} -->
 
+<style>
+    /* STYLIZACJA PASKA AKCJI (PRZYCISKU) */
+    .action-sidebar {
+        /* Domyślne zachowanie (wspólne) */
+        position: absolute;
+        z-index: 100;
+        transition: all 0.2s ease-out;
+    }
 
-<div class="card mb-3 position-relative overflow-hidden" id="{{ unique_id }}">
+    /* --- WERSJA DESKTOP (md i większe) --- */
+    @media (min-width: 768px) {
+        .action-sidebar {
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3rem;
+            /* Szerokość paska na komputerze */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 1;
+            /* Zawsze widoczny */
+            pointer-events: auto;
+        }
+    }
+
+    /* --- WERSJA MOBILE (poniżej 768px) --- */
+    @media (max-width: 767.98px) {
+        .action-sidebar {
+            /* Pozycjonowanie "DYMKA" pod wierszem */
+            left: 0;
+            top: 100%;
+            /* Ustawiamy na dolnej krawędzi wiersza */
+            margin-top: -18px;
+            /* Lekko podciągamy, żeby wisiał na linii podziału */
+            height: auto;
+            width: auto;
+
+            /* Wygląd przycisku na mobile (biały kwadracik z cieniem) */
+            background: white;
+            border-radius: 6px;
+            padding: 2px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+            border: 1px solid #dee2e6;
+
+            /* Ukrywanie/Pokazywanie */
+            opacity: 0;
+            transform: translateY(5px);
+            pointer-events: none;
+        }
+
+        /* Pokaż przycisk TYLKO gdy wiersz jest aktywny (focus-within) */
+        .exercise-row:focus-within .action-sidebar {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+            z-index: 1050;
+            /* Musi być na wierzchu */
+        }
+    }
+</style>
+
+<div class="exercise-row position-relative border-bottom py-3 node" id="{{ unique_id }}">
+
     <input type="hidden" name="id" value="{{ unique_id }}">
 
-    <div class="position-absolute start-0 top-0 h-100 d-flex flex-column justify-content-center ps-2" >
-    
-    <div class="dropdown">
-        <button class="btn btn-sm btn-link text-secondary text-decoration-none p-0" 
-                type="button" 
-                data-bs-toggle="dropdown" 
-                aria-expanded="false"
-                style="width: 30px; height: 30px;"
+    <div class="action-sidebar ps-1">
+        <div class="dropdown">
+            <button
+                class="btn btn-sm btn-link text-secondary text-decoration-none p-0 d-flex align-items-center justify-content-center"
+                type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 30px; height: 30px;"
                 data-bs-popper-config='{"strategy":"fixed"}'>
-            <i class="bi bi-plus-circle fs-4"></i>
-        </button>
+                <i class="bi bi-plus-lg fs-5"></i>
+            </button>
 
-        <ul class="dropdown-menu shadow" hx-target="closest .card" hx-swap="afterend" style="z-index: 1000;">
-            
-            <li><h6 class="dropdown-header">Dodaj poniżej:</h6></li>
+            <ul class="dropdown-menu shadow" hx-target="closest .exercise-row" hx-swap="afterend"
+                style="z-index: 1000;">
 
-            <li>
-                <button class="dropdown-item" type="button" hx-get="/card?type=running&value=Sprint&label=aktywnosc">
-                    <i class="bi bi-stopwatch me-2"></i>Bieganie
-                </button>
-            </li>
+                <li>
+                    <h6 class="dropdown-header">Dodaj:</h6>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button"
+                        hx-get="/card?type=running&value=Sprint&label=aktywnosc">
+                        <i class="bi bi-stopwatch me-2"></i>Bieganie
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button" hx-get="/card?type=exercise&label=ćwiczenie">
+                        <i class="bi bi-activity me-2"></i>Ćwiczenie
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button" hx-get="/card?type=gym2">
+                        <i class="bi bi-hdd-stack me-2"></i>Siłownia 2
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button" hx-get="/card?type=gym">
+                        <i class="bi bi-hdd-stack me-2"></i>Siłownia
+                    </button>
+                </li>
 
-            <li>
-                <button class="dropdown-item" type="button" hx-get="/card?type=exercise&label=ćwiczenie">
-                    <i class="bi bi-activity me-2"></i>Ćwiczenie
-                </button>
-            </li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <h6 class="dropdown-header">Tekst:</h6>
+                </li>
 
-            <li>
-                <button class="dropdown-item" type="button" 
-                        hx-get="/card?type=gym">
-                    <i class="bi bi-hdd-stack me-2"></i>Siłownia
-                </button>
-            </li>
+                <li>
+                    <button class="dropdown-item" type="button" hx-get="/card?type=text&size=fs-1 fw-bold">
+                        <i class="bi bi-type-h1 me-2"></i>Nagłówek H1
+                    </button>
+                </li>
 
-            <li><hr class="dropdown-divider"></li>
-            <li><h6 class="dropdown-header">Tekst:</h6></li>
+                <li>
+                    <button class="dropdown-item" type="button" hx-get="/card?type=text&size=fs-2 fw-bold">
+                        <i class="bi bi-type-h2 me-2"></i>Nagłówek H2
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button" hx-get="/card?type=text&size=fs-3 fw-bold">
+                        <i class="bi bi-type-h3 me-2"></i>Nagłówek H3
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button" hx-get="/card?type=text&size=fs-4 fw-bold">
+                        <i class="bi bi-type-h4 me-2"></i>Nagłówek H4
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button" hx-get="/card?type=text&size=fs-6">
+                        <i class="bi bi-type me-2"></i>tekst
+                    </button>
+                </li>
 
-            <li>
-                <button class="dropdown-item" type="button" 
-                        hx-get="/card?type=text&size=fs-1 fw-bold">
-                    <i class="bi bi-type-h1 me-2"></i>Nagłówek H1
-                </button>
-            </li>
-
-            <li>
-                <button class="dropdown-item" type="button" 
-                        hx-get="/card?type=text&size=fs-2 fw-bold">
-                    <i class="bi bi-type-h2 me-2"></i>Nagłówek H2
-                </button>
-            </li>
-             <li>
-                <button class="dropdown-item" type="button" 
-                        hx-get="/card?type=text&size=fs-3 fw-bold">
-                    <i class="bi bi-type-h3 me-2"></i>Nagłówek H3
-                </button>
-            </li>
-            <li>
-                <button class="dropdown-item" type="button" 
-                        hx-get="/card?type=text&size=fs-4 fw-bold">
-                    <i class="bi bi-type-h4 me-2"></i>Nagłówek H4
-                </button>
-            </li>
-            <li>
-                <button class="dropdown-item" type="button" 
-                        hx-get="/card?type=text&size=fs-6">
-                    <i class="bi bi-type me-2"></i>tekst
-                </button>
-            </li>
-            <li><hr class="dropdown-divider"></li>
-             <li>
-                <button class="dropdown-item text-danger" type="button" 
-                        onclick="this.closest('.card').remove()">
-                    <i class="bi bi-trash me-2"></i>Usuń tę kartę
-                </button>
-            </li>
-        </ul>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <button class="dropdown-item text-danger" type="button"
+                        onclick="this.closest('.exercise-row').remove()">
+                        <i class="bi bi-trash me-2"></i>Usuń wiersz
+                    </button>
+                </li>
+            </ul>
+        </div>
     </div>
-</div>
-    <div class="card-body ps-5">
+
+    <div class="ps-1 ps-md-5 pe-2 w-100">
         <div class="scroll-container">
-            <table class="table mb-0">
+            <table class="table table-borderless mb-0 w-100">
                 <tr id="row-{{ unique_id }}">
-                    <td>
-                        {% with data=data, options=options %}
-                            {% include "exercises/" ~ type ~ ".html" %}
+                    <td class="p-0">
+                        {% with data=data, options=options, unique_id=unique_id %}
+                        {% include "exercises/" ~ type ~ ".html" %}
                         {% endwith %}
                     </td>
                 </tr>

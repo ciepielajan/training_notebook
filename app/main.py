@@ -26,34 +26,6 @@ def load_settings(path):
 
 SETTINGS = load_settings(path="config.yaml")
 
-
-# --- KONFIGURACJA DOMYŚLNA ---
-DEFAULT_CARDS = [
-    ("text", {"head": "Trening Tempowy", "size": "fs-4 fw-bold"}),
-    (
-        "running",
-        {
-            "activity": {"value": "Bieg", "label": ""},
-            "details": [
-                {"value": "200", "type": "distance", "label": "Dystans [m]"},
-                {"value": "20:43", "type": "duration", "label": "Czas [sec]"},
-                {"value": "5:12", "type": "pace", "label": "Tempo [min/km]"},
-                {"value": "150", "type": "heart_rate", "label": "Śr. tętno [bpm]"},
-            ],
-        },
-    ),
-    (
-        "exercise",
-        {
-            "activity": {"value": "Wieloskok", "label": "Ćwiczenie"},
-            "details": [
-                {"value": "50", "type": "distance", "label": "Dystans [m]"},
-            ],
-        },
-    ),
-    ("running", {"activity": {"value": "Sprint", "label": ""}, "details": []}),
-]
-
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -158,111 +130,72 @@ def add_input(input_type: str):
     """
 
 
-@app.post("/save")
-async def save(request: Request):
-    form = await request.form()
+@app.post("/card/repetition/{uid}", response_class=HTMLResponse)
+async def duplicate_series(request: Request, uid: str):
+    form_data = await request.form()
+    json_body = form_data.get("json_body")
 
-    # Kolejność jest kluczowa, multi_items() ją gwarantuje
-    form_data = form.multi_items()
+    if not json_body:
+        return HTMLResponse("Błąd: Brak danych strukturalnych", status_code=400)
 
-    if not form_data:
-        return HTMLResponse("<div>⚠️ Brak danych do zapisania</div>", status_code=400)
+    data_tree = json.loads(json_body)
+    html_content = ""
 
-    result_cards = []
+    # 1. Znajdźmy naszą kartę w drzewie za pomocą uid (które u Ciebie jest polem 'id')
+    target_card = None
+    for card in data_tree.get("items", []):
+        if card.get("id") == uid:
+            target_card = card
+            break
 
-    # Wskaźniki stanu (kontekst)
-    current_card = None
-    in_details_section = False  # Flaga: czy jesteśmy już w środku listy <details>?
+    if not target_card:
+        return HTMLResponse("Nie znaleziono karty o podanym ID", status_code=404)
 
-    for key, val in form_data:
+    # 2. Wyciągamy detale.
+    # Zgodnie z Twoim nowym JSONem: karta -> items[0] (running) -> details
+    # Używamy get(..., []) aby uniknąć błędów
+    content_node = target_card.get("items", [{}])[0]
+    labels_to_duplicate = []
 
-        # --- POZIOM 0: NOWA KARTA ---
-        if key == "id":
-            # Tworzymy nową kartę
-            current_card = {
-                "id": val,
-                # type i data zostaną uzupełnione w kolejnych krokach pętli
+    # Pobieramy etykiety z sekcji 'details'
+    # Pamiętaj, że JS nazwał to 'details' dzięki data-children-key
+    for detail in content_node.get("details", []):
+        lbl = detail.get("label")
+        if lbl and lbl not in labels_to_duplicate:
+            labels_to_duplicate.append(lbl)
+
+    # 3. Generujemy HTML dla nowych pól (pustych)
+    for lbl in labels_to_duplicate:
+        html_content += templates.get_template("inputs/custom_detail.html").render(
+            {
+                "request": request,
+                "uid": uid,
+                "values": {
+                    "value": "",
+                    "label": lbl,
+                    "type": "custom",
+                },
             }
-            result_cards.append(current_card)
+        )
 
-            # Reset flagi sekcji przy nowej karcie
-            in_details_section = False
-
-        # --- POZIOM 1: TYP I KONTENER DANYCH ---
-        elif key == "type":
-            if current_card is not None:
-                # Uwaga: w detail.html też jest 'type', więc musimy sprawdzić kontekst
-                if in_details_section:
-                    # To type wewnątrz szczegółu (np. distance)
-                    details_list = current_card["data"]["details"]
-                    if details_list:
-                        details_list[-1]["type"] = val
-                else:
-                    # To główny type karty (np. running)
-                    current_card["type"] = val
-
-        elif key == "data":
-            # Znacznik <input name="data"> inicjalizuje obiekt data
-            if current_card is not None:
-                current_card["data"] = {}
-
-        # --- POZIOM 2: WNĘTRZE ACTIVITY (head, label przed details) ---
-        elif key == "head":
-            if current_card and "data" in current_card:
-                current_card["data"]["head"] = val
-
-        # --- POZIOM 3: ROZPOCZĘCIE LISTY SZCZEGÓŁÓW ---
-        elif key == "details":
-            # Znacznik <input name="details"> sygnalizuje start listy
-            if current_card and "data" in current_card:
-                current_card["data"]["details"] = []
-                in_details_section = True  # Przełączamy tryb na listę
-
-        # --- POZIOM 4: NOWY ELEMENT LISTY ---
-        elif key == "detail":
-            # Znacznik <input name="detail"> dodaje nowy pusty słownik do listy
-            if current_card and in_details_section:
-                current_card["data"]["details"].append({})
-
-        # --- WARTOŚCI (Context aware) ---
-        elif key in ["value", "label"]:
-            if current_card:
-                if in_details_section:
-                    # Jesteśmy w liście -> zapisujemy do ostatniego elementu listy
-                    details_list = current_card["data"].get("details", [])
-                    if details_list:
-                        details_list[-1][key] = val
-                else:
-                    # Nie jesteśmy w liście -> zapisujemy do głównego obiektu data
-                    # (To obsłuży 'label' dla Activity)
-                    if "data" in current_card:
-                        current_card["data"][key] = val
-
-        elif key == "size":
-            if current_card and "data" in current_card:
-                current_card["data"]["size"] = val
-
-    # --- Zapis do pliku ---
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
-    with open(tmp.name, "w", encoding="utf-8") as f:
-        json.dump(result_cards, f, ensure_ascii=False, indent=2)
-
-    return FileResponse(tmp.name, media_type="application/json", filename="training_data.json")
+    return HTMLResponse(content=html_content)
 
 
 @app.get("/index_form", response_class=HTMLResponse)
 async def index(request: Request):
+    file_path = "data/editorjs-2025-10-03T17-39-52-699Z.json"
 
-    cards_to_render = []
-    for card_type, card_data in DEFAULT_CARDS:
-        cards_to_render.append(
-            {
-                "type": card_type,
-                "unique_id": secrets.token_hex(4),
-                "data": card_data,
-                "options": SETTINGS.get("activities", {}).get(card_type, []),
-            }
-        )
+    try:
+        # 1. Wczytujemy plik z dysku
+        with open(file_path, "r", encoding="utf-8") as f:
+            spider_json = json.load(f)
+
+        # 2. Przetwarzamy dane naszą nową funkcją
+        cards_to_render = process_spider_json(spider_json)
+
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"OSTRZEŻENIE: Nie można wczytać domyślnego pliku: {e}")
+        cards_to_render = []
 
     return templates.TemplateResponse(
         "index_form.html",
@@ -275,66 +208,67 @@ async def index(request: Request):
 
 @app.post("/load", response_class=HTMLResponse)
 async def load(request: Request, file: UploadFile = File(...)):
-    print(f"--- Otrzymano plik: {file.filename} ---")
-
-    # 1. Wczytanie pliku
     content = await file.read()
-    print(f"Rozmiar pliku: {len(content)} bajtów")
+    spider_json = json.loads(content)
 
-    if len(content) == 0:
-        print("BŁĄD: Plik jest pusty!")
-        return HTMLResponse("<div>⚠️ Błąd: Przesłany plik jest pusty</div>", status_code=400)
-
-    try:
-        # Dekodowanie
-        text_content = content.decode("utf-8")
-        # print(f"Treść: {text_content}") # Odkomentuj jeśli chcesz widzieć treść w logach
-
-        cards_list = json.loads(text_content)
-        print("JSON poprawnie sparsowany.")
-
-    except json.JSONDecodeError as e:
-        print(f"BŁĄD JSON: {e}")
-        return HTMLResponse(f"<div>⚠️ Błąd JSON: {e}</div>", status_code=400)
-    except Exception as e:
-        print(f"BŁĄD NIEOCZEKIWANY: {e}")
-        return HTMLResponse(f"<div>⚠️ Błąd krytyczny: {e}</div>", status_code=400)
+    # Korzystamy z tej samej logiki transformacji
+    processed_cards = process_spider_json(spider_json)
 
     final_html = ""
+    for card in processed_cards:
+        final_html += templates.get_template("_card.html").render(
+            {"request": request, **card}  # Rozpakowuje unique_id, type, data, options
+        )
+
+    return final_html
+
+
+@app.post("/save")
+async def save(request: Request):
+    form = await request.form()
+    json_body = form.get("json_body")
+
+    if not json_body:
+        return HTMLResponse("Błąd: Pusty formularz", status_code=400)
+
     try:
-        card_template = templates.get_template("_card.html")
+        # 1. Parsujemy string JSON z formularza na obiekt Pythona
+        data_structure = json.loads(json_body)
 
-        for card in cards_list:
-            unique_id = card.get("id")
-            card_type = card.get("type")
-            raw_data = card.get("data", {})
+        # 2. Zapisujemy do pliku z wcięciami (indent=4) i polskimi znakami
+        with open("training_data.json", "w", encoding="utf-8") as f:
+            json.dump(data_structure, f, ensure_ascii=False, indent=4)
 
-            # TRANSFORMACJA DANYCH
-            values_for_template = {
-                # 1. Dla kart typu Running/Exercise (zagnieżdżone)
-                "activity": {"value": raw_data.get("head", ""), "label": raw_data.get("label", "")},
-                "details": raw_data.get("details", []),
-                # 2. Dla kart typu Text (płaskie)
-                # Szablon text.html używa {{ data.head }} i {{ data.size }}
-                "head": raw_data.get("head", ""),
-                "size": raw_data.get("size", ""),
-            }
-
-            context = {
-                "request": request,
-                "unique_id": unique_id,
-                "type": card_type,
-                "data": values_for_template,
-                "options": SETTINGS.get("activities", {}).get(card_type, []),
-            }
-
-            rendered_card = card_template.render(context)
-            final_html += rendered_card
+        return FileResponse("training_data.json", media_type="application/json", filename="training_data.json")
 
     except Exception as e:
-        print(f"BŁĄD RENDEROWANIA: {e}")
-        # Tu rzucamy 500, bo to błąd serwera (szablonów), a nie pliku
-        return HTMLResponse(f"<div>⚠️ Błąd renderowania: {e}</div>", status_code=500)
+        return HTMLResponse(f"Błąd zapisu: {e}", status_code=500)
 
-    print("Zwracanie HTML...")
-    return final_html
+
+def process_spider_json(spider_data):
+    """Przetwarza surowy JSON z pająka na listę kart gotową do renderowania."""
+    processed_cards = []
+
+    for card in spider_data.get("items", []):
+        # Szukamy data_obj (podobnie jak w metodzie load)
+        if card.get("items") and len(card["items"]) > 0:
+            data_obj = card["items"][0]
+        else:
+            data_obj = card
+
+        card_type = data_obj.get("type") or card.get("type")
+
+        # Ujednolicenie pod szablony
+        data_obj["activity"] = {"value": data_obj.get("head", ""), "label": data_obj.get("label", "")}
+        if not isinstance(data_obj.get("details"), list):
+            data_obj["details"] = []
+
+        processed_cards.append(
+            {
+                "unique_id": secrets.token_hex(4),  # Generujemy nowe ID przy każdym wejściu
+                "type": card_type,
+                "data": data_obj,
+                "options": SETTINGS.get("activities", {}).get(card_type, []),
+            }
+        )
+    return processed_cards

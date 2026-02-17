@@ -1,14 +1,13 @@
-<div class="form-floating position-relative">
+<div class="form-floating position-relative node" style="flex: 0 0 auto; width: 150px;">
     <input type="hidden" name="detail">
-    
+
     <input type="text" class="form-control shadow-none border-secondary-subtle pe-5"
         style="padding-top: 1.625rem; padding-bottom: 0.625rem; height: calc(3.5rem + 2px); line-height: 1.25;"
         name="value" value="{{ values.value }}" placeholder="Wartość..." required>
-        
+
     <input type="hidden" name="label" value="{{ values.label }}">
-    
-    <input type="text" class="form-control-plaintext position-absolute top-0 start-0 text-secondary" 
-        style="font-size: 0.85rem; 
+
+    <input type="text" class="form-control-plaintext position-absolute top-0 start-0 text-secondary" style="font-size: 0.85rem; 
                z-index: 5; 
                outline: none; 
                background: transparent; 
@@ -17,9 +16,7 @@
                padding-left: 0.75rem !important;
                height: auto; 
                line-height: 1;
-               opacity: 1;" 
-        name="label" value="{{ values.label }}" onclick="this.select()"
-        placeholder="Nazwa pola">
+               opacity: 1;" name="label" value="{{ values.label }}" onclick="this.select()" placeholder="Nazwa pola">
 
     <div class="dropdown position-absolute top-0 end-0 mt-2 me-2" style="z-index: 100;">
         <button class="btn btn-sm btn-link text-secondary p-0 text-decoration-none" type="button"
