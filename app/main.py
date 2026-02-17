@@ -41,13 +41,6 @@ async def field_fragment(request: Request):
     # zwraca fragment HTML (jedna linia pól)
     return templates.TemplateResponse("_fields_fragment.html", {"request": request})
 
-
-@app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
-    start_id = secrets.token_hex(4)
-    return templates.TemplateResponse("index.html", {"request": request, "unique_id": start_id, "type": "exercise"})
-
-
 @app.get("/card", response_class=HTMLResponse)
 async def field_fragment(
     request: Request,
@@ -181,9 +174,9 @@ async def duplicate_series(request: Request, uid: str):
     return HTMLResponse(content=html_content)
 
 
-@app.get("/index_form", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    file_path = "data/editorjs-2025-10-03T17-39-52-699Z.json"
+    file_path = "data/training_data (10).json"
 
     try:
         # 1. Wczytujemy plik z dysku

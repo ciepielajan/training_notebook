@@ -17,7 +17,7 @@ sudo ufw allow 8000/tcp # open port
 ```
 
 ```
-http://192.168.31.29:8000/index_form
+http://192.168.31.29:8000/
 ```
 
 
@@ -33,7 +33,7 @@ training_notebook/
 ```
 
 TODO:
-### glowna strona to http://127.0.0.1:8000/index_form
+### glowna strona to http://127.0.0.1:8000/
 #### co działa:
 - każdy przycisk:
 - - select z options z configu
@@ -47,7 +47,7 @@ TODO:
 - przycisk kolejnej serii (INPROGRESS - działa kopiowanie teraz teraz grzeba pogrupowaać etykiety w jednej linii jak w gym) 
 
 #### todo:
-- przycisk dodający nowe sekcje np tętno , laps (chyba tez jako zdefiniowane i jeden custom)
+- przycisk dodający nowe sekcje np tętno , laps (chyba tez jako zdefiniowane i jeden custom) [NIEE - to nipotrzebne kombinowanie. juz teraz moga to dodawać sobie jak chcą . ] - trzeba edytować przycisk dodanie serii ze albo w doł albo w prawo . trzeba wtedy zdefiniować nowe szablony i wstrzebić w nie dane . moze być potrzebne nowe pojęcie hx-swap-oob="true". 
 - przycisk obok kazdego card (kopiowanie i wklejanie całego card)
 - lista treningów
 - kopiowanie treningów
@@ -56,5 +56,5 @@ TODO:
 
 
 #### błedy:
-- NIE DZIAŁA WCZYTYWANIE JSONA z pliku jako demo ! od razu zrób kilka treningów w jednym folderze i liste treningów. myśle ze strona / serwer nie widzili plików !
+
 
