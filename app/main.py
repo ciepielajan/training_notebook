@@ -289,6 +289,8 @@ async def table_action(request: Request, uid: str):
     # 2. DODAJ KOLUMNĘ
     if action == "add_col":
         col_idx = int(form.get("col_index", 1))
+        # Pobieramy nazwę kolumny z formularza (jeśli kliknięto 'Własne pole', będzie to pusty string "")
+        col_name = form.get("col_name", "")
 
         # Przesuwamy dane w prawo, żeby zrobić miejsce na nową kolumnę
         for c in range(num_cols, col_idx, -1):
@@ -296,8 +298,8 @@ async def table_action(request: Request, uid: str):
             for r in range(1, num_rows + 1):
                 data[f"r{r}c{c+1}"] = data.get(f"r{r}c{c}", "")
 
-        # Czyścimy nową kolumnę
-        data[f"h{col_idx+1}"] = "Nowa"
+        # Wstawiamy nową kolumnę z wybraną nazwą!
+        data[f"h{col_idx+1}"] = col_name
         for r in range(1, num_rows + 1):
             data[f"r{r}c{col_idx+1}"] = ""
 
@@ -321,9 +323,42 @@ async def table_action(request: Request, uid: str):
 
             data["num_cols"] = num_cols - 1
 
-    # 4. DODAJ WIERSZ
+    # 4. DODAJ WIERSZ (Na samym dole tabeli - obsługuje przycisk "Dodaj wiersz" poza tabelą)
     elif action == "add_row":
         data["num_rows"] = num_rows + 1
+
+    # 5. NOWOŚĆ: DODAJ WIERSZ PONIŻEJ (Wewnątrz tabeli z menu komórki)
+    elif action == "add_row_below":
+        row_idx = int(form.get("row_index", 1))
+
+        # Przesuwamy wszystkie wiersze od dołu do 'row_idx' o jeden w dół
+        for r in range(num_rows, row_idx, -1):
+            for c in range(1, num_cols + 1):
+                data[f"r{r+1}c{c}"] = data.get(f"r{r}c{c}", "")
+
+        # Czyścimy nowo powstały wiersz (ten bezpośrednio pod klikniętym)
+        for c in range(1, num_cols + 1):
+            data[f"r{row_idx+1}c{c}"] = ""
+
+        # Zwiększamy licznik wierszy
+        data["num_rows"] = num_rows + 1
+
+    # 6. USUŃ WIERSZ (ĆWICZENIE)
+    elif action == "remove_row":
+        row_idx = int(form.get("row_index", 1))
+
+        if num_rows > 1:  # Blokada przed usunięciem ostatniego wiersza w tabeli
+            # Przesuwamy dane w górę (nadpisujemy usuwany wiersz tymi poniżej)
+            for r in range(row_idx, num_rows):
+                for c in range(1, num_cols + 1):
+                    data[f"r{r}c{c}"] = data.get(f"r{r+1}c{c}", "")
+
+            # Usuwamy "osierocone" dane z ostatniego wiersza, by nie zostały śmieci
+            for c in range(1, num_cols + 1):
+                data.pop(f"r{num_rows}c{c}", None)
+
+            # Zmniejszamy licznik wierszy o 1
+            data["num_rows"] = num_rows - 1
 
     # Renderujemy z powrotem cały szablon tabeli z nowymi danymi
     context = {

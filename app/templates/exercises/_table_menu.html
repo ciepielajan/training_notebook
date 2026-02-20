@@ -1,0 +1,65 @@
+<div class="dropdown">
+    <button class="btn btn-sm btn-link text-secondary p-0 shadow-none border-0" type="button" data-bs-toggle="dropdown"
+        data-bs-boundary="window" data-bs-popper-config='{"strategy":"fixed"}'>
+        <i class="bi bi-three-dots-vertical"></i>
+    </button>
+
+    <ul class="dropdown-menu shadow-sm">
+        <li>
+            <h6 class="dropdown-header">Dodaj:</h6>
+        </li>
+
+        {% for label in ["Powtórzenia", "Ciężar", "Przerwa", "Dystans", "Czas"] %}
+        <li>
+            <button class="dropdown-item" type="button" hx-post="/card/table/action/{{ unique_id }}"
+                hx-vals='{"action": "add_col", "col_index": {{ col_index }}, "col_name": "{{ label }}"}'
+                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-plus-square me-2"></i>{{ label }}
+            </button>
+        </li>
+        {% endfor %}
+        <li>
+            <button class="dropdown-item fw-bold text-primary" type="button"
+                hx-post="/card/table/action/{{ unique_id }}"
+                hx-vals='{"action": "add_col", "col_index": 0, "col_name": "Seria"}'
+                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-arrow-bar-left me-2"></i>Dodaj 'Serię' na początku
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" type="button" hx-post="/card/table/action/{{ unique_id }}"
+                hx-vals='{"action": "add_row_below", "row_index": {{ row_index }}}'
+                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-plus-circle me-2"></i>Dodaj ćwiczenie
+            </button>
+        </li>
+        <li>
+            <hr class="dropdown-divider">
+        </li>
+        <li>
+            <button class="dropdown-item" type="button" hx-post="/card/table/action/{{ unique_id }}"
+                hx-vals='{"action": "add_col", "col_index": {{ col_index }}, "col_name": ""}'
+                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-pencil-square me-2"></i>Własne pole
+            </button>
+        </li>
+
+        <li>
+            <hr class="dropdown-divider">
+        </li>
+        <li>
+            <button class="dropdown-item text-danger" type="button" hx-post="/card/table/action/{{ unique_id }}"
+                hx-vals='{"action": "remove_col", "col_index": {{ col_index }}}'
+                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-trash me-2"></i>Usuń kolumnę
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item text-danger" type="button" hx-post="/card/table/action/{{ unique_id }}"
+                hx-vals='{"action": "remove_row", "row_index": {{ row_index }}}'
+                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-trash me-2"></i>Usuń to ćwiczenie
+            </button>
+        </li>
+    </ul>
+</div>
