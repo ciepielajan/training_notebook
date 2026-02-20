@@ -6,7 +6,7 @@
 
     <ul class="dropdown-menu shadow" hx-target="#details-container-{{ unique_id }}" hx-swap="beforeend">
 
-        {% for label in ["Dystans", "Czas", 'Powtórzenia', 'Ciężar'] %}
+        {% for label in ['Serie', 'Powtórzenia', 'Ciężar',"Dystans", "Czas"] %}
         <li>
             <button class="dropdown-item" type="button" hx-get="/card/custom_field?label={{ label }}">
                 {{ label }}
@@ -21,7 +21,7 @@
         <li>
             <button class="dropdown-item" type="button" hx-post="/card/repetition/{{ unique_id }}"
                 hx-ext="json-body-builder" hx-target="#details-container-{{ unique_id }}" hx-swap="beforeend">
-                <i class="bi bi-plus-square me-2"></i>Kolejna seria
+                <i class="bi bi-plus-square me-2"></i>Powiel serie
             </button>
         </li>
     </ul>

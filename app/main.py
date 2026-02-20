@@ -41,6 +41,7 @@ async def field_fragment(request: Request):
     # zwraca fragment HTML (jedna linia pól)
     return templates.TemplateResponse("_fields_fragment.html", {"request": request})
 
+
 @app.get("/card", response_class=HTMLResponse)
 async def field_fragment(
     request: Request,
@@ -98,11 +99,6 @@ async def custom_field(request: Request, label: str = ""):
             "values": {"value": "", "label": label},
         },
     )
-
-
-# @app.get("/single-input", response_class=HTMLResponse)
-# async def single_input(request: Request):
-#     return '<input type="text" name="extra_text" placeholder="nowe pole">'
 
 
 @app.get("/test_form", response_class=HTMLResponse)
@@ -243,25 +239,96 @@ def process_spider_json(spider_data):
     processed_cards = []
 
     for card in spider_data.get("items", []):
-        # Szukamy data_obj (podobnie jak w metodzie load)
+        # 1. Wyciągamy kontener danych
         if card.get("items") and len(card["items"]) > 0:
             data_obj = card["items"][0]
         else:
             data_obj = card
 
+        # 2. Ustalamy typ karty
         card_type = data_obj.get("type") or card.get("type")
 
-        # Ujednolicenie pod szablony
-        data_obj["activity"] = {"value": data_obj.get("head", ""), "label": data_obj.get("label", "")}
-        if not isinstance(data_obj.get("details"), list):
-            data_obj["details"] = []
+        # 3. Ujednolicenie DEDYKOWANE dla poszczególnych typów
+        if card_type in ["running", "exercise", "running2"]:
+            data_obj["activity"] = {"value": data_obj.get("head", ""), "label": data_obj.get("label", "")}
+            # Upewniamy się, że struktura jest poprawna dla pętli w Jinja
+            if card_type == "running2":
+                if not isinstance(data_obj.get("sets"), list):
+                    data_obj["sets"] = []
+            else:
+                if not isinstance(data_obj.get("details"), list):
+                    data_obj["details"] = []
+
+        # UWAGA: Dla 'table' i 'text' nie robimy nic!
+        # Zostawiamy dane płasko, tak jak zapisał je pająk.
 
         processed_cards.append(
             {
-                "unique_id": secrets.token_hex(4),  # Generujemy nowe ID przy każdym wejściu
+                "unique_id": secrets.token_hex(4),
                 "type": card_type,
                 "data": data_obj,
                 "options": SETTINGS.get("activities", {}).get(card_type, []),
             }
         )
     return processed_cards
+
+
+@app.post("/card/table/action/{uid}", response_class=HTMLResponse)
+async def table_action(request: Request, uid: str):
+    form = await request.form()
+    action = form.get("action")
+
+    # 1. Zbieramy aktualne dane z tabeli
+    data = {}
+    for key, value in form.multi_items():
+        data[key] = value
+
+    num_rows = int(data.get("num_rows", 2))
+    num_cols = int(data.get("num_cols", 4))
+
+    # 2. DODAJ KOLUMNĘ
+    if action == "add_col":
+        col_idx = int(form.get("col_index", 1))
+
+        # Przesuwamy dane w prawo, żeby zrobić miejsce na nową kolumnę
+        for c in range(num_cols, col_idx, -1):
+            data[f"h{c+1}"] = data.get(f"h{c}", "")
+            for r in range(1, num_rows + 1):
+                data[f"r{r}c{c+1}"] = data.get(f"r{r}c{c}", "")
+
+        # Czyścimy nową kolumnę
+        data[f"h{col_idx+1}"] = "Nowa"
+        for r in range(1, num_rows + 1):
+            data[f"r{r}c{col_idx+1}"] = ""
+
+        data["num_cols"] = num_cols + 1
+
+    # 3. USUŃ KOLUMNĘ
+    elif action == "remove_col":
+        col_idx = int(form.get("col_index", 1))
+
+        if num_cols > 1:  # Nie pozwalamy usunąć ostatniej
+            # Przesuwamy dane w lewo, nadpisując usuwaną kolumnę
+            for c in range(col_idx, num_cols):
+                data[f"h{c}"] = data.get(f"h{c+1}", "")
+                for r in range(1, num_rows + 1):
+                    data[f"r{r}c{c}"] = data.get(f"r{r}c{c+1}", "")
+
+            # Usuwamy "osierocone" dane z ostatniej kolumny
+            data.pop(f"h{num_cols}", None)
+            for r in range(1, num_rows + 1):
+                data.pop(f"r{r}c{num_cols}", None)
+
+            data["num_cols"] = num_cols - 1
+
+    # 4. DODAJ WIERSZ
+    elif action == "add_row":
+        data["num_rows"] = num_rows + 1
+
+    # Renderujemy z powrotem cały szablon tabeli z nowymi danymi
+    context = {
+        "request": request,
+        "unique_id": uid,
+        "data": data,
+    }
+    return templates.TemplateResponse("exercises/table.html", context)

@@ -1,14 +1,14 @@
 {
     "items": [
         {
-            "id": "2b0f1bc3",
+            "id": "66c6f9b3",
             "type": "text",
             "data": "",
             "head": "Trening Tempowy",
             "size": "fs-4 fw-bold"
         },
         {
-            "id": "685756ef",
+            "id": "13693371",
             "items": [
                 {
                     "type": "running",
@@ -40,18 +40,34 @@
             ]
         },
         {
-            "id": "c90b3344",
+            "id": "52726b57",
             "items": [
                 {
                     "type": "exercise",
-                    "head": "Brzuszki",
+                    "head": "Burpees",
                     "label": "ćwiczenie",
-                    "details": ""
+                    "details": [
+                        {
+                            "detail": "",
+                            "value": "4",
+                            "label": "Serie"
+                        },
+                        {
+                            "detail": "",
+                            "value": "10",
+                            "label": "Powtórzenia"
+                        },
+                        {
+                            "detail": "",
+                            "value": "5",
+                            "label": "Przerwa [min]"
+                        }
+                    ]
                 }
             ]
         },
         {
-            "id": "71eb78ca",
+            "id": "18ec6a53",
             "items": [
                 {
                     "type": "running",
@@ -68,14 +84,61 @@
             ]
         },
         {
-            "id": "727af3a9",
-            "type": "text",
-            "data": "",
-            "head": "FastAPI korzysta głównie z dwóch kluczowych bibliotek na literę „S” oraz „P”: Starlette do obsługi części internetowej (asynchroniczność, routing) oraz Pydantic do walidacji danych. To połączenie zapewnia wysoką wydajność, porównywalną z Node.js czy Go.  Kluczowe biblioteki i technologie: Starlette: Lekki framework ASGI (Asynchronous Server Gateway Interface), który zapewnia obsługę asynchronicznego programowania (async/await). Pydantic: Biblioteka do walidacji danych i zarządzania ustawieniami za pomocą typów w Pythonie. Uvicorn: Chociaż nie zaczyna się na \"S\", to jest to najpopularniejszy serwer ASGI używany do uruchamiania aplikacji FastAPI (często instalowany razem z fastapi[all]).  Dzięki temu FastAPI pozwala na automatyczną dokumentację (Swagger UI/OpenAPI) i szybkie przetwarzanie żądań. ",
-            "size": "fs-6"
+            "id": "f7b47722",
+            "items": [
+                {
+                    "type": "table",
+                    "num_rows": "3",
+                    "num_cols": "11",
+                    "h1": "Ćwiczenie",
+                    "h2": "Seria",
+                    "h3": "Powtórzenia",
+                    "h4": "Nowa",
+                    "h5": "Nowa",
+                    "h6": "Nowa",
+                    "h7": "Nowa",
+                    "h8": "Nowa",
+                    "h9": "Nowa",
+                    "h10": "Nowa",
+                    "h11": "Przerwa",
+                    "r1c1": "bugary",
+                    "r1c2": "3",
+                    "r1c3": "15",
+                    "r1c4": "",
+                    "r1c5": "",
+                    "r1c6": "",
+                    "r1c7": "",
+                    "r1c8": "",
+                    "r1c9": "",
+                    "r1c10": "",
+                    "r1c11": "10",
+                    "r2c1": "brzuszki na drążku",
+                    "r2c2": "3",
+                    "r2c3": "10",
+                    "r2c4": "",
+                    "r2c5": "",
+                    "r2c6": "",
+                    "r2c7": "",
+                    "r2c8": "",
+                    "r2c9": "",
+                    "r2c10": "",
+                    "r2c11": "10",
+                    "r3c1": "",
+                    "r3c2": "",
+                    "r3c3": "",
+                    "r3c4": "",
+                    "r3c5": "",
+                    "r3c6": "",
+                    "r3c7": "",
+                    "r3c8": "",
+                    "r3c9": "",
+                    "r3c10": "",
+                    "r3c11": ""
+                }
+            ]
         },
         {
-            "id": "d3546539",
+            "id": "d4715745",
             "type": "text",
             "data": "",
             "head": "koniec treningu :)",
