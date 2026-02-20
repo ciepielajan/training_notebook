@@ -290,7 +290,7 @@ async def table_action(request: Request, uid: str):
     if action == "add_col":
         col_idx = int(form.get("col_index", 1))
         col_name = form.get("col_name", "")
-        col_width = form.get("col_width", "60px")  # <-- NOWOŚĆ: Odbieramy szerokość z przycisku
+        col_width = form.get("col_width", "")
 
         # Przesuwamy dane w prawo
         for c in range(num_cols, col_idx, -1):

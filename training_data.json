@@ -1,21 +1,14 @@
 {
     "items": [
         {
-            "id": "9bab6d92",
+            "id": "a50d5c53",
             "type": "text",
             "data": "",
             "head": "Trening Tempowy",
             "size": "fs-4 fw-bold"
         },
         {
-            "id": "10efaf63",
-            "type": "text",
-            "data": "",
-            "head": "hjghjg jhg jhg ",
-            "size": "fs-6"
-        },
-        {
-            "id": "d3c70e62",
+            "id": "3a190365",
             "items": [
                 {
                     "type": "running",
@@ -47,7 +40,7 @@
             ]
         },
         {
-            "id": "01448c53",
+            "id": "c9dd07ab",
             "items": [
                 {
                     "type": "exercise",
@@ -74,7 +67,7 @@
             ]
         },
         {
-            "id": "2f977a43",
+            "id": "b970737d",
             "items": [
                 {
                     "type": "running",
@@ -91,26 +84,39 @@
             ]
         },
         {
-            "id": "2c01e274",
+            "id": "dec89df9",
             "items": [
                 {
                     "type": "table",
                     "num_rows": "1",
                     "num_cols": "6",
+                    "w1": "60px",
                     "h1": "Seria",
+                    "w2": "180px",
                     "h2": "Ćwiczenie",
+                    "w3": "100px",
                     "h3": "Powtórzenia",
-                    "h4": "Ćwiczenie",
-                    "h5": "Powtórzenia",
-                    "h6": "Przerwa [kg]",
-                    "r1c1": "4",
+                    "w4": "100px",
+                    "h4": "Czas",
+                    "w5": "100px",
+                    "h5": "Przerwa",
+                    "w6": "100px",
+                    "h6": "Powtórzenia",
+                    "r1c1": "123",
                     "r1c2": "bugary",
-                    "r1c3": "15",
-                    "r1c4": "brzuszki w zwisie",
-                    "r1c5": "10",
-                    "r1c6": "5"
+                    "r1c3": "12345678",
+                    "r1c4": "12345678",
+                    "r1c5": "12345678",
+                    "r1c6": "12345678"
                 }
             ]
+        },
+        {
+            "id": "6e23a72d",
+            "type": "text",
+            "data": "",
+            "head": "koniec treningu :)",
+            "size": "fs-4 fw-bold"
         }
     ]
 }
