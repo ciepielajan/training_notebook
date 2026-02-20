@@ -289,17 +289,19 @@ async def table_action(request: Request, uid: str):
     # 2. DODAJ KOLUMNĘ
     if action == "add_col":
         col_idx = int(form.get("col_index", 1))
-        # Pobieramy nazwę kolumny z formularza (jeśli kliknięto 'Własne pole', będzie to pusty string "")
         col_name = form.get("col_name", "")
+        col_width = form.get("col_width", "60px")  # <-- NOWOŚĆ: Odbieramy szerokość z przycisku
 
-        # Przesuwamy dane w prawo, żeby zrobić miejsce na nową kolumnę
+        # Przesuwamy dane w prawo
         for c in range(num_cols, col_idx, -1):
             data[f"h{c+1}"] = data.get(f"h{c}", "")
+            data[f"w{c+1}"] = data.get(f"w{c}", "")  # <-- Przesuwamy "pamięć" o szerokości
             for r in range(1, num_rows + 1):
                 data[f"r{r}c{c+1}"] = data.get(f"r{r}c{c}", "")
 
-        # Wstawiamy nową kolumnę z wybraną nazwą!
+        # Wstawiamy nową kolumnę
         data[f"h{col_idx+1}"] = col_name
+        data[f"w{col_idx+1}"] = col_width  # <-- Zapisujemy jej na sztywno szerokość
         for r in range(1, num_rows + 1):
             data[f"r{r}c{col_idx+1}"] = ""
 
@@ -309,17 +311,18 @@ async def table_action(request: Request, uid: str):
     elif action == "remove_col":
         col_idx = int(form.get("col_index", 1))
 
-        if num_cols > 1:  # Nie pozwalamy usunąć ostatniej
-            # Przesuwamy dane w lewo, nadpisując usuwaną kolumnę
+        if num_cols > 1:
+            # Przesuwamy w lewo
             for c in range(col_idx, num_cols):
                 data[f"h{c}"] = data.get(f"h{c+1}", "")
+                data[f"w{c}"] = data.get(f"w{c+1}", "")  # <-- Przesuwamy "pamięć" o szerokości w lewo
                 for r in range(1, num_rows + 1):
                     data[f"r{r}c{c}"] = data.get(f"r{r}c{c+1}", "")
 
-            # Usuwamy "osierocone" dane z ostatniej kolumny
             data.pop(f"h{num_cols}", None)
+            data.pop(f"w{num_cols}", None)  # <-- Czyścimy dane o szerokości z usuniętej kolumny
             for r in range(1, num_rows + 1):
-                data.pop(f"r{r}c{num_cols}", None)
+                data.pop(f"r{num_rows}c{num_cols}", None)
 
             data["num_cols"] = num_cols - 1
 

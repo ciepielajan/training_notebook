@@ -21,7 +21,7 @@
         <li>
             <button class="dropdown-item fw-bold text-primary" type="button"
                 hx-post="/card/table/action/{{ unique_id }}"
-                hx-vals='{"action": "add_col", "col_index": 0, "col_name": "Seria"}'
+                hx-vals='{"action": "add_col", "col_index": 0, "col_name": "Seria", "col_width": "40px"}'
                 hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
                 <i class="bi bi-arrow-bar-left me-2"></i>Dodaj 'Serię' na początku
             </button>

@@ -24,10 +24,14 @@
                 <tr>
                     {% for c in range(1, num_cols + 1) %}
                     <th scope="col" class="p-0">
+                        
+                        {% set h_val = data['h' ~ c] if data['h' ~ c] is defined else (default_headers[c-1] if c <= 4 else 'Nowa') %}
+                        {% set stored_w = data['w' ~ c] %}
+                        {% set min_w = stored_w if stored_w else ('180px' if h_val|lower == 'ćwiczenie' else '60px') %}
+                        
+                        <input type="hidden" name="w{{ c }}" value="{{ min_w }}">
+
                         <div class="d-flex justify-content-between align-items-center ps-2 pe-1 pt-2 pb-0">
-                            {% set h_val = data['h' ~ c] if data['h' ~ c] is defined else (default_headers[c-1] if c <= 4 else 'Nowa') %}
-                            {% set min_w = '180px' if h_val|lower == 'ćwiczenie' else '60px' %}
-                            
                             <input type="text" class="form-control form-control-sm border-0 bg-transparent text-secondary shadow-none p-0 text-start fw-bold"
                                    style="font-size: 0.85rem; min-width: {{ min_w }}; line-height: 1;" 
                                    name="h{{ c }}" value="{{ h_val }}">
@@ -44,11 +48,12 @@
                     <td class="p-0">
                         {% set h_val = data['h' ~ c] if data['h' ~ c] is defined else (default_headers[c-1] if c <= 4 else 'Nowa') %}
                         {% set cell_val = data['r' ~ r ~ 'c' ~ c] if data['r' ~ r ~ 'c' ~ c] is defined else '' %}
-                        {% set min_w = '180px' if h_val|lower == 'ćwiczenie' else '60px' %}
                         {% set padding_class = 'pt-0 pb-2' if r == 1 else 'py-2' %}
                         
+                        {% set stored_w = data['w' ~ c] %}
+                        {% set min_w = stored_w if stored_w else ('180px' if h_val|lower == 'ćwiczenie' else '60px') %}
+                        
                         <div class="d-flex justify-content-between align-items-center ps-2 pe-1 {{ padding_class }}">
-                            
                             <input type="text" class="form-control border-0 shadow-none p-0 text-start bg-transparent"
                                    style="min-width: {{ min_w }};"
                                    name="r{{ r }}c{{ c }}" value="{{ cell_val }}">
@@ -56,7 +61,6 @@
                             {% with unique_id=unique_id, col_index=c, row_index=r %}
                                 {% include "exercises/_table_menu.html" %}
                             {% endwith %}
-                            
                         </div>
                     </td>
                     {% endfor %}
