@@ -11,6 +11,28 @@ import secrets
 import json
 from pathlib import Path
 import yaml
+import os
+
+# 1. Wczytujemy konfigurację z pliku config.yaml
+with open("config.yaml", "r", encoding="utf-8") as f:
+    config = yaml.safe_load(f)
+
+DATA_DIR = Path(config.get("data_dir"))
+
+
+def get_recent_workouts():
+    """Funkcja pobiera pliki JSON z folderu i sortuje je od najnowszego."""
+    if not DATA_DIR.exists() or not DATA_DIR.is_dir():
+        print(f"BŁĄD: Folder z danymi nie istnieje: {DATA_DIR}")
+        return []
+
+    # Pobieramy tylko pliki .json i sortujemy po dacie modyfikacji (od najnowszego)
+    files = sorted(DATA_DIR.glob("*.json"), key=os.path.getmtime, reverse=True)
+
+    workouts = []
+    for f in files:
+        workouts.append({"filename": f.name, "name": f.stem})
+    return workouts
 
 
 def load_settings(path):
@@ -172,6 +194,8 @@ async def duplicate_series(request: Request, uid: str):
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
+    # Twoje dotychczasowe kody budujące cards_list...
+
     file_path = "data/training_data (10).json"
 
     try:
@@ -186,13 +210,38 @@ async def index(request: Request):
         print(f"OSTRZEŻENIE: Nie można wczytać domyślnego pliku: {e}")
         cards_to_render = []
 
-    return templates.TemplateResponse(
-        "index_form.html",
-        {
-            "request": request,
-            "cards_list": cards_to_render,
-        },
-    )
+    # 1. Pobieramy listę plików z Twojego dysku
+    recent_workouts = get_recent_workouts()
+
+    # 2. Dodajemy ją do kontekstu
+    context = {"request": request, "cards_list": cards_to_render, "recent_workouts": recent_workouts}
+    return templates.TemplateResponse("index_form.html", context)
+
+
+# Upewnij się, że masz zdefiniowane DATA_DIR gdzieś na górze pliku, np:
+# DATA_DIR = Path("/home/janek/Dokumenty/my/training_notebook/data")
+
+
+@app.get("/load_workout/{filename}", response_class=HTMLResponse)
+async def load_workout(request: Request, filename: str):
+    # Tworzymy pełną ścieżkę do klikniętego pliku
+    file_path = DATA_DIR / filename
+
+    try:
+        # 1. Wczytujemy plik z dysku
+        with open(file_path, "r", encoding="utf-8") as f:
+            spider_json = json.load(f)
+
+        # 2. Przetwarzamy dane funkcją
+        cards_to_render = process_spider_json(spider_json)
+
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"BŁĄD: Nie można wczytać pliku {filename}: {e}")
+        cards_to_render = []
+
+    # 3. Zwracamy TYLKO wyrenderowane karty (dzięki temu HTMX płynnie podmieni środek strony)
+    context = {"request": request, "cards_list": cards_to_render}
+    return templates.TemplateResponse("_cards_list.html", context)
 
 
 @app.post("/load", response_class=HTMLResponse)

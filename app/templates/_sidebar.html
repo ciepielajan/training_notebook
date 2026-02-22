@@ -42,21 +42,20 @@
             {% if recent_workouts %}
             {% for workout in recent_workouts %}
             <li>
-                <a href="#" class="nav-link" hx-get="/load_workout/{{ workout.id }}" hx-target="#fields-container">
+                <a href="#" class="nav-link" hx-get="/load_workout/{{ workout.filename }}"
+                    hx-target="#fields-container">
                     <i class="bi bi-chat-left-text"></i>
                     <span class="menu-text">{{ workout.name }}</span>
                 </a>
             </li>
             {% endfor %}
             {% else %}
-            {% for i in range(1, 15) %}
             <li>
-                <a href="#" class="nav-link">
-                    <i class="bi bi-chat-left-text"></i>
-                    <span class="menu-text">Przykładowy trening {{ i }}</span>
+                <a href="#" class="nav-link pe-none" style="color: #8e8e8e;">
+                    <i class="bi bi-info-circle"></i>
+                    <span class="menu-text fst-italic">Brak treningów</span>
                 </a>
             </li>
-            {% endfor %}
             {% endif %}
         </ul>
     </div>

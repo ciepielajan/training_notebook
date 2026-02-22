@@ -4,6 +4,8 @@ system:
   app_name: "Dziennik Treningowy"
   version: 1.0
 
+data_dir: "/home/janek/Dokumenty/my/training_notebook/outputs"
+
 activities:
   running:
     - Bieg

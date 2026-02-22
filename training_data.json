@@ -1,14 +1,14 @@
 {
     "items": [
         {
-            "id": "6dcee3cd",
+            "id": "89c00528",
             "type": "text",
             "data": "",
             "head": "Trening Tempowy",
             "size": "fs-4 fw-bold"
         },
         {
-            "id": "fbc613c3",
+            "id": "5f0b6030",
             "items": [
                 {
                     "type": "running",
@@ -40,7 +40,7 @@
             ]
         },
         {
-            "id": "0a62cdbc",
+            "id": "4652d71d",
             "items": [
                 {
                     "type": "exercise",
@@ -51,7 +51,7 @@
             ]
         },
         {
-            "id": "a2c5210d",
+            "id": "b0fd0df9",
             "items": [
                 {
                     "type": "running",
@@ -66,13 +66,6 @@
                     ]
                 }
             ]
-        },
-        {
-            "id": "fc6244ed",
-            "type": "text",
-            "data": "",
-            "head": "koniec treningu :)",
-            "size": "fs-4 fw-bold"
         }
     ]
 }
