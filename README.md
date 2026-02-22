@@ -39,6 +39,7 @@ TODO:
 ##### v2
 - rezygnacja z grup indexów na rzecz tabelki. Wyglądem są juz identyczne a zarządznie o wiele prostsze
 - grupowanie i rozgrupowywanie serii (uwaga możliwe że logika usuwania wierszy w zgrupowanych może nie działać.)
+- menu
 
 #### todo:
 - lista treningów

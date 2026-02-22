@@ -20,21 +20,8 @@
 
     <main class="main-content">
 
-        <div class="mb-4 p-3 border rounded bg-white shadow-sm">
-            <h5>Wczytaj trening</h5>
-            <form hx-post="/load" hx-target="#fields-container" hx-swap="innerHTML" enctype="multipart/form-data">
-                <div class="input-group">
-                    <input type="file" class="form-control" name="file" accept=".json" required>
-                    <button class="btn btn-primary" type="submit">
-                        <i class="bi bi-upload"></i> Wczytaj JSON
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <hr>
-
         <form id="form" action="/save" method="post">
+
             <div id="fields-container" class="container node px-0">
                 {% for card in cards_list %}
                 {% with type=card.type, unique_id=card.unique_id, data=card.data, options=card.options %}
@@ -45,9 +32,6 @@
 
             <input type="hidden" name="json_body" id="hidden-json-input">
 
-            <div class="mt-4 mb-5">
-                <button type="submit" class="btn btn-success btn-lg">Zapisz cały trening</button>
-            </div>
         </form>
 
     </main>

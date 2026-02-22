@@ -1,5 +1,42 @@
 // app/static/main.js
 
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- Obsługa przycisku IMPORT z menu bocznego ---
+    const importBtn = document.getElementById('sidebar-import-btn');
+    const fileInput = document.getElementById('sidebar-file-input');
+    const submitBtn = document.getElementById('sidebar-submit-btn');
+
+    if (importBtn && fileInput && submitBtn) {
+        // Kliknięcie w link otwiera systemowe okno wyboru pliku
+        importBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            fileInput.click(); 
+        });
+
+        // Kiedy użytkownik wybierze plik, automatycznie klikamy ukryty przycisk wywołując HTMX
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                submitBtn.click();
+            }
+        });
+    }
+
+    // --- Obsługa przycisku ZAPISZ z menu bocznego ---
+    const saveBtn = document.getElementById('sidebar-save-btn');
+    const mainForm = document.getElementById('form');
+
+    if (saveBtn && mainForm) {
+        saveBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Wywołuje natywne wysłanie głównego formularza (uruchomi Twój skrypt json_body)
+            mainForm.requestSubmit(); 
+        });
+    }
+
+});
+
+
 // 1. Obsługa zwijania/rozwijania paska bocznego
 document.addEventListener('DOMContentLoaded', function() {
     const hamburgerBtn = document.getElementById('hamburger-btn');

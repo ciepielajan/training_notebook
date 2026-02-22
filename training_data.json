@@ -1,14 +1,14 @@
 {
     "items": [
         {
-            "id": "30c6b490",
+            "id": "6dcee3cd",
             "type": "text",
             "data": "",
             "head": "Trening Tempowy",
             "size": "fs-4 fw-bold"
         },
         {
-            "id": "3ca0e6f5",
+            "id": "fbc613c3",
             "items": [
                 {
                     "type": "running",
@@ -40,34 +40,18 @@
             ]
         },
         {
-            "id": "1c3a23ca",
+            "id": "0a62cdbc",
             "items": [
                 {
                     "type": "exercise",
-                    "head": "Burpees",
+                    "head": "Brzuszki",
                     "label": "ćwiczenie",
-                    "details": [
-                        {
-                            "detail": "",
-                            "value": "4",
-                            "label": "Serie"
-                        },
-                        {
-                            "detail": "",
-                            "value": "10",
-                            "label": "Powtórzenia"
-                        },
-                        {
-                            "detail": "",
-                            "value": "5",
-                            "label": "Przerwa [min]"
-                        }
-                    ]
+                    "details": ""
                 }
             ]
         },
         {
-            "id": "ffebbc0f",
+            "id": "a2c5210d",
             "items": [
                 {
                     "type": "running",
@@ -84,37 +68,7 @@
             ]
         },
         {
-            "id": "e8bc139b",
-            "items": [
-                {
-                    "type": "table",
-                    "num_rows": "2",
-                    "num_cols": "5",
-                    "w1": "60px",
-                    "h1": "Seria",
-                    "w2": "100px",
-                    "h2": "Dystans [m]",
-                    "w3": "100px",
-                    "h3": "Czas [s]",
-                    "w4": "100px",
-                    "h4": "Dystans [m]",
-                    "w5": "100px",
-                    "h5": "Czas [s]",
-                    "r1c1": "4",
-                    "r1c2": "500",
-                    "r1c3": "80:00",
-                    "r1c4": "300",
-                    "r1c5": "42:00",
-                    "r2c1": "3",
-                    "r2c2": "300",
-                    "r2c3": "42:00",
-                    "r2c4": "300",
-                    "r2c5": "39:00"
-                }
-            ]
-        },
-        {
-            "id": "8f47d4ad",
+            "id": "fc6244ed",
             "type": "text",
             "data": "",
             "head": "koniec treningu :)",
