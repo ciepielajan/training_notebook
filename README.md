@@ -34,7 +34,16 @@ training_notebook/
 
 TODO:
 ### glowna strona to http://127.0.0.1:8000/
+
 #### co działa:
+##### v2
+- rezygnacja z grup indexów na rzecz tabelki. Wyglądem są juz identyczne a zarządznie o wiele prostsze
+- grupowanie i rozgrupowywanie serii (uwaga możliwe że logika usuwania wierszy w zgrupowanych może nie działać.)
+
+#### todo:
+- lista treningów
+
+##### v1
 - każdy przycisk:
 - - select z options z configu
 - - przyciski elementów

@@ -295,15 +295,17 @@ async def table_action(request: Request, uid: str):
         # Przesuwamy dane w prawo
         for c in range(num_cols, col_idx, -1):
             data[f"h{c+1}"] = data.get(f"h{c}", "")
-            data[f"w{c+1}"] = data.get(f"w{c}", "")  # <-- Przesuwamy "pamięć" o szerokości
+            data[f"w{c+1}"] = data.get(f"w{c}", "")
             for r in range(1, num_rows + 1):
                 data[f"r{r}c{c+1}"] = data.get(f"r{r}c{c}", "")
+                data[f"m_r{r}c{c+1}"] = data.get(f"m_r{r}c{c}", "")  # <--- NOWOŚĆ: Przesuwamy info o złączeniu
 
         # Wstawiamy nową kolumnę
         data[f"h{col_idx+1}"] = col_name
-        data[f"w{col_idx+1}"] = col_width  # <-- Zapisujemy jej na sztywno szerokość
+        data[f"w{col_idx+1}"] = col_width
         for r in range(1, num_rows + 1):
             data[f"r{r}c{col_idx+1}"] = ""
+            data.pop(f"m_r{r}c{col_idx+1}", None)  # <--- NOWOŚĆ: Nowa kolumna na pewno nie jest złączona
 
         data["num_cols"] = num_cols + 1
 
@@ -315,22 +317,24 @@ async def table_action(request: Request, uid: str):
             # Przesuwamy w lewo
             for c in range(col_idx, num_cols):
                 data[f"h{c}"] = data.get(f"h{c+1}", "")
-                data[f"w{c}"] = data.get(f"w{c+1}", "")  # <-- Przesuwamy "pamięć" o szerokości w lewo
+                data[f"w{c}"] = data.get(f"w{c+1}", "")
                 for r in range(1, num_rows + 1):
                     data[f"r{r}c{c}"] = data.get(f"r{r}c{c+1}", "")
+                    data[f"m_r{r}c{c}"] = data.get(f"m_r{r}c{c+1}", "")  # <--- NOWOŚĆ: Przesuwamy info o złączeniu
 
             data.pop(f"h{num_cols}", None)
-            data.pop(f"w{num_cols}", None)  # <-- Czyścimy dane o szerokości z usuniętej kolumny
+            data.pop(f"w{num_cols}", None)
             for r in range(1, num_rows + 1):
-                data.pop(f"r{num_rows}c{num_cols}", None)
+                data.pop(f"r{r}c{num_cols}", None)  # <--- POPRAWKA BŁĘDU: Było r{num_rows}, a powinno być r{r}
+                data.pop(f"m_r{r}c{num_cols}", None)  # <--- NOWOŚĆ: Czyścimy info o złączeniu z usuniętej kolumny
 
             data["num_cols"] = num_cols - 1
 
-    # 4. DODAJ WIERSZ (Na samym dole tabeli - obsługuje przycisk "Dodaj wiersz" poza tabelą)
+    # 4. DODAJ WIERSZ (Na samym dole tabeli)
     elif action == "add_row":
         data["num_rows"] = num_rows + 1
 
-    # 5. NOWOŚĆ: DODAJ WIERSZ PONIŻEJ (Wewnątrz tabeli z menu komórki)
+    # 5. DODAJ WIERSZ PONIŻEJ
     elif action == "add_row_below":
         row_idx = int(form.get("row_index", 1))
 
@@ -338,10 +342,12 @@ async def table_action(request: Request, uid: str):
         for r in range(num_rows, row_idx, -1):
             for c in range(1, num_cols + 1):
                 data[f"r{r+1}c{c}"] = data.get(f"r{r}c{c}", "")
+                data[f"m_r{r+1}c{c}"] = data.get(f"m_r{r}c{c}", "")  # <--- NOWOŚĆ: Złączenia jadą w dół z wierszem
 
-        # Czyścimy nowo powstały wiersz (ten bezpośrednio pod klikniętym)
+        # Czyścimy nowo powstały wiersz
         for c in range(1, num_cols + 1):
             data[f"r{row_idx+1}c{c}"] = ""
+            data.pop(f"m_r{row_idx+1}c{c}", None)  # <--- NOWOŚĆ: Nowy wiersz domyślnie nie jest z niczym złączony
 
         # Zwiększamy licznik wierszy
         data["num_rows"] = num_rows + 1
@@ -350,18 +356,48 @@ async def table_action(request: Request, uid: str):
     elif action == "remove_row":
         row_idx = int(form.get("row_index", 1))
 
-        if num_rows > 1:  # Blokada przed usunięciem ostatniego wiersza w tabeli
-            # Przesuwamy dane w górę (nadpisujemy usuwany wiersz tymi poniżej)
+        if num_rows > 1:
+            # Przesuwamy dane w górę
             for r in range(row_idx, num_rows):
                 for c in range(1, num_cols + 1):
                     data[f"r{r}c{c}"] = data.get(f"r{r+1}c{c}", "")
+                    data[f"m_r{r}c{c}"] = data.get(f"m_r{r+1}c{c}", "")  # <--- NOWOŚĆ: Złączenia jadą w górę
 
-            # Usuwamy "osierocone" dane z ostatniego wiersza, by nie zostały śmieci
+            # Usuwamy "osierocone" dane z ostatniego wiersza
             for c in range(1, num_cols + 1):
                 data.pop(f"r{num_rows}c{c}", None)
+                data.pop(f"m_r{num_rows}c{c}", None)  # <--- NOWOŚĆ
 
-            # Zmniejszamy licznik wierszy o 1
+            # Zmniejszamy licznik wierszy
             data["num_rows"] = num_rows - 1
+
+    # ==========================================
+    # 7. NOWOŚĆ: ZGRUPUJ Z PONIŻSZYM (Super-serie)
+    # ==========================================
+    elif action == "group_below":
+        r = int(form.get("row_index", 1))
+        c = int(form.get("col_index", 1))
+
+        # Szukamy pierwszego "wolnego" wiersza poniżej bieżącej grupy
+        target_r = r + 1
+        while target_r <= num_rows and data.get(f"m_r{target_r}c{c}") == "1":
+            target_r += 1
+
+        if target_r <= num_rows:
+            data[f"m_r{target_r}c{c}"] = "1"
+
+    # ==========================================
+    # 8. NOWOŚĆ: ROZŁĄCZ GRUPĘ
+    # ==========================================
+    elif action == "ungroup":
+        r = int(form.get("row_index", 1))
+        c = int(form.get("col_index", 1))
+
+        # Zdejmujemy flagę zgrupowania ("1") ze wszystkich podpiętych wierszy poniżej
+        target_r = r + 1
+        while target_r <= num_rows and data.get(f"m_r{target_r}c{c}") == "1":
+            data.pop(f"m_r{target_r}c{c}", None)
+            target_r += 1
 
     # Renderujemy z powrotem cały szablon tabeli z nowymi danymi
     context = {

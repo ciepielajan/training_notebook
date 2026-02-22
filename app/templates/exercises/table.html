@@ -69,21 +69,40 @@
                 {% for r in range(1, num_rows + 1) %}
                 <tr>
                     {% for c in range(1, num_cols + 1) %}
-                    <td class="p-0">
-                        {% set cell_val = data['r' ~ r ~ 'c' ~ c] if data['r' ~ r ~ 'c' ~ c] is defined else '' %}
-                        {% set padding_class = 'pt-0 pb-2' if r == 1 else 'py-2' %}
+                    
+                    {% set is_merged = data['m_r' ~ r ~ 'c' ~ c] == '1' %}
+                    
+                    {% if is_merged %}
+                        <input type="hidden" name="m_r{{ r }}c{{ c }}" value="1">
+                    {% else %}
+                        {% set ns = namespace(rs=1, stop=false) %}
+                        {% for i in range(r + 1, num_rows + 1) %}
+                            {% if not ns.stop %}
+                                {% if data['m_r' ~ i ~ 'c' ~ c] == '1' %}
+                                    {% set ns.rs = ns.rs + 1 %}
+                                {% else %}
+                                    {% set ns.stop = true %}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
                         
-                        <div class="d-flex justify-content-between align-items-center ps-2 pe-1 {{ padding_class }}">
+                        <td class="p-0 align-middle" rowspan="{{ ns.rs }}">
+                            {% set cell_val = data['r' ~ r ~ 'c' ~ c] if data['r' ~ r ~ 'c' ~ c] is defined else '' %}
+                            {% set padding_class = 'pt-0 pb-2' if r == 1 else 'py-2' %}
                             
-                            <input type="text" class="form-control border-0 shadow-none p-0 text-start bg-transparent flex-grow-1"
-                                   style="min-width: 0;"
-                                   name="r{{ r }}c{{ c }}" value="{{ cell_val }}">
-                            
-                            {% with unique_id=unique_id, col_index=c, row_index=r %}
-                                {% include "exercises/_table_menu.html" %}
-                            {% endwith %}
-                        </div>
-                    </td>
+                            <div class="d-flex justify-content-between align-items-center ps-2 pe-1 h-100 {{ padding_class }}">
+                                
+                                <input type="text" class="form-control border-0 shadow-none p-0 text-start bg-transparent w-100 h-100"
+                                       name="r{{ r }}c{{ c }}" value="{{ cell_val }}">
+                                
+                                {% set h_val = data['h' ~ c] if data['h' ~ c] is defined else (default_headers[c-1] if c <= default_headers|length else 'Nowa') %}
+                                {% with unique_id=unique_id, col_index=c, row_index=r, h_val=h_val, rowspan=ns.rs %}
+                                    {% include "exercises/_table_menu.html" %}
+                                {% endwith %}
+                            </div>
+                        </td>
+                    {% endif %}
+                    
                     {% endfor %}
                 </tr>
                 {% endfor %}
