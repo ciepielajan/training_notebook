@@ -1,32 +1,29 @@
 <input type="hidden" name="type" value="list">
 <div class="input-group-vertical node" data-children-key="items">
 
-    <div class="input-group mb-2">
-        <div class="w-100">
-            <input type="text" class="form-control fw-bold border-0 shadow-none bg-transparent ps-0" name="head"
-                placeholder="Nazwa listy..." value="{{ data.head or '' }}">
-            <input type="hidden" name="list_type" value="{{ data.list_type | default('bullet') }}">
-        </div>
-    </div>
+    <input type="hidden" name="list_type" value="{{ data.list_type | default('bullet') }}">
 
     <div class="list-items-container list-items-container-{{ data.list_type | default('bullet') }} ps-3 border-start">
-        {% if data.get('items') %}
-        {% for item in data['items'] %}
+
+        {% set items = data.get('items', []) %}
+        {% if not items %}
+        {% set items = [{'content': ''}] %}
+        {% endif %}
+
+        {% for item in items %}
         <div class="node list-item-row d-flex align-items-center mb-1">
+
+            {% if (data.list_type | default('bullet')) == 'checklist' %}
+            <input class="form-check-input me-2 mt-0 shadow-none border-secondary" type="checkbox" name="is_checked" {%
+                if item.is_checked %}checked{% endif %}>
+            {% else %}
             <span class="me-2 text-secondary list-marker"></span>
+            {% endif %}
+
             <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0"
                 name="content" placeholder="Punkt listy..." value="{{ item.content or '' }}">
         </div>
         {% endfor %}
-        {% endif %}
 
-        <div id="new-items-anchor-{{ unique_id }}"></div>
-    </div>
-
-    <div class="mt-2 border-top pt-2">
-        <button type="button" class="btn btn-sm text-primary border-0 shadow-none p-0"
-            hx-get="/add_list_item/{{ unique_id }}" hx-target="#new-items-anchor-{{ unique_id }}" hx-swap="beforebegin">
-            <i class="bi bi-plus-circle me-1"></i> Dodaj punkt
-        </button>
     </div>
 </div>

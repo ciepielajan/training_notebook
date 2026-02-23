@@ -84,6 +84,11 @@
                     <h6 class="dropdown-header">Dodaj:</h6>
                 </li>
                 <li>
+                    <button class="dropdown-item fw-bold text-primary" type="button" hx-get="/card?type=metadata">
+                        <i class="bi bi-card-heading me-2"></i>Panel: Metadane
+                    </button>
+                </li>
+                <li>
                     <button class="dropdown-item" type="button"
                         hx-get="/card?type=running&value=Sprint&label=aktywnosc">
                         <i class="bi bi-stopwatch me-2"></i>Bieganie
@@ -115,7 +120,11 @@
                 <li>
                     <h6 class="dropdown-header">Tekst:</h6>
                 </li>
-
+                <li>
+                    <button class="dropdown-item" type="button" hx-get="/card?type=notes">
+                        <i class="bi bi-justify me-2"></i>Tekst
+                    </button>
+                </li>
                 <li>
                     <button class="dropdown-item" type="button" hx-get="/card?type=text&size=fs-1 fw-bold">
                         <i class="bi bi-type-h1 me-2"></i>Nagłówek H1
@@ -137,9 +146,10 @@
                         <i class="bi bi-type-h4 me-2"></i>Nagłówek H4
                     </button>
                 </li>
+
                 <li>
-                    <button class="dropdown-item" type="button" hx-get="/card?type=text&size=fs-6">
-                        <i class="bi bi-type me-2"></i>tekst
+                    <button class="dropdown-item" type="button" hx-get="/card?type=list&list_type=checklist">
+                        <i class="bi bi-ui-checks me-2"></i>Lista zadań (Checklista)
                     </button>
                 </li>
                 <li>

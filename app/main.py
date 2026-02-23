@@ -73,9 +73,17 @@ async def field_fragment(
     list_type: str = "bullet",
 ):
     unique_id = secrets.token_hex(4)
-
     activities = SETTINGS.get("activities", {})
     options_list = activities.get(type) or []
+
+    # CZYSTY MODEL DANYCH
+    data_obj = {
+        "activity": {"value": value, "label": label},
+        "details": [],
+        "size": size,
+        "list_type": list_type,
+        "items": [],  # Zawsze startujemy z czystą kartą
+    }
 
     return templates.TemplateResponse(
         "_card.html",
@@ -83,12 +91,7 @@ async def field_fragment(
             "request": request,
             "unique_id": unique_id,
             "type": type,
-            "data": {
-                "activity": {"value": value, "label": label},
-                "details": [],
-                "size": size,
-                "list_type": list_type,
-            },
+            "data": data_obj,
             "options": options_list,
         },
     )
@@ -381,20 +384,44 @@ def process_spider_json(spider_data):
     processed_cards = []
 
     for card in spider_data.get("items", []):
-        # 1. Zawsze wyciągamy rdzeń danych, jeśli struktura zagnieżdżona istnieje
-        # Usunięto anty-wzorzec 'if card_type != "list"'
-        if card.get("items") and len(card["items"]) > 0:
-            data_obj = card["items"][0]
-        else:
-            data_obj = card
+        data_obj = card
+        card_type = card.get("type")
 
-        # 2. Bezpieczne ustalenie typu (z karty nadrzędnej lub wewnątrz)
-        card_type = card.get("type") or data_obj.get("type")
+        # 1. Rozpakowywanie zagnieżdżonych struktur z htmlTreeToJson
+        items = card.get("items", [])
+        if items and len(items) > 0:
+            first_item = items[0]
 
-        # 3. Ujednolicenie struktur dla wszystkich typów treningowych
+            if card_type == "gym":
+                data_obj["details"] = items
+            elif card_type == "list":
+                data_obj = first_item
+            elif card_type == "metadata":
+                # FIX: Odzyskujemy tablicę zawodników z zagnieżdżonego węzła!
+                data_obj["athletes"] = first_item.get("athletes", [])
+            elif first_item.get("type"):
+                data_obj = first_item
+                card_type = first_item.get("type")
+
+        # 2. Bezpieczne ustalenie typu
+        card_type = card_type or data_obj.get("type")
+
+        # 🛡️ ZABEZPIECZENIE I AUTO-NAPRAWA
+        if not card_type:
+            if items and isinstance(items[0], dict) and ("content" in items[0] or "is_checked" in items[0]):
+                card_type = "list"
+                is_checklist = "is_checked" in items[0]
+                data_obj = {
+                    "head": "Odzyskana lista",
+                    "list_type": "checklist" if is_checklist else "bullet",
+                    "items": items,
+                }
+            else:
+                continue
+
+        # 3. Ujednolicenie struktur
         if card_type in ["running", "exercise", "running2", "gym", "gym2"]:
             data_obj["activity"] = {"value": data_obj.get("head", ""), "label": data_obj.get("label", "")}
-
             if card_type == "running2":
                 if not isinstance(data_obj.get("sets"), list):
                     data_obj["sets"] = []
@@ -402,22 +429,19 @@ def process_spider_json(spider_data):
                 if not isinstance(data_obj.get("details"), list):
                     data_obj["details"] = []
 
-        # 4. Inicjalizacja dla list (zabezpieczenie przed pustym renderem)
         if card_type == "list":
             if "items" not in data_obj:
                 data_obj["items"] = []
 
-        # 5. Tworzenie ustandaryzowanego obiektu renderowania
         processed_cards.append(
             {
-                # FIX ARCHITEKTONICZNY: Złota zasada HTMX - utrzymuj oryginalne ID elementów!
-                # Generujemy nowe ID tylko, jeśli karta faktycznie jest nowa.
                 "unique_id": card.get("id") or secrets.token_hex(4),
                 "type": card_type,
                 "data": data_obj,
                 "options": SETTINGS.get("activities", {}).get(card_type, []),
             }
         )
+
     return processed_cards
 
 
@@ -636,11 +660,21 @@ async def duplicate_workout(filename: str):
     return response
 
 
-@app.get("/add_list_item/{parent_id}", response_class=HTMLResponse)
-async def add_list_item(request: Request, parent_id: str):
-    return """
-    <div class="node list-item-row d-flex align-items-center mb-1">
-        <span class="me-2 text-secondary list-marker"></span> <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0" 
-               name="content" placeholder="Nowy punkt..." value="">
-    </div>
-    """
+# @app.get("/add_list_item/{parent_id}", response_class=HTMLResponse)
+# async def add_list_item(request: Request, parent_id: str, list_type: str = "bullet"):
+
+#     # Decydujemy, co jest znacznikiem na podstawie przekazanego typu
+#     if list_type == "checklist":
+#         marker = (
+#             '<input class="form-check-input me-2 mt-0 shadow-none border-secondary" type="checkbox" name="is_checked">'
+#         )
+#     else:
+#         marker = '<span class="me-2 text-secondary list-marker"></span>'
+
+#     return f"""
+#     <div class="node list-item-row d-flex align-items-center mb-1">
+#         {marker}
+#         <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0"
+#                name="content" placeholder="Nowy punkt..." value="">
+#     </div>
+#     """

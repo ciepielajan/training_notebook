@@ -1,0 +1,10 @@
+<input type="hidden" name="type" value="notes">
+<div class="input-group-vertical">
+    <div class="input-group mb-2">
+        <div class="w-100">
+            <textarea class="form-control border-0 shadow-none bg-transparent ps-0" name="head"
+                placeholder="Zacznij pisać notatki..." rows="2" style="resize: none; overflow: hidden;"
+                oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">{{ data.head or '' }}</textarea>
+        </div>
+    </div>
+</div>

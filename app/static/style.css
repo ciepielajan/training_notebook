@@ -348,3 +348,103 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
     min-width: 1rem;
     font-weight: bold;
 }
+
+/* Przekreślenie zrobionego punktu w checkliście bez udziału JS */
+.list-items-container-checklist .list-item-row:has(input[type="checkbox"]:checked) input[type="text"] {
+    text-decoration: line-through;
+    color: #adb5bd !important;
+    font-style: italic;
+}
+
+/* ========================================== */
+/* PANEL METADANYCH: Ujednolicenie wysokości  */
+/* ========================================== */
+.metadata-row .form-control {
+    /* FIX: Powiększamy wysokość na 4.5rem, aby uniknąć nachodzenia */
+    height: 4.5rem !important; 
+    padding-top: 1.8rem !important;
+    padding-bottom: 0.5rem !important;
+}
+
+/* ========================================== */
+/* CUSTOM SELECT: FACE PILE (Awatary Zawodników) */
+/* ========================================== */
+.athlete-select-trigger {
+    cursor: pointer;
+    display: flex;
+    align-items: flex-end; /* FIX: Spycha awatary na sam dół pod etykietę */
+}
+
+.avatar-pile {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 0.1rem;
+}
+
+.avatar-pile .avatar-wrapper {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    margin-left: -12px; /* Lepsze zachodzenie awatarów na siebie */
+    overflow: hidden;
+    display: none;
+    flex: 0 0 auto;
+    background-color: #e9ecef;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.avatar-pile .avatar-wrapper:first-of-type {
+    margin-left: 0;
+}
+
+.avatar-pile .avatar-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-pile .empty-state {
+    font-size: 1rem;
+    color: #6c757d;
+    margin-bottom: 0.2rem;
+}
+
+/* Widoczność w pasku po zaznaczeniu (ZMIENIONO # na . ) */
+.athlete-select:has(.chk-athlete-1:checked) .avatar-1,
+.athlete-select:has(.chk-athlete-2:checked) .avatar-2,
+.athlete-select:has(.chk-athlete-3:checked) .avatar-3,
+.athlete-select:has(.chk-athlete-4:checked) .avatar-4 {
+    display: block;
+}
+
+.athlete-select:has(input[type="checkbox"]:checked) .empty-state {
+    display: none;
+}
+/* Wygląd opcji w menu (bez checkboxa) */
+.athlete-option {
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.athlete-option:hover {
+    background-color: #f8f9fa;
+}
+
+.athlete-option:has(input[type="checkbox"]:checked) {
+    background-color: #e7f1ff;
+    color: #0c63e4;
+    font-weight: 500;
+}
+
+.athlete-option .check-icon {
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s ease;
+}
+
+.athlete-option:has(input[type="checkbox"]:checked) .check-icon {
+    opacity: 1;
+    transform: scale(1);
+}

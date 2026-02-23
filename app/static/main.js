@@ -14,7 +14,11 @@ function htmlTreeToJson(element) {
         const ownerNode = input.closest('.node');
         if (ownerNode === element) {
             if (input.name && input.name !== 'json_body') {
-                data[input.name] = input.value;
+                if (input.type === 'checkbox') {
+                    data[input.name] = input.checked;
+                } else {
+                    data[input.name] = input.value;
+                }
             }
         }
     });
@@ -188,3 +192,70 @@ document.body.addEventListener('htmx:configRequest', function (evt) {
     }
 });
 
+
+// --- Automatyczne dopasowanie wysokości pól tekstowych po ich załadowaniu ---
+document.body.addEventListener('htmx:load', function(evt) {
+    // evt.detail.elt to kontener, który właśnie wyrenderował HTMX (albo cały dokument na starcie)
+    // Szukamy w nim wszystkich pól textarea
+    const textareas = evt.detail.elt.querySelectorAll('textarea');
+    
+    textareas.forEach(ta => {
+        // Jeśli textarea ma jakąś zawartość, natychmiast przeliczamy jego wysokość
+        if (ta.value.trim() !== '') {
+            ta.style.height = ''; 
+            ta.style.height = ta.scrollHeight + 'px';
+        }
+    });
+});
+
+// ==========================================
+// 4. UX LISTY (Enter i Backspace jak w MS Word)
+// ==========================================
+document.addEventListener('keydown', function(e) {
+    // Sprawdzamy, czy wciskamy klawisz będąc w inpucie na liście
+    if (e.target.matches('.list-item-row input[type="text"]')) {
+        const input = e.target;
+        const currentRow = input.closest('.list-item-row');
+        const listContainer = currentRow.closest('.list-items-container');
+
+        // OBSŁUGA KLAWISZA ENTER (Tworzenie nowego punktu)
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Blokujemy przypadkowy submit formularza
+            
+            // Klonujemy węzeł zachowując strukturę HTML
+            const newRow = currentRow.cloneNode(true);
+            
+            // Czyścimy dane w klonie
+            const newInput = newRow.querySelector('input[type="text"]');
+            newInput.value = '';
+            
+            const checkbox = newRow.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = false;
+
+            // Wstawiamy po obecnym elemencie i przerzucamy tam kursor
+            currentRow.after(newRow);
+            newInput.focus();
+        } 
+        // OBSŁUGA KLAWISZA BACKSPACE (Usuwanie punktu, jeśli jest pusty)
+        else if (e.key === 'Backspace' && input.value === '') {
+            // Zabezpieczenie: Zawsze zostawiamy chociaż 1 punkt na liście
+            if (listContainer.querySelectorAll('.list-item-row').length > 1) {
+                e.preventDefault();
+                
+                const prevRow = currentRow.previousElementSibling;
+                currentRow.remove(); // Usuwamy bieżący pusty rząd
+                
+                // Przenosimy kursor na poprzedni punkt i ustawiamy na końcu jego tekstu
+                if (prevRow && prevRow.classList.contains('list-item-row')) {
+                    const prevInput = prevRow.querySelector('input[type="text"]');
+                    prevInput.focus();
+                    
+                    // Trick wymuszający kursor na końcu tekstu
+                    const val = prevInput.value;
+                    prevInput.value = '';
+                    prevInput.value = val;
+                }
+            }
+        }
+    }
+});
