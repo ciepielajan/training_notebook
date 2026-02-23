@@ -70,6 +70,7 @@ async def field_fragment(
     type: str = "running",
     value: str = "",
     label: str = "",
+    list_type: str = "bullet",
 ):
     unique_id = secrets.token_hex(4)
 
@@ -86,6 +87,7 @@ async def field_fragment(
                 "activity": {"value": value, "label": label},
                 "details": [],
                 "size": size,
+                "list_type": list_type,
             },
             "options": options_list,
         },
@@ -299,10 +301,10 @@ async def load_workout(request: Request, filename: str):
 @app.post("/load", response_class=HTMLResponse)
 async def load(request: Request, file: UploadFile = File(...)):
     content = await file.read()
-    spider_json = json.loads(content)
+    data = json.loads(content)
 
     # Korzystamy z tej samej logiki transformacji
-    processed_cards = process_spider_json(spider_json)
+    processed_cards = process_spider_json(data)
 
     final_html = ""
     for card in processed_cards:
@@ -379,23 +381,20 @@ def process_spider_json(spider_data):
     processed_cards = []
 
     for card in spider_data.get("items", []):
-        # 1. Wyciągamy kontener danych
-        # Dodajemy warunek: jeśli typ to 'list', nie wyciągamy pierwszego elementu z 'items',
-        # bo 'items' to tutaj nasze punkty listy!
-        card_type = card.get("type")
-
-        if card_type != "list" and card.get("items") and len(card["items"]) > 0:
+        # 1. Zawsze wyciągamy rdzeń danych, jeśli struktura zagnieżdżona istnieje
+        # Usunięto anty-wzorzec 'if card_type != "list"'
+        if card.get("items") and len(card["items"]) > 0:
             data_obj = card["items"][0]
         else:
             data_obj = card
 
-        # 2. Ustalamy typ karty (jeśli nie został ustalony wyżej)
-        if not card_type:
-            card_type = data_obj.get("type")
+        # 2. Bezpieczne ustalenie typu (z karty nadrzędnej lub wewnątrz)
+        card_type = card.get("type") or data_obj.get("type")
 
-        # 3. Ujednolicenie DEDYKOWANE
-        if card_type in ["running", "exercise", "running2"]:
+        # 3. Ujednolicenie struktur dla wszystkich typów treningowych
+        if card_type in ["running", "exercise", "running2", "gym", "gym2"]:
             data_obj["activity"] = {"value": data_obj.get("head", ""), "label": data_obj.get("label", "")}
+
             if card_type == "running2":
                 if not isinstance(data_obj.get("sets"), list):
                     data_obj["sets"] = []
@@ -403,14 +402,17 @@ def process_spider_json(spider_data):
                 if not isinstance(data_obj.get("details"), list):
                     data_obj["details"] = []
 
-        # Specyficzna inicjalizacja dla listy, jeśli jest pusta
+        # 4. Inicjalizacja dla list (zabezpieczenie przed pustym renderem)
         if card_type == "list":
             if "items" not in data_obj:
                 data_obj["items"] = []
 
+        # 5. Tworzenie ustandaryzowanego obiektu renderowania
         processed_cards.append(
             {
-                "unique_id": secrets.token_hex(4),
+                # FIX ARCHITEKTONICZNY: Złota zasada HTMX - utrzymuj oryginalne ID elementów!
+                # Generujemy nowe ID tylko, jeśli karta faktycznie jest nowa.
+                "unique_id": card.get("id") or secrets.token_hex(4),
                 "type": card_type,
                 "data": data_obj,
                 "options": SETTINGS.get("activities", {}).get(card_type, []),
@@ -636,12 +638,9 @@ async def duplicate_workout(filename: str):
 
 @app.get("/add_list_item/{parent_id}", response_class=HTMLResponse)
 async def add_list_item(request: Request, parent_id: str):
-    # Zwracamy mały fragment HTML dla nowego punktu listy
-    # Musi mieć klasę 'node', żeby htmlTreeToJson go złapał
     return """
     <div class="node list-item-row d-flex align-items-center mb-1">
-        <span class="me-2 text-secondary">•</span>
-        <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0" 
+        <span class="me-2 text-secondary list-marker"></span> <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0" 
                name="content" placeholder="Nowy punkt..." value="">
     </div>
     """

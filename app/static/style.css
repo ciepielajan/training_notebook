@@ -318,14 +318,33 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
 
 
 /* ========================================== */
-/* LIST .HTML             */
+/* LISTY (Punktowe i Numerowane)              */
 /* ========================================== */
-
-
 .list-item-row input:focus {
     border-bottom: 1px solid #dee2e6 !important;
 }
 
 .list-items-container {
     border-left: 2px solid rgba(0,0,0,0.05);
+}
+
+/* Generator numeracji dla list numerycznych */
+.list-items-container-numbered {
+    counter-reset: list-item-counter;
+}
+
+.list-items-container-numbered .list-marker::before {
+    counter-increment: list-item-counter;
+    content: counter(list-item-counter) ". ";
+    display: inline-block;
+    min-width: 1.2rem;
+    font-weight: 500;
+}
+
+/* Wygląd dla listy punktowej (bullet) */
+.list-items-container-bullet .list-marker::before {
+    content: "• ";
+    display: inline-block;
+    min-width: 1rem;
+    font-weight: bold;
 }

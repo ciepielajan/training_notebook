@@ -9,11 +9,11 @@
         </div>
     </div>
 
-    <div class="list-items-container ps-3 border-start">
+    <div class="list-items-container list-items-container-{{ data.list_type | default('bullet') }} ps-3 border-start">
         {% if data.get('items') %}
         {% for item in data['items'] %}
         <div class="node list-item-row d-flex align-items-center mb-1">
-            <span class="me-2 text-secondary">•</span>
+            <span class="me-2 text-secondary list-marker"></span>
             <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0"
                 name="content" placeholder="Punkt listy..." value="{{ item.content or '' }}">
         </div>
