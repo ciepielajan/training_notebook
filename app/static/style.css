@@ -263,3 +263,69 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
     overflow: hidden;
     pointer-events: none;
 }
+
+/* ========================================== */
+/* 5. OPCJE TRENINGU (3 KROPKI W PASKU)       */
+/* ========================================== */
+
+/* Domyślnie ukrywamy 3 kropki */
+.workout-item .menu-options {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* Pokazujemy 3 kropki, gdy najedziemy na wiersz myszką 
+   LUB gdy menu dropdown jest właśnie otwarte (klasa .show z Bootstrapa) */
+.workout-item:hover .menu-options,
+.workout-item .menu-options .btn.show {
+    opacity: 1;
+}
+
+/* Bezwzględnie ukrywamy kropki, jeśli boczny pasek jest zwinięty do rozmiaru ikonek */
+.sidebar.collapsed .menu-options {
+    display: none !important;
+}
+
+/* Delikatne modyfikacje ciemnego motywu dropdowna */
+.dropdown-menu-dark {
+    background-color: #2b2d31;
+    border-color: #3c3f43;
+    font-size: 0.9rem;
+}
+.dropdown-menu-dark .dropdown-item {
+    color: #e3e3e3;
+    padding: 8px 16px;
+}
+.dropdown-menu-dark .dropdown-item:hover {
+    background-color: #3c3f43;
+}
+
+/* ========================================== */
+/* 6. AKTYWNY TRENING W MENU                  */
+/* ========================================== */
+.sidebar .nav-link.active-workout {
+    background-color: rgba(13, 110, 253, 0.15); /* Subtelne niebieskie tło */
+    color: #6ea8fe !important; /* Jasnoniebieski tekst */
+    font-weight: 600;
+    border-left: 3px solid #0d6efd; /* Wyraźny pasek z lewej strony */
+    border-radius: 4px;
+}
+
+.sidebar .nav-link.active-workout i {
+    color: #6ea8fe !important;
+}
+
+
+
+/* ========================================== */
+/* LIST .HTML             */
+/* ========================================== */
+
+
+.list-item-row input:focus {
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+.list-items-container {
+    border-left: 2px solid rgba(0,0,0,0.05);
+}

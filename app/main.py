@@ -1,17 +1,16 @@
-from collections import defaultdict
-from pprint import pprint
-import tempfile
 from fastapi import UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import secrets
+import datetime
 import json
 from pathlib import Path
 import yaml
 import os
+import shutil
 
 # 1. Wczytujemy konfigurację z pliku config.yaml
 with open("config.yaml", "r", encoding="utf-8") as f:
@@ -192,34 +191,87 @@ async def duplicate_series(request: Request, uid: str):
     return HTMLResponse(content=html_content)
 
 
+@app.get("/new_workout", response_class=HTMLResponse)
+async def new_workout(request: Request):
+    unique_id = secrets.token_hex(4)
+
+    # Tworzymy Twój domyślny szablon startowy
+    spider_json = {
+        "items": [
+            {"id": unique_id, "type": "text", "data": "", "head": "Trening Tempowy", "size": "fs-6"},
+        ]
+    }
+
+    # Przetwarzamy dane naszą funkcją
+    cards_to_render = process_spider_json(spider_json)
+
+    # KLUCZOWE: Ustawiamy current_filename na pusty string ("").
+    # Dzięki temu aplikacja wie, że to nowy, niezapisany plik i przy kliknięciu "Zapisz"
+    # wygeneruje nową nazwę z datą, zamiast nadpisywać poprzedni trening!
+    context = {"request": request, "cards_list": cards_to_render, "current_filename": ""}
+
+    # Zwracamy tylko wyrenderowane karty, żeby HTMX mógł podmienić środek ekranu
+    return templates.TemplateResponse("_cards_list.html", context)
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    # Twoje dotychczasowe kody budujące cards_list...
-
-    file_path = "data/training_data (10).json"
-
-    try:
-        # 1. Wczytujemy plik z dysku
-        with open(file_path, "r", encoding="utf-8") as f:
-            spider_json = json.load(f)
-
-        # 2. Przetwarzamy dane naszą nową funkcją
-        cards_to_render = process_spider_json(spider_json)
-
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"OSTRZEŻENIE: Nie można wczytać domyślnego pliku: {e}")
-        cards_to_render = []
-
-    # 1. Pobieramy listę plików z Twojego dysku
+    # 1. Pobieramy listę plików
     recent_workouts = get_recent_workouts()
+    workouts_count = len(recent_workouts)
 
-    # 2. Dodajemy ją do kontekstu
-    context = {"request": request, "cards_list": cards_to_render, "recent_workouts": recent_workouts}
+    # 2. Tworzymy elegancki Dashboard z dwóch osobnych kart (bez znaków \n)
+    spider_json = {
+        "items": [
+            {
+                "id": secrets.token_hex(4),
+                "type": "text",
+                "data": "",
+                "head": "👋 Witaj w Notatniku Treningowym!",
+                "size": "fs-5 fw-bold",
+            },
+            {
+                "id": secrets.token_hex(4),
+                "type": "text",
+                "data": "",
+                "head": "Wybierz trening z menu po lewej lub kliknij 'Nowy trening', aby zacząć.",
+                "size": "fs-6",
+            },
+            {
+                "id": secrets.token_hex(4),
+                "type": "text",
+                "data": "",
+                "head": " ",
+                "size": "fs-6",
+            },
+            {
+                "id": secrets.token_hex(4),
+                "type": "text",
+                "data": "",
+                "head": "📊 Podsumowanie",
+                "size": "fs-6 fw-bold",
+            },
+            {
+                "id": secrets.token_hex(4),
+                "type": "text",
+                "data": "",
+                "head": f"Masz aktualnie {workouts_count} zapisanych treningów na dysku.",
+                "size": "fs-6",
+            },
+        ]
+    }
+
+    # 3. Przetwarzamy na karty
+    cards_to_render = process_spider_json(spider_json)
+
+    # 4. Przekazujemy do kontekstu
+    context = {
+        "request": request,
+        "cards_list": cards_to_render,
+        "recent_workouts": recent_workouts,
+        "current_filename": "",
+    }
     return templates.TemplateResponse("index_form.html", context)
-
-
-# Upewnij się, że masz zdefiniowane DATA_DIR gdzieś na górze pliku, np:
-# DATA_DIR = Path("/home/janek/Dokumenty/my/training_notebook/data")
 
 
 @app.get("/load_workout/{filename}", response_class=HTMLResponse)
@@ -240,7 +292,7 @@ async def load_workout(request: Request, filename: str):
         cards_to_render = []
 
     # 3. Zwracamy TYLKO wyrenderowane karty (dzięki temu HTMX płynnie podmieni środek strony)
-    context = {"request": request, "cards_list": cards_to_render}
+    context = {"request": request, "cards_list": cards_to_render, "current_filename": filename}
     return templates.TemplateResponse("_cards_list.html", context)
 
 
@@ -266,41 +318,84 @@ async def save(request: Request):
     form = await request.form()
     json_body = form.get("json_body")
 
+    # Pobieramy informacje o akcji i obecnie otwartym pliku z ukrytych inputów
+    save_action = form.get("save_action", "save")  # domyślnie "save"
+    current_filename = form.get("current_filename", "").strip()
+
     if not json_body:
         return HTMLResponse("Błąd: Pusty formularz", status_code=400)
 
     try:
-        # 1. Parsujemy string JSON z formularza na obiekt Pythona
         data_structure = json.loads(json_body)
 
-        # 2. Zapisujemy do pliku z wcięciami (indent=4) i polskimi znakami
-        with open("training_data.json", "w", encoding="utf-8") as f:
+        # ==========================================
+        # AKCJA 3: EKSPORTUJ (Tylko pobieranie)
+        # ==========================================
+        if save_action == "export":
+            # Tworzymy plik w pamięci i wysyłamy do przeglądarki (omijamy dysk serwera)
+            json_str = json.dumps(data_structure, ensure_ascii=False, indent=4)
+            dl_filename = current_filename if current_filename else "eksport_treningu.json"
+            return Response(
+                content=json_str,
+                media_type="application/json",
+                headers={"Content-Disposition": f"attachment; filename={dl_filename}"},
+            )
+
+        # ==========================================
+        # AKCJA 1 i 2: ZAPISZ / ZAPISZ JAKO (Na dysk)
+        # ==========================================
+
+        # Sprawdzamy czy musimy wygenerować nowy plik
+        is_new_file = False
+        if save_action == "save_as" or not current_filename:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            target_filename = f"trening_{timestamp}.json"
+            is_new_file = True
+        else:
+            target_filename = current_filename
+
+        target_filename = Path(target_filename).name
+        file_path = DATA_DIR / target_filename
+
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data_structure, f, ensure_ascii=False, indent=4)
 
-        return FileResponse("training_data.json", media_type="application/json", filename="training_data.json")
+        # KLUCZOWA ZMIANA:
+        if is_new_file:
+            # Jeśli to był "Zapisz jako" lub "Nowy", odświeżamy by pokazać go w menu
+            return RedirectResponse(url="/", status_code=303)
+        else:
+            # Zwykłe nadpisanie "Zapisz" - zwracamy 204 No Content!
+            # (Przeglądarka ani drgnie)
+            return Response(status_code=204)
 
+    except json.JSONDecodeError:
+        return HTMLResponse("Błąd: Nieprawidłowy format JSON", status_code=400)
     except Exception as e:
-        return HTMLResponse(f"Błąd zapisu: {e}", status_code=500)
+        return HTMLResponse(f"Wystąpił błąd podczas zapisu: {e}", status_code=500)
 
 
 def process_spider_json(spider_data):
-    """Przetwarza surowy JSON z pająka na listę kart gotową do renderowania."""
     processed_cards = []
 
     for card in spider_data.get("items", []):
         # 1. Wyciągamy kontener danych
-        if card.get("items") and len(card["items"]) > 0:
+        # Dodajemy warunek: jeśli typ to 'list', nie wyciągamy pierwszego elementu z 'items',
+        # bo 'items' to tutaj nasze punkty listy!
+        card_type = card.get("type")
+
+        if card_type != "list" and card.get("items") and len(card["items"]) > 0:
             data_obj = card["items"][0]
         else:
             data_obj = card
 
-        # 2. Ustalamy typ karty
-        card_type = data_obj.get("type") or card.get("type")
+        # 2. Ustalamy typ karty (jeśli nie został ustalony wyżej)
+        if not card_type:
+            card_type = data_obj.get("type")
 
-        # 3. Ujednolicenie DEDYKOWANE dla poszczególnych typów
+        # 3. Ujednolicenie DEDYKOWANE
         if card_type in ["running", "exercise", "running2"]:
             data_obj["activity"] = {"value": data_obj.get("head", ""), "label": data_obj.get("label", "")}
-            # Upewniamy się, że struktura jest poprawna dla pętli w Jinja
             if card_type == "running2":
                 if not isinstance(data_obj.get("sets"), list):
                     data_obj["sets"] = []
@@ -308,8 +403,10 @@ def process_spider_json(spider_data):
                 if not isinstance(data_obj.get("details"), list):
                     data_obj["details"] = []
 
-        # UWAGA: Dla 'table' i 'text' nie robimy nic!
-        # Zostawiamy dane płasko, tak jak zapisał je pająk.
+        # Specyficzna inicjalizacja dla listy, jeśli jest pusta
+        if card_type == "list":
+            if "items" not in data_obj:
+                data_obj["items"] = []
 
         processed_cards.append(
             {
@@ -455,3 +552,96 @@ async def table_action(request: Request, uid: str):
         "data": data,
     }
     return templates.TemplateResponse("exercises/table.html", context)
+
+
+# ==========================================
+# ZMIANA NAZWY PLIKU
+# ==========================================
+@app.post("/rename_workout/{filename}")
+async def rename_workout(request: Request, filename: str):
+    # HTMX wysyła wpisany w okienko tekst w specjalnym nagłówku 'HX-Prompt'
+    new_name = request.headers.get("HX-Prompt")
+
+    # Jeśli użytkownik wcisnął "Anuluj" lub nie wpisał niczego
+    if not new_name or not new_name.strip():
+        return Response(status_code=204)  # 204 oznacza "Nic nie rób"
+
+    safe_name = new_name.strip()
+
+    # Upewniamy się, że nowa nazwa ma rozszerzenie .json
+    if not safe_name.endswith(".json"):
+        new_filename = f"{safe_name}.json"
+    else:
+        new_filename = safe_name
+
+    old_path = DATA_DIR / filename
+    new_path = DATA_DIR / new_filename
+
+    # Zmieniamy nazwę na dysku
+    if old_path.exists() and not new_path.exists():
+        old_path.rename(new_path)
+
+    # Mówimy HTMX-owi: "Udało się, odśwież całą stronę"
+    response = Response(status_code=200)
+    response.headers["HX-Refresh"] = "true"
+    return response
+
+
+# ==========================================
+# USUWANIE PLIKU
+# ==========================================
+@app.delete("/delete_workout/{filename}")
+async def delete_workout(filename: str):
+    file_path = DATA_DIR / filename
+
+    # Usuwamy plik, jeśli istnieje
+    if file_path.exists():
+        file_path.unlink()
+
+    # Mówimy HTMX-owi: "Udało się, odśwież całą stronę"
+    response = Response(status_code=200)
+    response.headers["HX-Refresh"] = "true"
+    return response
+
+
+# ==========================================
+# DUPLIKOWANIE PLIKU
+# ==========================================
+@app.post("/duplicate_workout/{filename}")
+async def duplicate_workout(filename: str):
+    old_path = DATA_DIR / filename
+
+    if not old_path.exists():
+        return Response(status_code=404)
+
+    # 1. Bierzemy bazową nazwę (bez .json) i dodajemy "(kopia)"
+    stem = old_path.stem
+    new_filename = f"{stem} (kopia).json"
+    new_path = DATA_DIR / new_filename
+
+    # 2. Pętla zabezpieczająca: jeśli zrobisz kopię kopii,
+    # doklejamy kolejne "(kopia)", aż znajdziemy wolną nazwę.
+    while new_path.exists():
+        stem = new_path.stem
+        new_filename = f"{stem} (kopia).json"
+        new_path = DATA_DIR / new_filename
+
+    # 3. Kopiujemy plik
+    shutil.copy2(old_path, new_path)
+
+    response = Response(status_code=200)
+    response.headers["HX-Refresh"] = "true"
+    return response
+
+
+@app.get("/add_list_item/{parent_id}", response_class=HTMLResponse)
+async def add_list_item(request: Request, parent_id: str):
+    # Zwracamy mały fragment HTML dla nowego punktu listy
+    # Musi mieć klasę 'node', żeby htmlTreeToJson go złapał
+    return """
+    <div class="node list-item-row d-flex align-items-center mb-1">
+        <span class="me-2 text-secondary">•</span>
+        <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0" 
+               name="content" placeholder="Nowy punkt..." value="">
+    </div>
+    """

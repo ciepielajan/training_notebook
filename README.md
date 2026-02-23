@@ -36,6 +36,19 @@ TODO:
 ### glowna strona to http://127.0.0.1:8000/
 
 #### co działa:
+##### v4
+- [todo] - Przenieść z aplikacji
+
+##### v3
+- poniższa całość na tyle działa świetnie że przenosze robienie notatek TODO z readme do notatek aplikacji [[todo] po jakimś etapie przenieść zrobine rzeczy do readmy żeby zachowaly sie w git]
+- lista treningów, zapisz, zapisz jako, import, export
+- wczytywanie i zaciaganie listy treningów z folderu na dysku
+- duplikowanie, zmiana nazwy, usuwanie treningów
+- strona startowa, 
+- grupowanie ćwiczeń w serie
+- nowy block ( list punktowa, lista numerowana, checkboxy) [inprogress]  
+
+
 ##### v2
 - rezygnacja z grup indexów na rzecz tabelki. Wyglądem są juz identyczne a zarządznie o wiele prostsze
 - grupowanie i rozgrupowywanie serii (uwaga możliwe że logika usuwania wierszy w zgrupowanych może nie działać.)
