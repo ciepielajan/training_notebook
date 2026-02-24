@@ -10,13 +10,13 @@
         </li>
 
         {% for label in ["Ćwiczenie","Powtórzenia", "Ciężar", "Przerwa", "Dystans", "Czas"] %}
-            <li>
-                <button class="dropdown-item" type="button" hx-post="/card/table/action/{{ unique_id }}"
-                    hx-vals='{"action": "add_col", "col_index": {{ col_index }}, "col_name": "{{ label }}"}'
-                    hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
-                    <i class="bi bi-plus-square me-2"></i>{{ label }}
-                </button>
-            </li>
+        <li>
+            <button class="dropdown-item" type="button" hx-post="/card/table/action/{{ unique_id }}"
+                hx-vals='{"action": "add_col", "col_index": {{ col_index }}, "col_name": "{{ label }}"}'
+                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-plus-square me-2"></i>{{ label }}
+            </button>
+        </li>
         {% endfor %}
 
         <li>
@@ -44,7 +44,13 @@
                 <i class="bi bi-pencil-square me-2"></i>Własne pole
             </button>
         </li>
-
+        <li>
+            <button class="dropdown-item fw-bold text-info" type="button" hx-post="/card/table/action/{{ unique_id }}"
+                hx-vals='{"action": "transpose"}' hx-include="#table-{{ unique_id }} input"
+                hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-arrow-repeat me-2"></i>Transpozycja (obróć tabelę)
+            </button>
+        </li>
         <li>
             <hr class="dropdown-divider">
         </li>
@@ -63,29 +69,29 @@
             </button>
         </li>
         {% if h_val|lower == 'seria' %}
-            <li>
-                <hr class="dropdown-divider">
-            </li>
-            <li>
-                <h6 class="dropdown-header">Super-serie:</h6>
-            </li>
-            <li>
-                <button class="dropdown-item fw-bold" type="button" hx-post="/card/table/action/{{ unique_id }}"
-                    hx-vals='{"action": "group_below", "row_index": {{ row_index }}, "col_index": {{ col_index }}}'
-                    hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
-                    <i class="bi bi-link-45deg me-2"></i>Zgrupuj z poniższym
-                </button>
-            </li>
+        <li>
+            <hr class="dropdown-divider">
+        </li>
+        <li>
+            <h6 class="dropdown-header">Super-serie:</h6>
+        </li>
+        <li>
+            <button class="dropdown-item fw-bold" type="button" hx-post="/card/table/action/{{ unique_id }}"
+                hx-vals='{"action": "group_below", "row_index": {{ row_index }}, "col_index": {{ col_index }}}'
+                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-link-45deg me-2"></i>Zgrupuj z poniższym
+            </button>
+        </li>
 
-            {% if rowspan > 1 %}
-            <li>
-                <button class="dropdown-item text-warning" type="button" hx-post="/card/table/action/{{ unique_id }}"
-                    hx-vals='{"action": "ungroup", "row_index": {{ row_index }}, "col_index": {{ col_index }}}'
-                    hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
-                    <i class="bi bi-intersect me-2"></i>Rozłącz grupę
-                </button>
-            </li>
-            {% endif %}
+        {% if rowspan > 1 %}
+        <li>
+            <button class="dropdown-item text-warning" type="button" hx-post="/card/table/action/{{ unique_id }}"
+                hx-vals='{"action": "ungroup", "row_index": {{ row_index }}, "col_index": {{ col_index }}}'
+                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-intersect me-2"></i>Rozłącz grupę
+            </button>
+        </li>
+        {% endif %}
         {% endif %}
     </ul>
 </div>

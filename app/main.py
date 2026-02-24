@@ -596,6 +596,38 @@ async def table_action(request: Request, uid: str):
             data.pop(f"m_r{target_r}c{c}", None)
             target_r += 1
 
+    # ==========================================
+    # 9. NOWOŚĆ: TRANSPOZYCJA TABELI
+    # ==========================================
+    elif action == "transpose":
+        # Architektoniczne założenie:
+        # Traktujemy tabelę jako macierz (num_rows + 1) x num_cols (wliczając nagłówki).
+        # Po obrocie: nowe num_cols = stare num_rows + 1
+        # nowe num_rows = stare num_cols - 1
+
+        new_data = {"num_rows": num_cols - 1, "num_cols": num_rows + 1}
+
+        # 1. Lewy górny róg zostaje na swoim miejscu (np. etykieta "Ćwiczenie" lub pusty róg)
+        new_data["h1"] = data.get("h1", "")
+
+        # 2. Stara pierwsza kolumna staje się nowymi nagłówkami
+        for r in range(1, num_rows + 1):
+            new_data[f"h{r+1}"] = data.get(f"r{r}c1", "")
+
+        # 3. Stare nagłówki (od 2 kolumny) stają się nową pierwszą kolumną
+        # a reszta komórek odpowiednio obraca swoje współrzędne r/c
+        for c in range(2, num_cols + 1):
+            new_r = c - 1
+            new_data[f"r{new_r}c1"] = data.get(f"h{c}", "")
+
+            for r in range(1, num_rows + 1):
+                new_c = r + 1
+                new_data[f"r{new_r}c{new_c}"] = data.get(f"r{r}c{c}", "")
+
+        # Sprytny ruch: nadpisujemy cały stan nowym słownikiem.
+        # Z automatu czyści to śmieci (flagi m_r, stare szerokości w_c, itp.)
+        data = new_data
+
     # Renderujemy z powrotem cały szablon tabeli z nowymi danymi
     context = {
         "request": request,
