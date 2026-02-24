@@ -59,7 +59,9 @@ def process_spider_json(spider_data):
     for card in spider_data.get("items", []):
         card_type = card.get("type")
 
-        if card_type != "list" and card.get("items") and len(card["items"]) > 0:
+        # 1. SPRYTNE ROZPAKOWANIE DANYCH (Usunięto wadliwy wyjątek dla "list")
+        # Rozpakowujemy wiersz, JEŚLI ma wewnętrzną strukturę `items` z danymi
+        if card.get("items") and isinstance(card["items"], list) and len(card["items"]) > 0 and isinstance(card["items"][0], dict):
             data_obj = card["items"][0]
         else:
             data_obj = card
@@ -67,8 +69,8 @@ def process_spider_json(spider_data):
         if not card_type:
             card_type = data_obj.get("type")
 
-        # Ujednolicenie DEDYKOWANE
-        if card_type in ["running", "exercise", "running2"]:
+        # 2. UJEDNOLICENIE I ZABEZPIECZENIE TYPÓW
+        if card_type in ["running", "exercise", "running2", "gym", "gym2"]:
             data_obj["activity"] = {"value": data_obj.get("head", ""), "label": data_obj.get("label", "")}
             if card_type == "running2":
                 if not isinstance(data_obj.get("sets"), list):
@@ -81,15 +83,19 @@ def process_spider_json(spider_data):
             if "items" not in data_obj:
                 data_obj["items"] = []
 
-        # Logika poziomów i widoczności
+        # 3. ZARZĄDZANIE WIDOCZNOŚCIĄ (level i collapsed)
+        # Pobieramy stan z głównego 'card' (jeśli istnieje) lub jako fallback z 'data_obj'
         if card_type == "text":
-            data_obj["level"] = get_header_level(data_obj.get("size", ""))
-            c = data_obj.get("collapsed", "false")
-            # Kuloodporna konwersja do stringa dla HTML
-            data_obj["collapsed"] = "true" if str(c).lower() == "true" else "false"
+            calc_level = get_header_level(data_obj.get("size", ""))
         else:
-            data_obj["level"] = 0
-            data_obj["collapsed"] = "false"
+            calc_level = int(card.get("level", data_obj.get("level", 0)))
+
+        c_val = card.get("collapsed", data_obj.get("collapsed", "false"))
+        is_collapsed = "true" if str(c_val).lower() == "true" else "false"
+
+        # Nadpisujemy wartości w data_obj, bo Jinja2 odczytuje to przez {{ data.level }}
+        data_obj["level"] = calc_level
+        data_obj["collapsed"] = is_collapsed
 
         processed_cards.append(
             {
@@ -100,8 +106,6 @@ def process_spider_json(spider_data):
             }
         )
     return processed_cards
-
-
 SETTINGS = load_settings(path="config.yaml")
 
 app = FastAPI()

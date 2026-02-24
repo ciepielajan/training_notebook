@@ -310,6 +310,16 @@ function refreshVisibility() {
             row.style.display = 'none';
         } else {
             row.style.display = ''; // Odkrywamy z powrotem
+            
+            // --- FIX DLA TEXTAREA (Przywracanie wysokości po rozwinięciu) ---
+            // Ponieważ element był ukryty (display: none), przeglądarka wyzerowała jego scrollHeight.
+            // Wymuszamy ponowne przeliczenie wysokości, gdy znów jest widoczny.
+            row.querySelectorAll('textarea').forEach(ta => {
+                ta.style.height = 'auto'; // Reset wysokości
+                if (ta.scrollHeight > 0) {
+                    ta.style.height = ta.scrollHeight + 'px'; // Dopasowanie do zawartości
+                }
+            });
         }
 
         // Jeśli sam ten wiersz jest nagłówkiem, nie jest aktualnie przez nikogo ukryty, 
