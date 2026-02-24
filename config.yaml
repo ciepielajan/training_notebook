@@ -26,3 +26,16 @@ activities:
   gym:
     - Wyciskanie
     - Martwy ciąg
+
+block_names:
+  running: "Bieganie"
+  exercise: "Ćwiczenie"
+  gym: "Siłownia"
+  gym2: "Siłownia"
+  table: "Tabela serii"
+  list: "Lista punktowa"
+  text: "Tekst"
+  text_1: "Nagłówek H1"
+  text_2: "Nagłówek H2"
+  text_3: "Nagłówek H3"
+  text_4: "Nagłówek H4"

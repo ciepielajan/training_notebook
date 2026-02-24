@@ -12,11 +12,26 @@ import yaml
 import os
 import shutil
 
-# 1. Wczytujemy konfigurację z pliku config.yaml
-with open("config.yaml", "r", encoding="utf-8") as f:
-    config = yaml.safe_load(f)
 
-DATA_DIR = Path(config.get("data_dir"))
+def load_settings(path):
+    """Wczytuje opcje z pliku YAML. Jeśli błąd, zwraca domyślne."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    except FileNotFoundError:
+        print(f"⚠️ Plik {path} nie istnieje.")
+    except:
+        print("⚠️ Nieznany błąd")
+
+
+SETTINGS = load_settings(path="config.yaml")
+DATA_DIR = Path(SETTINGS.get("data_dir"))
+
+app = FastAPI()
+templates = Jinja2Templates(directory="app/templates")
+# --- SENIOR TRICK: Udostępniamy SETTINGS globalnie dla wszystkich szablonów ---
+templates.env.globals["SETTINGS"] = SETTINGS
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
 def get_recent_workouts():
@@ -32,17 +47,6 @@ def get_recent_workouts():
     for f in files:
         workouts.append({"filename": f.name, "name": f.stem})
     return workouts
-
-
-def load_settings(path):
-    """Wczytuje opcje z pliku YAML. Jeśli błąd, zwraca domyślne."""
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f)
-    except FileNotFoundError:
-        print(f"⚠️ Plik {path} nie istnieje.")
-    except:
-        print("⚠️ Nieznany błąd")
 
 
 def get_header_level(size_class: str) -> int:
@@ -61,7 +65,12 @@ def process_spider_json(spider_data):
 
         # 1. SPRYTNE ROZPAKOWANIE DANYCH (Usunięto wadliwy wyjątek dla "list")
         # Rozpakowujemy wiersz, JEŚLI ma wewnętrzną strukturę `items` z danymi
-        if card.get("items") and isinstance(card["items"], list) and len(card["items"]) > 0 and isinstance(card["items"][0], dict):
+        if (
+            card.get("items")
+            and isinstance(card["items"], list)
+            and len(card["items"]) > 0
+            and isinstance(card["items"][0], dict)
+        ):
             data_obj = card["items"][0]
         else:
             data_obj = card
@@ -106,11 +115,6 @@ def process_spider_json(spider_data):
             }
         )
     return processed_cards
-SETTINGS = load_settings(path="config.yaml")
-
-app = FastAPI()
-templates = Jinja2Templates(directory="app/templates")
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
 @app.get("/test", response_class=HTMLResponse)

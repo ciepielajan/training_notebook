@@ -64,6 +64,12 @@
     }
 </style>
 
+
+{% set lvl = data.get('level', 0) | int %}
+{% set dict_key = type ~ '_' ~ lvl if type == 'text' and lvl > 0 else type %}
+{% set block_name = SETTINGS.get('block_names', {}).get(dict_key, 'Nieznany blok') %}
+
+
 <div class="exercise-row position-relative border-bottom py-3 node" id="{{ unique_id }}">
 
     <input type="hidden" name="id" value="{{ unique_id }}">
@@ -75,8 +81,8 @@
             <button
                 class="btn btn-sm btn-link text-secondary text-decoration-none p-0 d-flex align-items-center justify-content-center"
                 type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 30px; height: 30px;"
-                data-bs-popper-config='{"strategy":"fixed"}'>
-                <i class="bi bi-plus-lg fs-5"></i>
+                data-bs-popper-config='{"strategy":"fixed"}' title="{{ block_name }}"> <i
+                    class="bi bi-plus-lg fs-5"></i>
             </button>
 
             <ul class="dropdown-menu shadow" hx-target="closest .exercise-row" hx-swap="afterend"
