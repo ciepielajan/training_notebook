@@ -45,6 +45,63 @@ def load_settings(path):
         print("⚠️ Nieznany błąd")
 
 
+def get_header_level(size_class: str) -> int:
+    """Zwraca poziom nagłówka na podstawie klasy rozmiaru (np. fs-1 -> 1)."""
+    if not size_class:
+        return 0
+    level_map = {"fs-1": 1, "fs-2": 2, "fs-3": 3, "fs-4": 4}
+    return next((v for k, v in level_map.items() if k in size_class), 0)
+
+
+def process_spider_json(spider_data):
+    processed_cards = []
+
+    for card in spider_data.get("items", []):
+        card_type = card.get("type")
+
+        if card_type != "list" and card.get("items") and len(card["items"]) > 0:
+            data_obj = card["items"][0]
+        else:
+            data_obj = card
+
+        if not card_type:
+            card_type = data_obj.get("type")
+
+        # Ujednolicenie DEDYKOWANE
+        if card_type in ["running", "exercise", "running2"]:
+            data_obj["activity"] = {"value": data_obj.get("head", ""), "label": data_obj.get("label", "")}
+            if card_type == "running2":
+                if not isinstance(data_obj.get("sets"), list):
+                    data_obj["sets"] = []
+            else:
+                if not isinstance(data_obj.get("details"), list):
+                    data_obj["details"] = []
+
+        if card_type == "list":
+            if "items" not in data_obj:
+                data_obj["items"] = []
+
+        # Logika poziomów i widoczności
+        if card_type == "text":
+            data_obj["level"] = get_header_level(data_obj.get("size", ""))
+            c = data_obj.get("collapsed", "false")
+            # Kuloodporna konwersja do stringa dla HTML
+            data_obj["collapsed"] = "true" if str(c).lower() == "true" else "false"
+        else:
+            data_obj["level"] = 0
+            data_obj["collapsed"] = "false"
+
+        processed_cards.append(
+            {
+                "unique_id": card.get("id") or secrets.token_hex(4),
+                "type": card_type,
+                "data": data_obj,
+                "options": SETTINGS.get("activities", {}).get(card_type, []),
+            }
+        )
+    return processed_cards
+
+
 SETTINGS = load_settings(path="config.yaml")
 
 app = FastAPI()
@@ -57,33 +114,17 @@ async def index(request: Request):
     return templates.TemplateResponse("test.html", {"request": request})
 
 
-@app.get("/field-fragment", response_class=HTMLResponse)
-async def field_fragment(request: Request):
-    # zwraca fragment HTML (jedna linia pól)
-    return templates.TemplateResponse("_fields_fragment.html", {"request": request})
+# @app.get("/field-fragment", response_class=HTMLResponse)
+# async def field_fragment(request: Request):
+#     # zwraca fragment HTML (jedna linia pól)
+#     return templates.TemplateResponse("_fields_fragment.html", {"request": request})
 
 
 @app.get("/card", response_class=HTMLResponse)
-async def field_fragment(
-    request: Request,
-    size: str = "",
-    type: str = "running",
-    value: str = "",
-    label: str = "",
-    list_type: str = "bullet",
-):
+async def field_fragment(request: Request, size: str = "", type: str = "running", value: str = "", label: str = ""):
     unique_id = secrets.token_hex(4)
     activities = SETTINGS.get("activities", {})
     options_list = activities.get(type) or []
-
-    # CZYSTY MODEL DANYCH
-    data_obj = {
-        "activity": {"value": value, "label": label},
-        "details": [],
-        "size": size,
-        "list_type": list_type,
-        "items": [],  # Zawsze startujemy z czystą kartą
-    }
 
     return templates.TemplateResponse(
         "_card.html",
@@ -91,7 +132,13 @@ async def field_fragment(
             "request": request,
             "unique_id": unique_id,
             "type": type,
-            "data": data_obj,
+            "data": {
+                "activity": {"value": value, "label": label},
+                "details": [],
+                "size": size,
+                "level": get_header_level(size) if type == "text" else 0,  # Używamy funkcji
+                "collapsed": "false",
+            },
             "options": options_list,
         },
     )
@@ -380,69 +427,39 @@ async def save(request: Request):
         return HTMLResponse(f"Wystąpił błąd podczas zapisu: {e}", status_code=500)
 
 
-def process_spider_json(spider_data):
-    processed_cards = []
+# ==========================================
+# ZWIJANIE / ROZWIJANIE NAGŁÓWKÓW (HTMX)
+# ==========================================
+@app.post("/card/toggle/{uid}", response_class=HTMLResponse)
+async def toggle_card_collapse(request: Request, uid: str):
+    form_data = await request.form()
 
-    for card in spider_data.get("items", []):
-        data_obj = card
-        card_type = card.get("type")
+    # Odczyt z formularza przysłanego przez HTMX
+    card_type = form_data.get("type", "text")
+    current_collapsed = form_data.get("collapsed", "false")
 
-        # 1. Rozpakowywanie zagnieżdżonych struktur z htmlTreeToJson
-        items = card.get("items", [])
-        if items and len(items) > 0:
-            first_item = items[0]
+    # Przełączenie flagi
+    new_collapsed = "true" if current_collapsed == "false" else "false"
 
-            if card_type == "gym":
-                data_obj["details"] = items
-            elif card_type == "list":
-                data_obj = first_item
-            elif card_type == "metadata":
-                # FIX: Odzyskujemy tablicę zawodników z zagnieżdżonego węzła!
-                data_obj["athletes"] = first_item.get("athletes", [])
-            elif first_item.get("type"):
-                data_obj = first_item
-                card_type = first_item.get("type")
+    # Budujemy nowy obiekt danych dla szablonu
+    data_obj = {
+        "head": form_data.get("head", ""),
+        "size": form_data.get("size", "fs-6"),
+        "level": int(form_data.get("level", 0)),
+        "collapsed": new_collapsed,
+    }
 
-        # 2. Bezpieczne ustalenie typu
-        card_type = card_type or data_obj.get("type")
-
-        # 🛡️ ZABEZPIECZENIE I AUTO-NAPRAWA
-        if not card_type:
-            if items and isinstance(items[0], dict) and ("content" in items[0] or "is_checked" in items[0]):
-                card_type = "list"
-                is_checklist = "is_checked" in items[0]
-                data_obj = {
-                    "head": "Odzyskana lista",
-                    "list_type": "checklist" if is_checklist else "bullet",
-                    "items": items,
-                }
-            else:
-                continue
-
-        # 3. Ujednolicenie struktur
-        if card_type in ["running", "exercise", "running2", "gym", "gym2"]:
-            data_obj["activity"] = {"value": data_obj.get("head", ""), "label": data_obj.get("label", "")}
-            if card_type == "running2":
-                if not isinstance(data_obj.get("sets"), list):
-                    data_obj["sets"] = []
-            else:
-                if not isinstance(data_obj.get("details"), list):
-                    data_obj["details"] = []
-
-        if card_type == "list":
-            if "items" not in data_obj:
-                data_obj["items"] = []
-
-        processed_cards.append(
-            {
-                "unique_id": card.get("id") or secrets.token_hex(4),
-                "type": card_type,
-                "data": data_obj,
-                "options": SETTINGS.get("activities", {}).get(card_type, []),
-            }
-        )
-
-    return processed_cards
+    # Odświeżamy i zwracamy wyłącznie zmodyfikowaną kartę
+    return templates.TemplateResponse(
+        "_card.html",
+        {
+            "request": request,
+            "unique_id": uid,
+            "type": card_type,
+            "data": data_obj,
+            "options": SETTINGS.get("activities", {}).get(card_type, []),
+        },
+    )
 
 
 @app.post("/card/table/action/{uid}", response_class=HTMLResponse)

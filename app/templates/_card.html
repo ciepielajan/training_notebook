@@ -67,6 +67,8 @@
 <div class="exercise-row position-relative border-bottom py-3 node" id="{{ unique_id }}">
 
     <input type="hidden" name="id" value="{{ unique_id }}">
+    <input type="hidden" name="level" value="{{ data.get('level', 0) }}">
+    <input type="hidden" name="collapsed" value="{{ data.get('collapsed', 'false') }}">
 
     <div class="action-sidebar ps-1">
         <div class="dropdown">

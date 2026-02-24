@@ -1,7 +1,16 @@
 <input type="hidden" name="type" value="text">
 <input type="hidden" name="data">
 <div class="input-group-vertical">
-    <div class="input-group">
+    <div class="input-group align-items-center">
+
+        {% if data.get('level', 0)|int > 0 %}
+        <button type="button" class="btn btn-sm btn-link text-secondary p-0 me-2 shadow-none"
+            onclick="toggleSection(this)">
+            <i
+                class="bi {{ 'bi-chevron-right' if data.get('collapsed', 'false') == 'true' else 'bi-chevron-down' }} fs-5"></i>
+        </button>
+        {% endif %}
+
         <div class="w-100">
             <input type="text" class="form-control {{ data.size }} border-0 shadow-none bg-transparent ps-0" name="head"
                 placeholder="..." value="{{ data.head }}">
