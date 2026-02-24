@@ -735,3 +735,39 @@ async def duplicate_workout(filename: str):
 #                name="content" placeholder="Nowy punkt..." value="">
 #     </div>
 #     """
+
+
+@app.post("/card/repetition/duplicate/{uid}", response_class=HTMLResponse)
+async def duplicate_card(request: Request, uid: str):
+    form_data = await request.form()
+    json_body = form_data.get("json_body")
+
+    if not json_body:
+        return HTMLResponse("Błąd: Brak danych strukturalnych", status_code=400)
+
+    data_tree = json.loads(json_body)
+
+    # 1. Szukamy karty o podanym ID
+    target_card = None
+    for card in data_tree.get("items", []):
+        if card.get("id") == uid:
+            target_card = card
+            break
+
+    if not target_card:
+        return HTMLResponse("Nie znaleziono karty do duplikacji", status_code=404)
+
+    # 2. CLEAN CODE: Jawnie usuwamy stare ID z obiektu.
+    # Co prawda szablon _card.html i tak zignoruje to pole (nadpisze je zmienną {{ unique_id }}),
+    # ale usunięcie go gwarantuje, że nie przenosimy "martwych" danych w backendzie.
+    target_card.pop("id", None)
+
+    # 3. Przetwarzamy kartę przez nasz standardowy pipeline – dostanie nowy `unique_id`
+    dummy_spider = {"items": [target_card]}
+    processed_cards = process_spider_json(dummy_spider)
+
+    if not processed_cards:
+        return HTMLResponse("Błąd przetwarzania karty", status_code=500)
+
+    # 4. Renderujemy nową kartę
+    return templates.TemplateResponse("_card.html", {"request": request, **processed_cards[0]})

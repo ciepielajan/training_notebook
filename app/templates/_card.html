@@ -123,6 +123,13 @@
                     </button>
                 </li>
                 <li>
+                    <button class="dropdown-item fw-bold text-success" type="button"
+                        hx-post="/card/repetition/duplicate/{{ unique_id }}" hx-target="closest .exercise-row"
+                        hx-swap="afterend">
+                        <i class="bi bi-copy me-2"></i>Duplikuj element
+                    </button>
+                </li>
+                <li>
                     <hr class="dropdown-divider">
                 </li>
                 <li>
