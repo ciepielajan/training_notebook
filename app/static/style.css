@@ -459,3 +459,16 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
     background-color: #fcfcfc;
     border-bottom: 2px dashed #dee2e6 !important;
 }
+
+/* ========================================== */
+/* 7. MECHANIZM ZWIJANIA SEKCJI               */
+/* ========================================== */
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+.spin-icon {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+    color: #0d6efd; /* Niebieski kolor bootstrapa oznaczający proces w tle */
+}

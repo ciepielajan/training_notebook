@@ -87,72 +87,122 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Obsługa akcji ZAPISU (Zapisz, Zapisz jako, Eksportuj) ---
+    // --- GŁÓWNA FUNKCJA ZAPISU (Zabezpieczona z Auto-Save) ---
     const mainForm = document.getElementById('form');
     const saveActionInput = document.getElementById('hidden-save-action');
 
-    function triggerSave(actionType) {
+    function triggerSave(actionType, isAutoSave = false) {
         if (!mainForm || !saveActionInput) return;
 
         saveActionInput.value = actionType;
 
-        // 1. Zawsze najpierw zbieramy najnowsze dane do ukrytego inputa
+        // Zbieramy aktualne dane z ekranu
         const rootElement = document.getElementById('fields-container');
         const structure = htmlTreeToJson(rootElement);
         document.getElementById('hidden-json-input').value = JSON.stringify(structure);
 
-        // 2. Eksport pobiera plik, więc wymusza standardowe pobieranie (nie przeładowuje to strony)
+        // Jeśli to eksport, pozwalamy przeglądarce pobrać plik i przerywamy fetchowanie
         if (actionType === 'export') {
             mainForm.submit();
-        } else {
-            // 3. Zapisz / Zapisz Jako - wysyłamy plik "po cichu" w TLE
-            const formData = new FormData(mainForm);
-            const isNewFile = !formData.get('current_filename'); // Czy to czysty, nowy trening?
-
-            fetch('/save', {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                // Jeśli zapisaliśmy "Nowy trening",
-                // powstał nowy plik na dysku, więc musimy odświeżyć listę w menu
-                if (isNewFile) {
-                    window.location.reload();
-                } else {
-                    // ZWYKŁY ZAPIS - BRAK PRZEŁADOWANIA! 🎉
-                    // Dajemy tylko ładny efekt wizualny na przycisku
-                    const saveBtn = document.getElementById('sidebar-save-btn');
-                    if (saveBtn) {
-                        const originalHtml = saveBtn.innerHTML;
-                        saveBtn.innerHTML = '<i class="bi bi-check-lg"></i> <span class="menu-text">Zapisano!</span>';
-                        setTimeout(() => {
-                            saveBtn.innerHTML = originalHtml;
-                        }, 2000);
-                    }
-                }
-            }).catch(error => {
-                alert("Wystąpił błąd podczas zapisu!");
-            });
+            return;
         }
+
+        const formData = new FormData(mainForm);
+        const isNewFile = !formData.get('current_filename'); 
+
+        const saveBtn = document.getElementById('sidebar-save-btn');
+        
+        // KLUCZOWE: Domyślny wygląd przycisku trzymamy "na sztywno", żeby uniknąć pułapki stanu UI
+        const defaultBtnHtml = '<i class="bi bi-floppy"></i> <span class="menu-text">Zapisz</span>';
+
+        if (saveBtn) {
+            // Reakcja wizualna w zależności od tego, czy to zapis ręczny czy auto-zapis z tła
+            if (isAutoSave) {
+                saveBtn.innerHTML = '<i class="bi bi-arrow-repeat spin-icon"></i> <span class="menu-text">Auto-zapis...</span>';
+            } else {
+                saveBtn.innerHTML = '<i class="bi bi-hourglass-split spin-icon"></i> <span class="menu-text">Zapisywanie...</span>';
+            }
+        }
+
+        // Wysyłamy żądanie w tle
+        fetch('/save', {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            // Jeśli serwer wyrzucił błąd (np. 400 lub 500), przechodzimy do catch
+            if (!response.ok) {
+                throw new Error("Błąd serwera: " + response.status);
+            }
+            
+            if (isNewFile) {
+                // Nowy plik wymaga odświeżenia, aby pojawił się na liście w menu po lewej
+                window.location.reload();
+            } else {
+                // Zwykłe nadpisanie (lub Auto-Zapis) - dajemy feedback i przywracamy domyślny wygląd przycisku
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<i class="bi bi-check-lg text-success"></i> <span class="menu-text text-success">Zapisano!</span>';
+                    setTimeout(() => {
+                        saveBtn.innerHTML = defaultBtnHtml;
+                    }, 2000);
+                }
+            }
+        }).catch(error => {
+            console.error("Błąd podczas zapisu:", error);
+            if (saveBtn) {
+                // Jeśli coś pójdzie nie tak, pokazujemy czerwony błąd
+                saveBtn.innerHTML = '<i class="bi bi-x-circle text-danger"></i> <span class="menu-text text-danger">Błąd zapisu!</span>';
+                setTimeout(() => {
+                    saveBtn.innerHTML = defaultBtnHtml;
+                }, 3000);
+            }
+        });
     }
 
+    // Standardowe kliknięcia w menu (zapis ręczny)
     document.getElementById('sidebar-save-btn')?.addEventListener('click', (e) => { 
-        e.preventDefault(); triggerSave('save'); 
+        e.preventDefault(); 
+        triggerSave('save', false); 
     });
 
     document.getElementById('sidebar-export-btn')?.addEventListener('click', (e) => { 
-        e.preventDefault(); triggerSave('export'); 
+        e.preventDefault(); 
+        triggerSave('export', false); 
     });
 
-    // --- GŁÓWNE ZDARZENIE FORMULARZA: Budowanie JSON-a przed wysłaniem ---
+    // --- GŁÓWNE ZDARZENIE FORMULARZA: Budowanie JSON-a przed klasycznym wysłaniem ---
     if (mainForm) {
         mainForm.addEventListener('submit', function (e) {
             const rootElement = document.getElementById('fields-container');
             const structure = htmlTreeToJson(rootElement);
             document.getElementById('hidden-json-input').value = JSON.stringify(structure);
-            
-            // Dla pewności wypisujemy wysyłany json w konsoli
             console.log("WYSYŁANY JSON:", JSON.stringify(structure, null, 2));
         });
+    }
+
+    // ==========================================
+    // AUTO-SAVE (Debouncing)
+    // ==========================================
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    const autoSave = debounce(() => {
+        const currentFilename = document.querySelector('input[name="current_filename"]')?.value;
+        // Wymuszamy auto-zapis tylko wtedy, gdy edytujemy już istniejący plik na dysku
+        if (currentFilename && currentFilename.trim() !== '') {
+            triggerSave('save', true);
+        }
+    }, 2000);
+
+    // Event Delegation - łapiemy każdą zmianę w formularzu
+    const fieldsContainer = document.getElementById('fields-container');
+    if (fieldsContainer) {
+        fieldsContainer.addEventListener('input', autoSave);
+        fieldsContainer.addEventListener('change', autoSave);
     }
 
 });
@@ -179,7 +229,7 @@ document.body.addEventListener('htmx:afterOnLoad', function(evt) {
     }
 });
 
-// Dołączanie zaktualizowanego JSON-a do żądań HTMX (np. zmiana rodzaju powtórzeń)
+// Dołączanie zaktualizowanego JSON-a do żądań HTMX (np. zmiana rodzaju powtórzeń lub duplikacja)
 document.body.addEventListener('htmx:configRequest', function (evt) {
     if (evt.detail.path.includes('/card/repetition/')) {
         const rootElement = document.getElementById('fields-container');
@@ -258,7 +308,7 @@ document.addEventListener('keydown', function(e) {
 
 
 // ==========================================
-// ZARZĄDZANIE WIDOCZNOŚCIĄ SEKCJI (ZAGNIEDŻDZENIA H1-H4)
+// 5. ZARZĄDZANIE WIDOCZNOŚCIĄ SEKCJI (ZAGNIEDŻDZENIA H1-H4)
 // ==========================================
 
 function toggleSection(button) {
@@ -324,7 +374,7 @@ function refreshVisibility() {
             hideLevel = currentLevel;
         }
         
-        // Dodanie subtelnej klasy CSS dla zwiniętego nagłówka (jeśli chcesz mieć kreskę)
+        // Dodanie subtelnej klasy CSS dla zwiniętego nagłówka
         if (currentLevel > 0) {
             row.classList.toggle('header-collapsed', isCollapsed);
         }
