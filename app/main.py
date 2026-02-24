@@ -402,31 +402,26 @@ async def save(request: Request):
             )
 
         # ==========================================
-        # AKCJA 1 i 2: ZAPISZ / ZAPISZ JAKO (Na dysk)
+        # AKCJA 2: ZAPISZ (Nowy plik lub nadpisanie)
         # ==========================================
+        is_new_file = not current_filename
 
-        # Sprawdzamy czy musimy wygenerować nowy plik
-        is_new_file = False
-        if save_action == "save_as" or not current_filename:
+        if is_new_file:
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             target_filename = f"trening_{timestamp}.json"
-            is_new_file = True
         else:
-            target_filename = current_filename
+            target_filename = Path(current_filename).name
 
-        target_filename = Path(target_filename).name
         file_path = DATA_DIR / target_filename
 
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data_structure, f, ensure_ascii=False, indent=4)
 
-        # KLUCZOWA ZMIANA:
         if is_new_file:
-            # Jeśli to był "Zapisz jako" lub "Nowy", odświeżamy by pokazać go w menu
+            # Utworzyliśmy nowy plik - odświeżamy stronę, by pokazać go w menu
             return RedirectResponse(url="/", status_code=303)
         else:
-            # Zwykłe nadpisanie "Zapisz" - zwracamy 204 No Content!
-            # (Przeglądarka ani drgnie)
+            # Zwykłe nadpisanie (brak przeładowania frontendu)
             return Response(status_code=204)
 
     except json.JSONDecodeError:

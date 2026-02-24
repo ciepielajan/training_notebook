@@ -113,9 +113,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 body: formData
             }).then(response => {
-                // Jeśli kliknęliśmy "Zapisz jako" lub zapisaliśmy "Nowy trening",
+                // Jeśli zapisaliśmy "Nowy trening",
                 // powstał nowy plik na dysku, więc musimy odświeżyć listę w menu
-                if (actionType === 'save_as' || isNewFile) {
+                if (isNewFile) {
                     window.location.reload();
                 } else {
                     // ZWYKŁY ZAPIS - BRAK PRZEŁADOWANIA! 🎉
@@ -137,10 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('sidebar-save-btn')?.addEventListener('click', (e) => { 
         e.preventDefault(); triggerSave('save'); 
-    });
-
-    document.getElementById('sidebar-save-as-btn')?.addEventListener('click', (e) => { 
-        e.preventDefault(); triggerSave('save_as'); 
     });
 
     document.getElementById('sidebar-export-btn')?.addEventListener('click', (e) => { 
