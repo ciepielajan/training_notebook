@@ -31,67 +31,47 @@
             <span class="menu-text">Pobierz</span>
         </a>
     </div>
+    <div class="folders-container mt-2 mb-2">
+        <div class="sidebar-heading menu-text">
+            Foldery
+        </div>
+        <ul class="list-unstyled mb-0">
+            <li>
+                <a href="#" class="nav-link">
+                    <i class="bi bi-folder"></i>
+                    <span class="menu-text">Siłownia</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-link">
+                    <i class="bi bi-folder"></i>
+                    <span class="menu-text">Przepisy</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-link">
+                    <i class="bi bi-folder"></i>
+                    <span class="menu-text">Zamówienia</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-link text-secondary">
+                    <i class="bi bi-folder-plus"></i>
+                    <span class="menu-text fst-italic">Utwórz nowy...</span>
+                </a>
+            </li>
+        </ul>
+    </div>
     <div class="recent-workouts-container mt-2">
         <div class="sidebar-heading menu-text">
             Ostatnie
         </div>
 
-        <ul class="list-unstyled mb-0">
-            {% if recent_workouts %}
-            {% for workout in recent_workouts %}
-            <li class="d-flex align-items-center justify-content-between workout-item">
+        <ul class="list-unstyled mb-0" id="recent-workouts-list" hx-get="/recent_workouts_html"
+            hx-trigger="updateSidebar from:body">
 
-                <a href="#" class="nav-link flex-grow-1 text-truncate pe-1"
-                    hx-get="/load_workout/{{ workout.filename }}" hx-target="#fields-container">
-                    <i class="bi bi-chat-left-text"></i>
-                    <span class="menu-text">{{ workout.name }}</span>
-                </a>
+            {% include "_recent_list.html" %}
 
-                <div class="dropdown me-2 menu-options">
-                    <button class="btn btn-sm text-secondary shadow-none p-1" type="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        <i class="bi bi-three-dots-vertical"></i>
-                    </button>
-
-                    <ul class="dropdown-menu dropdown-menu-dark shadow">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-pin-angle me-2"></i>Przypnij</a></li>
-                        <li>
-                            <button class="dropdown-item" hx-post="/duplicate_workout/{{ workout.filename }}"
-                                hx-swap="none">
-                                <i class="bi bi-copy me-2"></i>Duplikuj
-                            </button>
-                        </li>
-
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-
-                        <li>
-                            <button class="dropdown-item"
-                                onclick="let val = prompt('Podaj nową nazwę dla treningu:', '{{ workout.name }}'); if(val && val.trim() !== '') { htmx.ajax('POST', '/rename_workout/{{ workout.filename }}', {headers: {'HX-Prompt': val}}); }">
-                                <i class="bi bi-pencil me-2"></i>Zmień nazwę
-                            </button>
-                        </li>
-                        <li>
-                            <button class="dropdown-item text-danger fw-bold"
-                                hx-delete="/delete_workout/{{ workout.filename }}"
-                                hx-confirm="Czy na pewno chcesz bezpowrotnie usunąć trening '{{ workout.name }}'?"
-                                hx-swap="none">
-                                <i class="bi bi-trash me-2"></i>Usuń
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-            </li>
-            {% endfor %}
-            {% else %}
-            <li>
-                <a href="#" class="nav-link pe-none" style="color: #8e8e8e;">
-                    <i class="bi bi-info-circle"></i>
-                    <span class="menu-text fst-italic">Brak treningów</span>
-                </a>
-            </li>
-            {% endif %}
         </ul>
     </div>
 

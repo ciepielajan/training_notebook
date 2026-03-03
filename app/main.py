@@ -1,5 +1,5 @@
 from fastapi import UploadFile, File
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -407,6 +407,9 @@ async def save(request: Request):
         is_new_file = not current_filename
 
         if is_new_file:
+            # UWAGA: Twój JS wysyła już wygenerowaną nazwę w current_filename,
+            # więc ten blok prawdopodobnie się nie wykona dla autozapisu,
+            # ale zostawiamy go jako zabezpieczenie.
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             target_filename = f"trening_{timestamp}.json"
         else:
@@ -417,17 +420,14 @@ async def save(request: Request):
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data_structure, f, ensure_ascii=False, indent=4)
 
-        if is_new_file:
-            # Utworzyliśmy nowy plik - odświeżamy stronę, by pokazać go w menu
-            return RedirectResponse(url="/", status_code=303)
-        else:
-            # Zwykłe nadpisanie (brak przeładowania frontendu)
-            return Response(status_code=204)
+        # KLUCZOWA ZMIANA: Zawsze zwracamy JSON-a dla przeglądarki!
+        # Dzięki temu frontend wie, że się udało i poznaje nazwę pliku.
+        return JSONResponse(content={"status": "success", "filename": target_filename})
 
     except json.JSONDecodeError:
-        return HTMLResponse("Błąd: Nieprawidłowy format JSON", status_code=400)
+        return JSONResponse(content={"status": "error", "message": "Nieprawidłowy format JSON"}, status_code=400)
     except Exception as e:
-        return HTMLResponse(f"Wystąpił błąd podczas zapisu: {e}", status_code=500)
+        return JSONResponse(content={"status": "error", "message": f"Błąd zapisu: {str(e)}"}, status_code=500)
 
 
 # ==========================================
@@ -592,35 +592,73 @@ async def table_action(request: Request, uid: str):
             target_r += 1
 
     # ==========================================
-    # 9. NOWOŚĆ: TRANSPOZYCJA TABELI
+    # 9. NOWOŚĆ: INTELIGENTNA TRANSPOZYCJA TABELI (Pion <-> Poziom)
     # ==========================================
     elif action == "transpose":
-        # Architektoniczne założenie:
-        # Traktujemy tabelę jako macierz (num_rows + 1) x num_cols (wliczając nagłówki).
-        # Po obrocie: nowe num_cols = stare num_rows + 1
-        # nowe num_rows = stare num_cols - 1
+        # Sprawdzamy obecny układ. Rozpoznajemy tryb poziomy po tym,
+        # że górny nagłówek h1 jest pusty, bo etykieta "Ćwiczenie"
+        # została zrzucona do wiersza w ciele tabeli (r1c1).
+        is_horizontal = data.get("h1", "").strip() == ""
 
-        new_data = {"num_rows": num_cols - 1, "num_cols": num_rows + 1}
+        new_data = {}
 
-        # 1. Lewy górny róg zostaje na swoim miejscu (np. etykieta "Ćwiczenie" lub pusty róg)
-        new_data["h1"] = data.get("h1", "")
+        if not is_horizontal:
+            # --- TRYB: PIONOWY -> POZIOMY ---
+            new_data["num_rows"] = num_cols
+            new_data["num_cols"] = num_rows + 1
 
-        # 2. Stara pierwsza kolumna staje się nowymi nagłówkami
-        for r in range(1, num_rows + 1):
-            new_data[f"h{r+1}"] = data.get(f"r{r}c1", "")
+            # W trybie poziomym potrzebujemy węższych kolumn na dane (np. 60px zamiast 100px)
+            # Pierwsza kolumna zachowuje swoją dotychczasową szerokość
+            new_data["w1"] = data.get("w1", "180px")
+            for c in range(2, new_data["num_cols"] + 1):
+                new_data[f"w{c}"] = "60px"
 
-        # 3. Stare nagłówki (od 2 kolumny) stają się nową pierwszą kolumną
-        # a reszta komórek odpowiednio obraca swoje współrzędne r/c
-        for c in range(2, num_cols + 1):
-            new_r = c - 1
-            new_data[f"r{new_r}c1"] = data.get(f"h{c}", "")
+            # 1. Górne nagłówki (th) ukrywamy (czyścimy)
+            for c in range(1, new_data["num_cols"] + 1):
+                new_data[f"h{c}"] = ""
 
-            for r in range(1, num_rows + 1):
-                new_c = r + 1
-                new_data[f"r{new_r}c{new_c}"] = data.get(f"r{r}c{c}", "")
+            # 2. Wiersz 1: Etykieta głównego ćwiczenia i jego wartość zrzucone z góry
+            new_data["r1c1"] = data.get("h1", "")
+            new_data["r1c2"] = data.get("r1c1", "")
+            # (Puste komórki od r1c3 w górę wygenerują się w HTML automatycznie jako puste kwadraty)
 
-        # Sprytny ruch: nadpisujemy cały stan nowym słownikiem.
-        # Z automatu czyści to śmieci (flagi m_r, stare szerokości w_c, itp.)
+            # 3. Wiersze 2+: Transponujemy tylko metryki (Powtórzenia, Ciężar, itp.)
+            for old_c in range(2, num_cols + 1):
+                new_r = old_c
+                new_data[f"r{new_r}c1"] = data.get(f"h{old_c}", "")
+
+                for old_r in range(1, num_rows + 1):
+                    new_c = old_r + 1
+                    new_data[f"r{new_r}c{new_c}"] = data.get(f"r{old_r}c{old_c}", "")
+
+        else:
+            # --- TRYB: POZIOMY -> PIONOWY (Cofnięcie do oryginału) ---
+            new_data["num_rows"] = num_cols - 1
+            new_data["num_cols"] = num_rows
+
+            # Przywracamy standardowe szerokości kolumn (dla metryk np. 100px)
+            new_data["w1"] = data.get("w1", "180px")
+            for c in range(2, new_data["num_cols"] + 1):
+                new_data[f"w{c}"] = "100px"
+
+            # 1. "Ćwiczenie" i wartość wracają na swoje miejsce (h1 i złączone r1c1)
+            new_data["h1"] = data.get("r1c1", "")
+            new_data["r1c1"] = data.get("r1c2", "")
+
+            # Odtwarzamy flagi scalenia (rowspan) w dół dla kolumny z nazwą ćwiczenia
+            for r in range(2, new_data["num_rows"] + 1):
+                new_data[f"m_r{r}c1"] = "1"
+
+            # 2. Reszta wierszy wraca do układu kolumnowego jako nagłówki i wartości
+            for old_r in range(2, num_rows + 1):
+                new_c = old_r
+                new_data[f"h{new_c}"] = data.get(f"r{old_r}c1", "")
+
+                for old_c in range(2, num_cols + 1):
+                    new_r = old_c - 1
+                    new_data[f"r{new_r}c{new_c}"] = data.get(f"r{old_r}c{old_c}", "")
+
+        # Nadpisujemy stary stan czystą, nowo zmapowaną macierzą
         data = new_data
 
     # Renderujemy z powrotem cały szablon tabeli z nowymi danymi
@@ -766,3 +804,9 @@ async def duplicate_card(request: Request, uid: str):
 
     # 4. Renderujemy nową kartę
     return templates.TemplateResponse("_card.html", {"request": request, **processed_cards[0]})
+
+
+@app.get("/recent_workouts_html")
+async def recent_workouts_html(request: Request):
+    recent_workouts = get_recent_workouts()
+    return templates.TemplateResponse("_recent_list.html", {"request": request, "recent_workouts": recent_workouts})

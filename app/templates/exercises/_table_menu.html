@@ -45,10 +45,10 @@
             </button>
         </li>
         <li>
-            <button class="dropdown-item fw-bold text-info" type="button" hx-post="/card/table/action/{{ unique_id }}"
-                hx-vals='{"action": "transpose"}' hx-include="#table-{{ unique_id }} input"
-                hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
-                <i class="bi bi-arrow-repeat me-2"></i>Transpozycja (obróć tabelę)
+            <button class="dropdown-item fw-bold text-primary" type="button"
+                hx-post="/card/table/action/{{ unique_id }}" hx-vals='{"action": "transpose"}'
+                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-arrow-repeat me-2"></i>Obróć układ tabeli (Transpose)
             </button>
         </li>
         <li>

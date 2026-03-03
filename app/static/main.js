@@ -1,11 +1,65 @@
-// app/static/main.js
+// main.js
+
+// zmiany
+import { initSidebar } from './ui.js';
+import { initImportExport } from './import_export.js';
+import { triggerSave, debounce, getFormattedTimestamp } from './storage.js';
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Inicjalizacja UI
+    initSidebar();
+    initImportExport();
+
+    // 2. Podpięcie przycisków ręcznych
+    document.getElementById('sidebar-save-btn')?.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        triggerSave('save', false); 
+    });
+
+    document.getElementById('sidebar-export-btn')?.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        triggerSave('export', false); 
+    });
+
+    // 3. Konfiguracja Auto-Save
+    const autoSave = debounce(() => {
+        const filenameInput = document.querySelector('input[name="current_filename"]');
+        let justGeneratedNewName = false; // Tworzymy nową flagę
+        
+        if (!filenameInput.value || filenameInput.value.trim() === '') {
+            filenameInput.value = 'nowy_trening_temp_' + getFormattedTimestamp() + '.json';
+            justGeneratedNewName = true; // Zaznaczamy, że to był świeży plik
+        }
+        
+        // Przekazujemy naszą flagę jako 3. argument
+        triggerSave('save', true, justGeneratedNewName); 
+    }, 2000);
+
+    // PANCERNE NASŁUCHIWANIE (Działa nawet po przeładowaniu HTMX)
+    document.body.addEventListener('input', (e) => {
+        // Sprawdzamy, czy edytowany element znajduje się w naszym formularzu
+        if (e.target.closest('#fields-container')) {
+            console.log("Wykryto zmianę! Czekam 2 sekundy..."); // Zostaw to do testów
+            autoSave();
+        }
+    });
+
+    document.body.addEventListener('change', (e) => {
+        if (e.target.closest('#fields-container')) {
+            autoSave();
+        }
+    });
+});
+
+
+
 
 // ==========================================
-// 1. FUNKCJE POMOCNICZE
+// 2. FUNKCJE POMOCNICZE
 // ==========================================
 
 // Obsługa parsowania HTML do struktury JSON
-function htmlTreeToJson(element) {
+window.htmlTreeToJson = function htmlTreeToJson(element) {
     let data = {};
     let items = [];
 
@@ -38,174 +92,6 @@ function htmlTreeToJson(element) {
 
     return data;
 }
-
-
-// ==========================================
-// 2. INICJALIZACJA APLIKACJI (po załadowaniu DOM)
-// ==========================================
-document.addEventListener('DOMContentLoaded', function() {
-
-    // --- Obsługa HAMBURGERA (zwijanie/rozwijanie z pamięcią localStorage) ---
-    const sidebar = document.getElementById('sidebar');
-    const hamburgerBtn = document.getElementById('hamburger-btn');
-    
-    // 1. Przy starcie strony sprawdzamy, co przeglądarka zapamiętała
-    if (localStorage.getItem('sidebarState') === 'open') {
-        sidebar.classList.remove('collapsed');
-    } else if (localStorage.getItem('sidebarState') === 'closed') {
-        sidebar.classList.add('collapsed');
-    }
-
-    if (hamburgerBtn && sidebar) {
-        hamburgerBtn.addEventListener('click', function() {
-            sidebar.classList.toggle('collapsed');
-            
-            // 2. Zapisujemy decyzję użytkownika po każdym kliknięciu
-            if (sidebar.classList.contains('collapsed')) {
-                localStorage.setItem('sidebarState', 'closed');
-            } else {
-                localStorage.setItem('sidebarState', 'open');
-            }
-        });
-    }
-
-    // --- Obsługa przycisku IMPORT z menu bocznego ---
-    const importBtn = document.getElementById('sidebar-import-btn');
-    const fileInput = document.getElementById('sidebar-file-input');
-    const submitBtn = document.getElementById('sidebar-submit-btn');
-
-    if (importBtn && fileInput && submitBtn) {
-        importBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            fileInput.click(); // Otwiera okno wyboru pliku
-        });
-
-        fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                submitBtn.click(); // Automatycznie wysyła ukryty formularz HTMX
-            }
-        });
-    }
-
-    // --- GŁÓWNA FUNKCJA ZAPISU (Zabezpieczona z Auto-Save) ---
-    const mainForm = document.getElementById('form');
-    const saveActionInput = document.getElementById('hidden-save-action');
-
-    function triggerSave(actionType, isAutoSave = false) {
-        if (!mainForm || !saveActionInput) return;
-
-        saveActionInput.value = actionType;
-
-        // Zbieramy aktualne dane z ekranu
-        const rootElement = document.getElementById('fields-container');
-        const structure = htmlTreeToJson(rootElement);
-        document.getElementById('hidden-json-input').value = JSON.stringify(structure);
-
-        // Jeśli to eksport, pozwalamy przeglądarce pobrać plik i przerywamy fetchowanie
-        if (actionType === 'export') {
-            mainForm.submit();
-            return;
-        }
-
-        const formData = new FormData(mainForm);
-        const isNewFile = !formData.get('current_filename'); 
-
-        const saveBtn = document.getElementById('sidebar-save-btn');
-        
-        // KLUCZOWE: Domyślny wygląd przycisku trzymamy "na sztywno", żeby uniknąć pułapki stanu UI
-        const defaultBtnHtml = '<i class="bi bi-floppy"></i> <span class="menu-text">Zapisz</span>';
-
-        if (saveBtn) {
-            // Reakcja wizualna w zależności od tego, czy to zapis ręczny czy auto-zapis z tła
-            if (isAutoSave) {
-                saveBtn.innerHTML = '<i class="bi bi-arrow-repeat spin-icon"></i> <span class="menu-text">Auto-zapis...</span>';
-            } else {
-                saveBtn.innerHTML = '<i class="bi bi-hourglass-split spin-icon"></i> <span class="menu-text">Zapisywanie...</span>';
-            }
-        }
-
-        // Wysyłamy żądanie w tle
-        fetch('/save', {
-            method: 'POST',
-            body: formData
-        }).then(response => {
-            // Jeśli serwer wyrzucił błąd (np. 400 lub 500), przechodzimy do catch
-            if (!response.ok) {
-                throw new Error("Błąd serwera: " + response.status);
-            }
-            
-            if (isNewFile) {
-                // Nowy plik wymaga odświeżenia, aby pojawił się na liście w menu po lewej
-                window.location.reload();
-            } else {
-                // Zwykłe nadpisanie (lub Auto-Zapis) - dajemy feedback i przywracamy domyślny wygląd przycisku
-                if (saveBtn) {
-                    saveBtn.innerHTML = '<i class="bi bi-check-lg text-success"></i> <span class="menu-text text-success">Zapisano!</span>';
-                    setTimeout(() => {
-                        saveBtn.innerHTML = defaultBtnHtml;
-                    }, 2000);
-                }
-            }
-        }).catch(error => {
-            console.error("Błąd podczas zapisu:", error);
-            if (saveBtn) {
-                // Jeśli coś pójdzie nie tak, pokazujemy czerwony błąd
-                saveBtn.innerHTML = '<i class="bi bi-x-circle text-danger"></i> <span class="menu-text text-danger">Błąd zapisu!</span>';
-                setTimeout(() => {
-                    saveBtn.innerHTML = defaultBtnHtml;
-                }, 3000);
-            }
-        });
-    }
-
-    // Standardowe kliknięcia w menu (zapis ręczny)
-    document.getElementById('sidebar-save-btn')?.addEventListener('click', (e) => { 
-        e.preventDefault(); 
-        triggerSave('save', false); 
-    });
-
-    document.getElementById('sidebar-export-btn')?.addEventListener('click', (e) => { 
-        e.preventDefault(); 
-        triggerSave('export', false); 
-    });
-
-    // --- GŁÓWNE ZDARZENIE FORMULARZA: Budowanie JSON-a przed klasycznym wysłaniem ---
-    if (mainForm) {
-        mainForm.addEventListener('submit', function (e) {
-            const rootElement = document.getElementById('fields-container');
-            const structure = htmlTreeToJson(rootElement);
-            document.getElementById('hidden-json-input').value = JSON.stringify(structure);
-            console.log("WYSYŁANY JSON:", JSON.stringify(structure, null, 2));
-        });
-    }
-
-    // ==========================================
-    // AUTO-SAVE (Debouncing)
-    // ==========================================
-    function debounce(func, wait) {
-        let timeout;
-        return function(...args) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), wait);
-        };
-    }
-
-    const autoSave = debounce(() => {
-        const currentFilename = document.querySelector('input[name="current_filename"]')?.value;
-        // Wymuszamy auto-zapis tylko wtedy, gdy edytujemy już istniejący plik na dysku
-        if (currentFilename && currentFilename.trim() !== '') {
-            triggerSave('save', true);
-        }
-    }, 2000);
-
-    // Event Delegation - łapiemy każdą zmianę w formularzu
-    const fieldsContainer = document.getElementById('fields-container');
-    if (fieldsContainer) {
-        fieldsContainer.addEventListener('input', autoSave);
-        fieldsContainer.addEventListener('change', autoSave);
-    }
-
-});
 
 
 // ==========================================

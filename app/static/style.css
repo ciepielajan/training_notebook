@@ -208,43 +208,67 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
 }
 
 /* ========================================== */
-/* 4. HISTORIA TRENINGÓW W PASKU BOCZNYM      */
+/* 4. ZARZĄDZANIE LISTAMI W PASKU BOCZNYM     */
 /* ========================================== */
 
-/* Kontener z listą zajmuje resztę miejsca i ma własny pasek przewijania */
-.sidebar .recent-workouts-container {
-    flex-grow: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    margin-bottom: 10px;
+/* Kontenery nadrzędne - trzymają proporcje flexboxa, ale same NIE posiadają scrolla */
+.sidebar .recent-workouts-container,
+.sidebar .folders-container {
     display: flex;
     flex-direction: column;
+    margin-bottom: 10px;
     transition: opacity 0.2s ease, visibility 0.2s ease;
+    overflow: hidden; /* Zapobiega wyciekaniu czegokolwiek poza ramki */
 }
 
-/* Gdy pasek jest zwinięty, całkowicie ukrywamy listę treningów (wraz z ikonami) */
-.sidebar.collapsed .recent-workouts-container {
+/* Utrzymujemy proporcje podziału wolnego miejsca (4 do 5) */
+.sidebar .folders-container {
+    flex: 4 1 0;
+}
+
+.sidebar .recent-workouts-container {
+    flex: 7 1 0;
+}
+
+/* WŁAŚCIWE PASKI PRZEWIJANIA - nałożone wyłącznie na listy (ul) */
+.sidebar .recent-workouts-container ul,
+.sidebar .folders-container ul {
+    flex: 1 1 0;   /* Lista ma zająć całą dostępną resztę miejsca w kontenerze */
+    min-height: 0; /* KLUCZOWE: Wymusza działanie scrolla wewnątrz Flex-itema */
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+/* Gdy pasek jest zwinięty, całkowicie ukrywamy kontenery */
+.sidebar.collapsed .recent-workouts-container,
+.sidebar.collapsed .folders-container {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
 }
 
-/* Subtelny, ciemny pasek przewijania (widoczny tylko w webkit/Chrome/Edge) */
-.sidebar .recent-workouts-container::-webkit-scrollbar {
+/* Przeniesiona stylizacja scrollbara bezpośrednio na tagi UL */
+.sidebar .recent-workouts-container ul::-webkit-scrollbar,
+.sidebar .folders-container ul::-webkit-scrollbar {
     width: 6px;
 }
-.sidebar .recent-workouts-container::-webkit-scrollbar-track {
+.sidebar .recent-workouts-container ul::-webkit-scrollbar-track,
+.sidebar .folders-container ul::-webkit-scrollbar-track {
     background: transparent;
 }
-.sidebar .recent-workouts-container::-webkit-scrollbar-thumb {
+.sidebar .recent-workouts-container ul::-webkit-scrollbar-thumb,
+.sidebar .folders-container ul::-webkit-scrollbar-thumb {
     background: #4b4d51;
     border-radius: 10px;
 }
-.sidebar .recent-workouts-container::-webkit-scrollbar-thumb:hover {
+.sidebar .recent-workouts-container ul::-webkit-scrollbar-thumb:hover,
+.sidebar .folders-container ul::-webkit-scrollbar-thumb:hover {
     background: #6a6c70;
 }
 
-/* Nagłówek "Ostatnie" */
+/* Nagłówki - bezpiecznie osadzone nad scrollującą się listą */
 .sidebar .sidebar-heading {
     padding: 10px 24px 5px 24px;
     font-size: 0.75rem;
@@ -253,9 +277,10 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
     text-transform: uppercase;
     letter-spacing: 0.5px;
     transition: opacity 0.2s, height 0.2s, padding 0.2s;
+    flex-shrink: 0; /* Zabezpiecza nagłówek przed byciem zgniecionym przez flexboxa */
 }
 
-/* Gdy menu jest zwinięte, całkowicie ukrywamy nagłówek "Ostatnie" */
+/* Gdy menu jest zwinięte, całkowicie ukrywamy nagłówki */
 .sidebar.collapsed .sidebar-heading {
     opacity: 0;
     height: 0;
