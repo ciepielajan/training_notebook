@@ -3,7 +3,28 @@ Serwer run
 uvicorn app.main:app --reload
 ```
 
-
+Serwer debug
+```
+launch.json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: FastAPI",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "app.main:app",  
+                "--reload",
+                "--port", "8000"
+            ],
+            "jinja": true,
+            "justMyCode": true
+        }
+    ]
+}
+```
 
 
 Serwer on your wifi
