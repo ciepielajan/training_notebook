@@ -45,12 +45,7 @@ export async function triggerSave(actionType, isAutoSave = false) {
         if (result.filename) {
             document.querySelector('input[name="current_filename"]').value = result.filename;
         }
-
-        /* UWAGA: Usunęliśmy isNewFile i dispatchEvent. 
-           Dlaczego? Bo przy tworzeniu pliku odświeżenie paska bocznego 
-           robi teraz Python przez HX-Trigger w "/new_workout".
-        */
-        
+       
         // Feedback sukcesu
         if (saveBtn) {
             saveBtn.innerHTML = '<i class="bi bi-check-lg text-success"></i> <span class="menu-text text-success">Zapisano!</span>';

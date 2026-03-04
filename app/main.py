@@ -129,7 +129,14 @@ def process_spider_json(spider_data):
 
 
 @app.get("/card", response_class=HTMLResponse)
-async def field_fragment(request: Request, size: str = "", type: str = "running", value: str = "", label: str = ""):
+async def field_fragment(
+    request: Request,
+    size: str = "",
+    type: str = "running",
+    value: str = "",
+    label: str = "",
+    list_type: str = "bullet",
+):
     unique_id = secrets.token_hex(4)
     activities = SETTINGS.get("activities", {})
     options_list = activities.get(type) or []
@@ -144,8 +151,9 @@ async def field_fragment(request: Request, size: str = "", type: str = "running"
                 "activity": {"value": value, "label": label},
                 "details": [],
                 "size": size,
-                "level": get_header_level(size) if type == "text" else 0,  # Używamy funkcji
+                "level": get_header_level(size) if type == "text" else 0,
                 "collapsed": "false",
+                "list_type": list_type,
             },
             "options": options_list,
         },
@@ -747,24 +755,24 @@ async def duplicate_workout(filename: str):
     return response
 
 
-# @app.get("/add_list_item/{parent_id}", response_class=HTMLResponse)
-# async def add_list_item(request: Request, parent_id: str, list_type: str = "bullet"):
+@app.get("/add_list_item/{parent_id}", response_class=HTMLResponse)
+async def add_list_item(request: Request, parent_id: str, list_type: str = "bullet"):
 
-#     # Decydujemy, co jest znacznikiem na podstawie przekazanego typu
-#     if list_type == "checklist":
-#         marker = (
-#             '<input class="form-check-input me-2 mt-0 shadow-none border-secondary" type="checkbox" name="is_checked">'
-#         )
-#     else:
-#         marker = '<span class="me-2 text-secondary list-marker"></span>'
+    # Decydujemy, co jest znacznikiem na podstawie przekazanego typu
+    if list_type == "checklist":
+        marker = (
+            '<input class="form-check-input me-2 mt-0 shadow-none border-secondary" type="checkbox" name="is_checked">'
+        )
+    else:
+        marker = '<span class="me-2 text-secondary list-marker"></span>'
 
-#     return f"""
-#     <div class="node list-item-row d-flex align-items-center mb-1">
-#         {marker}
-#         <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0"
-#                name="content" placeholder="Nowy punkt..." value="">
-#     </div>
-#     """
+    return f"""
+    <div class="node list-item-row d-flex align-items-center mb-1">
+        {marker}
+        <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0"
+               name="content" placeholder="Nowy punkt..." value="">
+    </div>
+    """
 
 
 @app.post("/card/repetition/duplicate/{uid}", response_class=HTMLResponse)
