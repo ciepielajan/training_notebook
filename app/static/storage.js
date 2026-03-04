@@ -1,42 +1,30 @@
 // storage.js
 
-// Funkcja formatująca datę (z naszej poprzedniej rozmowy)
-export function getFormattedTimestamp() {
-    const now = new Date();
-    const yy = String(now.getFullYear()).slice(-2);
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const hh = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    const ss = String(now.getSeconds()).padStart(2, '0');
-    return `${yy}${mm}${dd}${hh}${min}${ss}`;
-}
-
 // Główna funkcja zapisu
-export async function triggerSave(actionType, isAutoSave = false, isNewlyGenerated = false) {
+export async function triggerSave(actionType, isAutoSave = false) {
     const mainForm = document.getElementById('form');
     const saveActionInput = document.getElementById('hidden-save-action');
     if (!mainForm || !saveActionInput) return;
 
     saveActionInput.value = actionType;
 
-    // Budowanie JSON (Zakładam, że funkcja htmlTreeToJson jest dostępna globalnie)
+    // Budowanie JSON
     const rootElement = document.getElementById('fields-container');
-    const structure = htmlTreeToJson(rootElement);
+    // Używamy window. dla pewności, że moduł widzi funkcję z main.js
+    const structure = window.htmlTreeToJson(rootElement); 
     document.getElementById('hidden-json-input').value = JSON.stringify(structure);
 
+    // Eksport obsługujemy klasycznie przez submit (pobieranie pliku)
     if (actionType === 'export') {
         mainForm.submit();
         return;
     }
 
     const formData = new FormData(mainForm);
-    const isNewFile = !formData.get('current_filename') || 
-                      formData.get('current_filename').trim() === '' || 
-                      isNewlyGenerated;
     const saveBtn = document.getElementById('sidebar-save-btn');
     const defaultBtnHtml = '<i class="bi bi-floppy"></i> <span class="menu-text">Zapisz</span>';
 
+    // UI Feedback
     if (saveBtn) {
         saveBtn.innerHTML = isAutoSave 
             ? '<i class="bi bi-arrow-repeat spin-icon"></i> <span class="menu-text">Auto-zapis...</span>'
@@ -45,34 +33,33 @@ export async function triggerSave(actionType, isAutoSave = false, isNewlyGenerat
 
     try {
         const response = await fetch('/save', { method: 'POST', body: formData });
+        
         if (!response.ok) throw new Error("Błąd serwera: " + response.status);
         
-        const result = await response.json(); // Oczekujemy JSON-a z serwera!
+        // Bezpieczne parsowanie JSON (zapobiega błędowi Unexpected end of input)
+        const text = await response.text();
+        if (!text) throw new Error("Pusta odpowiedź z serwera");
+        const result = JSON.parse(text);
 
-        // Aktualizujemy ukryte pole w HTML, żeby kolejny auto-zapis wiedział, na czym pracuje
+        // Zawsze aktualizujemy pole nazwy (źródło prawdy z serwera)
         if (result.filename) {
             document.querySelector('input[name="current_filename"]').value = result.filename;
         }
 
-        if (isNewFile) {
-            // =====================================
-            // KROK 4: Pancerne wywołanie HTMX
-            // =====================================
-            console.log("🔥 KROK 4: Wysyłam sygnał do HTMX o odświeżenie listy!");
-            
-            // Najbezpieczniejsza metoda: użycie wbudowanej funkcji HTMX
-            if (typeof htmx !== 'undefined') {
-                htmx.trigger("body", "updateSidebar");
-            } else {
-                // Metoda zapasowa z wymuszonym "bąbelkowaniem"
-                document.body.dispatchEvent(new CustomEvent("updateSidebar", { bubbles: true }));
-            }
-        }
+        /* UWAGA: Usunęliśmy isNewFile i dispatchEvent. 
+           Dlaczego? Bo przy tworzeniu pliku odświeżenie paska bocznego 
+           robi teraz Python przez HX-Trigger w "/new_workout".
+        */
         
-        // Feedback dla użytkownika
+        // Feedback sukcesu
         if (saveBtn) {
             saveBtn.innerHTML = '<i class="bi bi-check-lg text-success"></i> <span class="menu-text text-success">Zapisano!</span>';
-            setTimeout(() => { saveBtn.innerHTML = defaultBtnHtml; }, 2000);
+            setTimeout(() => { 
+                // Przywracamy domyślny wygląd tylko jeśli w międzyczasie nie odpalił się kolejny auto-zapis
+                if (!saveBtn.innerHTML.includes('spin-icon')) {
+                    saveBtn.innerHTML = defaultBtnHtml; 
+                }
+            }, 2000);
         }
 
     } catch (error) {
@@ -84,7 +71,6 @@ export async function triggerSave(actionType, isAutoSave = false, isNewlyGenerat
     }
 }
 
-// Funkcja debouncing dla Auto-Save
 export function debounce(func, wait) {
     let timeout;
     return function(...args) {

@@ -29,7 +29,7 @@ DATA_DIR = Path(SETTINGS.get("data_dir"))
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
-# --- SENIOR TRICK: Udostępniamy SETTINGS globalnie dla wszystkich szablonów ---
+# --- SETTINGS globalnie dla wszystkich szablonów ---
 templates.env.globals["SETTINGS"] = SETTINGS
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -117,9 +117,9 @@ def process_spider_json(spider_data):
     return processed_cards
 
 
-@app.get("/test", response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("test.html", {"request": request})
+# @app.get("/test", response_class=HTMLResponse)
+# async def index(request: Request):
+#     return templates.TemplateResponse("test.html", {"request": request})
 
 
 # @app.get("/field-fragment", response_class=HTMLResponse)
@@ -251,27 +251,56 @@ async def duplicate_series(request: Request, uid: str):
     return HTMLResponse(content=html_content)
 
 
+def create_and_render_workout(request: Request, workout_data: dict, file_prefix: str):
+    """
+    Wspólna logika dla tworzenia i ładowania treningów.
+    Zapisuje JSON na dysku, przetwarza karty i zwraca szablon dla HTMX.
+    """
+    # 1. GENERUJEMY NAZWĘ I ZAPISUJEMY PLIK
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    new_filename = f"{file_prefix}_{timestamp}.json"
+    file_path = DATA_DIR / new_filename
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(workout_data, f, ensure_ascii=False, indent=4)
+
+    # 2. PRZETWARZAMY DANE
+    cards_to_render = process_spider_json(workout_data)
+    context = {"request": request, "cards_list": cards_to_render, "current_filename": new_filename}
+
+    # 3. ZWRACAMY HTML I ODŚWIEŻAMY SIDEBAR
+    response = templates.TemplateResponse("_cards_list.html", context)
+    response.headers["HX-Trigger"] = "updateSidebar"
+
+    return response
+
+
 @app.get("/new_workout", response_class=HTMLResponse)
 async def new_workout(request: Request):
     unique_id = secrets.token_hex(4)
 
-    # Tworzymy Twój domyślny szablon startowy
+    # Tworzymy domyślny szablon startowy
     spider_json = {
         "items": [
             {"id": unique_id, "type": "text", "data": "", "head": "Trening Tempowy", "size": "fs-6"},
         ]
     }
 
-    # Przetwarzamy dane naszą funkcją
-    cards_to_render = process_spider_json(spider_json)
+    # Przekazujemy dane i przedrostek do wspólnej funkcji
+    return create_and_render_workout(request, spider_json, "nowy")
 
-    # KLUCZOWE: Ustawiamy current_filename na pusty string ("").
-    # Dzięki temu aplikacja wie, że to nowy, niezapisany plik i przy kliknięciu "Zapisz"
-    # wygeneruje nową nazwę z datą, zamiast nadpisywać poprzedni trening!
-    context = {"request": request, "cards_list": cards_to_render, "current_filename": ""}
 
-    # Zwracamy tylko wyrenderowane karty, żeby HTMX mógł podmienić środek ekranu
-    return templates.TemplateResponse("_cards_list.html", context)
+@app.post("/load", response_class=HTMLResponse)
+async def load(request: Request, file: UploadFile = File(...)):
+    content = await file.read()
+
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        return HTMLResponse("Błąd: Wgrany plik nie jest poprawnym formatem JSON", status_code=400)
+
+    # Przekazujemy wczytane dane i przedrostek "import"
+    return create_and_render_workout(request, data, "import")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -356,72 +385,40 @@ async def load_workout(request: Request, filename: str):
     return templates.TemplateResponse("_cards_list.html", context)
 
 
-@app.post("/load", response_class=HTMLResponse)
-async def load(request: Request, file: UploadFile = File(...)):
-    content = await file.read()
-    data = json.loads(content)
-
-    # Korzystamy z tej samej logiki transformacji
-    processed_cards = process_spider_json(data)
-
-    final_html = ""
-    for card in processed_cards:
-        final_html += templates.get_template("_card.html").render(
-            {"request": request, **card}  # Rozpakowuje unique_id, type, data, options
-        )
-
-    return final_html
-
-
 @app.post("/save")
 async def save(request: Request):
     form = await request.form()
     json_body = form.get("json_body")
-
-    # Pobieramy informacje o akcji i obecnie otwartym pliku z ukrytych inputów
-    save_action = form.get("save_action", "save")  # domyślnie "save"
+    save_action = form.get("save_action", "save")
     current_filename = form.get("current_filename", "").strip()
 
-    if not json_body:
-        return HTMLResponse("Błąd: Pusty formularz", status_code=400)
+    # Zabezpieczenie: formularz musi mieć nazwę pliku, bo nadało ją /new_workout
+    if not json_body or not current_filename:
+        return JSONResponse(
+            content={"status": "error", "message": "Błąd: Brak danych lub nazwy pliku"}, status_code=400
+        )
 
     try:
         data_structure = json.loads(json_body)
 
-        # ==========================================
-        # AKCJA 3: EKSPORTUJ (Tylko pobieranie)
-        # ==========================================
+        # AKCJA: EKSPORT (Zostaje bez zmian - po prostu pobieranie)
         if save_action == "export":
-            # Tworzymy plik w pamięci i wysyłamy do przeglądarki (omijamy dysk serwera)
             json_str = json.dumps(data_structure, ensure_ascii=False, indent=4)
-            dl_filename = current_filename if current_filename else "eksport_treningu.json"
             return Response(
                 content=json_str,
                 media_type="application/json",
-                headers={"Content-Disposition": f"attachment; filename={dl_filename}"},
+                headers={"Content-Disposition": f"attachment; filename={current_filename}"},
             )
 
-        # ==========================================
-        # AKCJA 2: ZAPISZ (Nowy plik lub nadpisanie)
-        # ==========================================
-        is_new_file = not current_filename
-
-        if is_new_file:
-            # UWAGA: Twój JS wysyła już wygenerowaną nazwę w current_filename,
-            # więc ten blok prawdopodobnie się nie wykona dla autozapisu,
-            # ale zostawiamy go jako zabezpieczenie.
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            target_filename = f"trening_{timestamp}.json"
-        else:
-            target_filename = Path(current_filename).name
-
+        # AKCJA: AUTO-ZAPIS / ZAPIS (Tylko nadpisanie)
+        # Bierzemy nazwę z formularza, czyścimy ścieżkę dla bezpieczeństwa
+        target_filename = Path(current_filename).name
         file_path = DATA_DIR / target_filename
 
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data_structure, f, ensure_ascii=False, indent=4)
 
-        # KLUCZOWA ZMIANA: Zawsze zwracamy JSON-a dla przeglądarki!
-        # Dzięki temu frontend wie, że się udało i poznaje nazwę pliku.
+        # Zwracamy informację o sukcesie
         return JSONResponse(content={"status": "success", "filename": target_filename})
 
     except json.JSONDecodeError:

@@ -1,9 +1,8 @@
 // main.js
 
-// zmiany
 import { initSidebar } from './ui.js';
 import { initImportExport } from './import_export.js';
-import { triggerSave, debounce, getFormattedTimestamp } from './storage.js';
+import { triggerSave, debounce } from './storage.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     // 1. Inicjalizacja UI
@@ -21,25 +20,16 @@ document.addEventListener('DOMContentLoaded', function() {
         triggerSave('export', false); 
     });
 
-    // 3. Konfiguracja Auto-Save
+    // 3. Konfiguracja Auto-Save (MOCNO ODCHUDZONA)
     const autoSave = debounce(() => {
-        const filenameInput = document.querySelector('input[name="current_filename"]');
-        let justGeneratedNewName = false; // Tworzymy nową flagę
-        
-        if (!filenameInput.value || filenameInput.value.trim() === '') {
-            filenameInput.value = 'nowy_trening_temp_' + getFormattedTimestamp() + '.json';
-            justGeneratedNewName = true; // Zaznaczamy, że to był świeży plik
-        }
-        
-        // Przekazujemy naszą flagę jako 3. argument
-        triggerSave('save', true, justGeneratedNewName); 
+        // Wszystko co robimy, to po prostu wywołujemy zapis po 2 sekundach bezczynności.
+        // Koniec z nadawaniem nazw po stronie JS!
+        triggerSave('save', true);
     }, 2000);
 
-    // PANCERNE NASŁUCHIWANIE (Działa nawet po przeładowaniu HTMX)
+    // PANCERNE NASŁUCHIWANIE (Zostaje jak było, bo jest świetne)
     document.body.addEventListener('input', (e) => {
-        // Sprawdzamy, czy edytowany element znajduje się w naszym formularzu
         if (e.target.closest('#fields-container')) {
-            console.log("Wykryto zmianę! Czekam 2 sekundy..."); // Zostaw to do testów
             autoSave();
         }
     });
