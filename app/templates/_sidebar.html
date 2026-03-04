@@ -7,14 +7,14 @@
     </div>
 
     <div class="mb-2">
-        <a href="#" class="nav-link" hx-get="/new_workout" hx-target="#fields-container" hx-swap="innerHTML">
+        <a href="#" class="nav-link" hx-get="/new_workout" hx-target="#form" hx-swap="innerHTML">
             <i class="bi bi-plus-lg"></i>
             <span class="menu-text">Nowy trening</span>
         </a>
     </div>
 
     <div class="mb-1">
-        <form id="sidebar-upload-form" hx-post="/load" hx-target="#fields-container" hx-swap="innerHTML"
+        <form id="sidebar-upload-form" hx-post="/load" hx-target="#form" hx-swap="innerHTML"
             enctype="multipart/form-data" style="display: none;">
             <input type="file" id="sidebar-file-input" name="file" accept=".json">
             <button type="submit" id="sidebar-submit-btn"></button>

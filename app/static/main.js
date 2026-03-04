@@ -27,15 +27,17 @@ document.addEventListener('DOMContentLoaded', function() {
         triggerSave('save', true);
     }, 2000);
 
-    // PANCERNE NASŁUCHIWANIE (Zostaje jak było, bo jest świetne)
+    // PANCERNE NASŁUCHIWANIE
     document.body.addEventListener('input', (e) => {
-        if (e.target.closest('#fields-container')) {
+        // ZMIANA: Nasłuchujemy zmian w CAŁYM formularzu (nagłówek + karty)
+        if (e.target.closest('#form')) {
             autoSave();
         }
     });
 
     document.body.addEventListener('change', (e) => {
-        if (e.target.closest('#fields-container')) {
+        // ZMIANA: Podobnie tutaj
+        if (e.target.closest('#form')) {
             autoSave();
         }
     });
@@ -187,7 +189,7 @@ document.addEventListener('keydown', function(e) {
 // 5. ZARZĄDZANIE WIDOCZNOŚCIĄ SEKCJI (ZAGNIEDŻDZENIA H1-H4)
 // ==========================================
 
-function toggleSection(button) {
+window.toggleSection = function(button) {
     const row = button.closest('.exercise-row');
     const collapsedInput = row.querySelector('input[name="collapsed"]');
     

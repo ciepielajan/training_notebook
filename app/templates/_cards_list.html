@@ -1,7 +1,5 @@
-<input type="hidden" name="current_filename" value="{{ current_filename | default('') }}">
-
 {% for card in cards_list %}
-    {% with type=card.type, unique_id=card.unique_id, data=card.data, options=card.options %}
-       {% include "_card.html" %}
-    {% endwith %}
+{% with type=card.type, unique_id=card.unique_id, data=card.data, options=card.options %}
+{% include "_card.html" %}
+{% endwith %}
 {% endfor %}

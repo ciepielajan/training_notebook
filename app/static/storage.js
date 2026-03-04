@@ -9,7 +9,7 @@ export async function triggerSave(actionType, isAutoSave = false) {
     saveActionInput.value = actionType;
 
     // Budowanie JSON
-    const rootElement = document.getElementById('fields-container');
+    const rootElement = document.getElementById('form');
     // Używamy window. dla pewności, że moduł widzi funkcję z main.js
     const structure = window.htmlTreeToJson(rootElement); 
     document.getElementById('hidden-json-input').value = JSON.stringify(structure);

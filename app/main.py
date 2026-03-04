@@ -274,12 +274,16 @@ def create_and_render_workout(request: Request, workout_data: dict, file_prefix:
 
     # 2. PRZETWARZAMY DANE
     cards_to_render = process_spider_json(workout_data)
-    context = {"request": request, "cards_list": cards_to_render, "current_filename": new_filename}
+    context = {
+        "request": request,
+        "cards_list": cards_to_render,
+        "current_filename": new_filename,
+        "workout_data": workout_data,
+    }
 
-    # 3. ZWRACAMY HTML I ODŚWIEŻAMY SIDEBAR
-    response = templates.TemplateResponse("_cards_list.html", context)
+    # ZMIANA: Zwracamy _workout_content.html zamiast _cards_list.html
+    response = templates.TemplateResponse("_workout_content.html", context)
     response.headers["HX-Trigger"] = "updateSidebar"
-
     return response
 
 
@@ -375,6 +379,7 @@ async def index(request: Request):
 async def load_workout(request: Request, filename: str):
     # Tworzymy pełną ścieżkę do klikniętego pliku
     file_path = DATA_DIR / filename
+    spider_json = {}
 
     try:
         # 1. Wczytujemy plik z dysku
@@ -388,9 +393,16 @@ async def load_workout(request: Request, filename: str):
         print(f"BŁĄD: Nie można wczytać pliku {filename}: {e}")
         cards_to_render = []
 
-    # 3. Zwracamy TYLKO wyrenderowane karty (dzięki temu HTMX płynnie podmieni środek strony)
-    context = {"request": request, "cards_list": cards_to_render, "current_filename": filename}
-    return templates.TemplateResponse("_cards_list.html", context)
+    # 3. Zwracamy PEŁNĄ paczkę (Nagłówek + Karty + Inputy) i przekazujemy workout_data
+    context = {
+        "request": request,
+        "cards_list": cards_to_render,
+        "current_filename": filename,
+        "workout_data": spider_json,
+    }
+
+    # Zmieniamy zwracany szablon na naszą nową paczkę
+    return templates.TemplateResponse("_workout_content.html", context)
 
 
 @app.post("/save")

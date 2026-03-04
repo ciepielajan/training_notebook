@@ -1,0 +1,54 @@
+{% set w_data = workout_data | default({}) %}
+
+<div class="card shadow-sm mb-3 border-0 bg-light">
+    <div class="card-body p-2 px-3 d-flex flex-wrap flex-md-nowrap align-items-center gap-3">
+
+        <div class="form-floating flex-grow-1" style="min-width: 250px;">
+            <input type="text" class="form-control fw-bold border-secondary-subtle shadow-none bg-white"
+                id="visible-filename" name="current_filename" placeholder="Nazwa treningu"
+                value="{{ current_filename or w_data.get('current_filename', '') }}">
+            <label class="text-secondary" for="visible-filename">
+                <i class="bi bi-file-earmark-text me-1"></i> Nazwa pliku
+            </label>
+        </div>
+
+        <div class="form-floating" style="flex: 0 0 180px;">
+            <select class="form-select border-secondary-subtle shadow-none bg-white cursor-pointer"
+                name="workout_category">
+                <option value="default" {% if w_data.get('workout_category')=='default' %}selected{% endif %}>Ogólne
+                </option>
+                <option value="sprint" {% if w_data.get('workout_category')=='sprint' %}selected{% endif %}>Sprint
+                </option>
+                <option value="strength" {% if w_data.get('workout_category')=='strength' %}selected{% endif %}>Siła
+                </option>
+                <option value="endurance" {% if w_data.get('workout_category')=='endurance' %}selected{% endif %}>
+                    Wytrzymałość</option>
+                <option value="recovery" {% if w_data.get('workout_category')=='recovery' %}selected{% endif %}>
+                    Regeneracja</option>
+            </select>
+            <label class="text-secondary"><i class="bi bi-tag me-1"></i> Kategoria</label>
+        </div>
+
+        <div class="form-floating" style="flex: 0 0 180px;">
+            <select class="form-select border-secondary-subtle shadow-none bg-white cursor-pointer"
+                name="workout_folder">
+                <option value="/" {% if w_data.get('workout_folder')=='/' %}selected{% endif %}>/ Główny</option>
+                <option value="/mikrocykl_1" {% if w_data.get('workout_folder')=='/mikrocykl_1' %}selected{% endif %}>/
+                    Mikrocykl 1</option>
+                <option value="/testy" {% if w_data.get('workout_folder')=='/testy' %}selected{% endif %}>/ Testy
+                </option>
+            </select>
+            <label class="text-secondary"><i class="bi bi-folder2-open me-1"></i> Folder</label>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-center px-3 border-start" style="min-width: 140px;">
+            <button type="button"
+                class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2"
+                id="sidebar-save-btn" title="Zapisz teraz" onclick="triggerSave('save', false)">
+                <i class="bi bi-floppy fs-5"></i>
+                <span class="menu-text fw-medium">Zapisz</span>
+            </button>
+        </div>
+
+    </div>
+</div>
