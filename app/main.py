@@ -1,5 +1,5 @@
-from fastapi import UploadFile, File
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi import UploadFile, File, status
+from fastapi.responses import JSONResponse, Response
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -115,17 +115,6 @@ def process_spider_json(spider_data):
             }
         )
     return processed_cards
-
-
-# @app.get("/test", response_class=HTMLResponse)
-# async def index(request: Request):
-#     return templates.TemplateResponse("test.html", {"request": request})
-
-
-# @app.get("/field-fragment", response_class=HTMLResponse)
-# async def field_fragment(request: Request):
-#     # zwraca fragment HTML (jedna linia pól)
-#     return templates.TemplateResponse("_fields_fragment.html", {"request": request})
 
 
 @app.get("/card", response_class=HTMLResponse)
@@ -405,46 +394,53 @@ async def load_workout(request: Request, filename: str):
     return templates.TemplateResponse("_workout_content.html", context)
 
 
+# --- ENDPOINT 1: Cichy Auto-Zapis (Dla HTMX) ---
 @app.post("/save")
 async def save(request: Request):
     form = await request.form()
     json_body = form.get("json_body")
-    save_action = form.get("save_action", "save")
     current_filename = form.get("current_filename", "").strip()
 
-    # Zabezpieczenie: formularz musi mieć nazwę pliku, bo nadało ją /new_workout
     if not json_body or not current_filename:
-        return JSONResponse(
-            content={"status": "error", "message": "Błąd: Brak danych lub nazwy pliku"}, status_code=400
-        )
+        return JSONResponse(content={"status": "error", "message": "Brak danych"}, status_code=400)
 
     try:
         data_structure = json.loads(json_body)
-
-        # AKCJA: EKSPORT (Zostaje bez zmian - po prostu pobieranie)
-        if save_action == "export":
-            json_str = json.dumps(data_structure, ensure_ascii=False, indent=4)
-            return Response(
-                content=json_str,
-                media_type="application/json",
-                headers={"Content-Disposition": f"attachment; filename={current_filename}"},
-            )
-
-        # AKCJA: AUTO-ZAPIS / ZAPIS (Tylko nadpisanie)
-        # Bierzemy nazwę z formularza, czyścimy ścieżkę dla bezpieczeństwa
         target_filename = Path(current_filename).name
         file_path = DATA_DIR / target_filename
 
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data_structure, f, ensure_ascii=False, indent=4)
 
-        # Zwracamy informację o sukcesie
-        return JSONResponse(content={"status": "success", "filename": target_filename})
+        # Zwracamy pustą odpowiedź (HTMX i tak to ignoruje dzięki hx-swap="none")
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    except json.JSONDecodeError:
-        return JSONResponse(content={"status": "error", "message": "Nieprawidłowy format JSON"}, status_code=400)
     except Exception as e:
-        return JSONResponse(content={"status": "error", "message": f"Błąd zapisu: {str(e)}"}, status_code=500)
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+
+# --- ENDPOINT 2: Pobieranie pliku (Eksport - Omija HTMX) ---
+@app.post("/export")
+async def export(request: Request):
+    form = await request.form()
+    json_body = form.get("json_body")
+    current_filename = form.get("current_filename", "export.json").strip()
+
+    if not json_body:
+        return JSONResponse(content={"status": "error", "message": "Brak danych"}, status_code=400)
+
+    try:
+        # Formatujemy ładnie JSONa do pobrania
+        data_structure = json.loads(json_body)
+        json_str = json.dumps(data_structure, ensure_ascii=False, indent=4)
+
+        return Response(
+            content=json_str,
+            media_type="application/json",
+            headers={"Content-Disposition": f"attachment; filename={current_filename}"},
+        )
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
 
 
 # ==========================================
@@ -731,7 +727,6 @@ async def delete_workout(filename: str):
     if file_path.exists():
         file_path.unlink()
 
-    # Mówimy HTMX-owi: "Udało się, odśwież całą stronę"
     response = Response(status_code=200)
     response.headers["HX-Refresh"] = "true"
     return response
@@ -769,22 +764,12 @@ async def duplicate_workout(filename: str):
 
 @app.get("/add_list_item/{parent_id}", response_class=HTMLResponse)
 async def add_list_item(request: Request, parent_id: str, list_type: str = "bullet"):
+    # Przygotowujemy "pusty" obiekt elementu, aby partial wiedział co renderować
+    empty_item = {"content": "", "is_checked": False}
 
-    # Decydujemy, co jest znacznikiem na podstawie przekazanego typu
-    if list_type == "checklist":
-        marker = (
-            '<input class="form-check-input me-2 mt-0 shadow-none border-secondary" type="checkbox" name="is_checked">'
-        )
-    else:
-        marker = '<span class="me-2 text-secondary list-marker"></span>'
-
-    return f"""
-    <div class="node list-item-row d-flex align-items-center mb-1">
-        {marker}
-        <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0"
-               name="content" placeholder="Nowy punkt..." value="">
-    </div>
-    """
+    return templates.TemplateResponse(
+        "exercises/list_item.html", {"request": request, "item": empty_item, "list_type": list_type}
+    )
 
 
 @app.post("/card/repetition/duplicate/{uid}", response_class=HTMLResponse)

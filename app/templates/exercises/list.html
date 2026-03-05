@@ -1,29 +1,14 @@
 <input type="hidden" name="type" value="list">
 <div class="input-group-vertical node" data-children-key="items">
 
-    <input type="hidden" name="list_type" value="{{ data.list_type | default('bullet') }}">
+    {% set list_type = data.list_type | default('bullet') %}
+    <input type="hidden" name="list_type" value="{{ list_type }}">
 
-    <div class="list-items-container list-items-container-{{ data.list_type | default('bullet') }} ps-3 border-start">
-
-        {% set items = data.get('items', []) %}
-        {% if not items %}
-        {% set items = [{'content': ''}] %}
-        {% endif %}
+    <div class="list-items-container list-items-container-{{ list_type }} ps-3 border-start">
+        {% set items = data.get('items', [{'content': ''}]) %}
 
         {% for item in items %}
-        <div class="node list-item-row d-flex align-items-center mb-1">
-
-            {% if (data.list_type | default('bullet')) == 'checklist' %}
-            <input class="form-check-input me-2 mt-0 shadow-none border-secondary" type="checkbox" name="is_checked" {%
-                if item.is_checked %}checked{% endif %}>
-            {% else %}
-            <span class="me-2 text-secondary list-marker"></span>
-            {% endif %}
-
-            <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0"
-                name="content" placeholder="Punkt listy..." value="{{ item.content or '' }}">
-        </div>
+            {% include 'exercises/list_item.html' with context %}
         {% endfor %}
-
     </div>
 </div>
