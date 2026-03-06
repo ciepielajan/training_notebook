@@ -70,7 +70,7 @@
 
                             {% set h_val = data['h' ~ c] if data['h' ~ c] is defined else (default_headers[c-1] if c <=
                                 default_headers|length else 'Nowa' ) %} {% with unique_id=unique_id, col_index=c,
-                                row_index=r, h_val=h_val, rowspan=ns.rs %} {% include "exercises/table_menu.html" %} {%
+                                row_index=r, h_val=h_val, rowspan=ns.rs %} {% include "blocks/table_menu.html" %} {%
                                 endwith %} </div>
                     </td>
                     {% endif %}

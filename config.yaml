@@ -6,7 +6,7 @@ system:
 
 paths:
   data_dir: "/home/janek/Dokumenty/my/training_notebook/outputs"
-  exercises_dir: "app/templates/exercises"
+  blocks_dir: "app/templates/blocks"
 
 block_names:
   table: "Tabela serii"

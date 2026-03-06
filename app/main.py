@@ -567,7 +567,7 @@ async def table_action(request: Request, uid: str):
         "unique_id": uid,
         "data": data,
     }
-    return templates.TemplateResponse("exercises/table.html", context)
+    return templates.TemplateResponse("blocks/table.html", context)
 
 
 # ==========================================
@@ -655,7 +655,7 @@ async def add_list_item(request: Request, parent_id: str, list_type: str = "bull
     empty_item = {"content": "", "is_checked": False}
 
     return templates.TemplateResponse(
-        "exercises/list_item.html", {"request": request, "item": empty_item, "list_type": list_type}
+        "blocks/list_item.html", {"request": request, "item": empty_item, "list_type": list_type}
     )
 
 

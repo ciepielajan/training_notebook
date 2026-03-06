@@ -8,7 +8,7 @@
         {% set items = data.get('items', [{'content': ''}]) %}
 
         {% for item in items %}
-            {% include 'exercises/list_item.html' with context %}
+        {% include 'blocks/list_item.html' with context %}
         {% endfor %}
     </div>
 </div>

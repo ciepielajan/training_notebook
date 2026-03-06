@@ -37,22 +37,47 @@ export function htmlTreeToJson(element) {
 
 // 2. Główna funkcja zapisu
 export async function triggerSave(actionType, isAutoSave = false) {
-    const mainForm = document.getElementById('form');
-    const saveActionInput = document.getElementById('hidden-save-action');
-    if (!mainForm || !saveActionInput) return;
+    const mainContainer = document.getElementById('form');
+    if (!mainContainer) return;
 
-    saveActionInput.value = actionType;
+    // Budujemy JSON z naszej struktury
+    const structure = htmlTreeToJson(mainContainer); 
+    const jsonString = JSON.stringify(structure);
+    
+    // Szukamy inputa z nazwą pliku
+    const filenameInput = document.querySelector('input[name="current_filename"]');
+    const currentFilename = filenameInput ? filenameInput.value : '';
 
-    const structure = htmlTreeToJson(mainForm); 
-    document.getElementById('hidden-json-input').value = JSON.stringify(structure);
-
+    // ==============================================
+    // OPCJA A: EKSPORT (Pobieranie pliku w oknie)
+    // ==============================================
     if (actionType === 'export') {
-        mainForm.action = '/export'; 
-        mainForm.method = 'POST';    
-        mainForm.submit();
+        // Tworzymy wirtualny formularz tylko po to, by pobrać plik (wymaga przeładowania okna do zapisu)
+        const tempForm = document.createElement('form');
+        tempForm.method = 'POST';
+        tempForm.action = '/export';
+        
+        const inputJson = document.createElement('input');
+        inputJson.type = 'hidden';
+        inputJson.name = 'json_body';
+        inputJson.value = jsonString;
+        tempForm.appendChild(inputJson);
+
+        const inputName = document.createElement('input');
+        inputName.type = 'hidden';
+        inputName.name = 'current_filename';
+        inputName.value = currentFilename;
+        tempForm.appendChild(inputName);
+
+        document.body.appendChild(tempForm);
+        tempForm.submit();
+        document.body.removeChild(tempForm);
         return;
     }
 
+    // ==============================================
+    // OPCJA B: ZAPIS (Auto-save lub Ręczny)
+    // ==============================================
     const saveBtn = document.getElementById('sidebar-save-btn');
     const defaultBtnHtml = '<i class="bi bi-floppy"></i> <span class="menu-text">Zapisz</span>';
     
@@ -61,7 +86,11 @@ export async function triggerSave(actionType, isAutoSave = false) {
     }
 
     try {
-        const formData = new FormData(mainForm);
+        // Ręcznie tworzymy ładunek z danymi
+        const formData = new FormData();
+        formData.append('json_body', jsonString);
+        formData.append('current_filename', currentFilename);
+
         const response = await fetch('/save', { method: 'POST', body: formData });
         
         if (!response.ok) throw new Error("Błąd serwera: " + response.status);
@@ -70,8 +99,8 @@ export async function triggerSave(actionType, isAutoSave = false) {
         const text = await response.text();
         if (text) {
             const result = JSON.parse(text);
-            if (result.filename) {
-                document.querySelector('input[name="current_filename"]').value = result.filename;
+            if (result.filename && filenameInput) {
+                filenameInput.value = result.filename;
             }
         }
        
@@ -89,7 +118,7 @@ export async function triggerSave(actionType, isAutoSave = false) {
     }
 }
 
-// 3. Funkcja opóźniająca (Auto-Save)
+// 3. Funkcja opóźniająca
 export function debounce(func, wait) {
     let timeout;
     return function(...args) {

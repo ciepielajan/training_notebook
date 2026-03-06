@@ -20,7 +20,7 @@ def load_settings(path: str = "config.yaml") -> dict:
 SETTINGS = load_settings()
 PATHS = SETTINGS.get("paths", {})
 DATA_DIR = Path(PATHS.get("data_dir")).resolve()
-EXERCISES_DIR = Path(PATHS.get("exercises_dir")).resolve()
+BLOCKS_DIR = Path(PATHS.get("blocks_dir")).resolve()
 
 
 def get_recent_workouts() -> list:
@@ -67,8 +67,8 @@ def process_spider_json(spider_data: dict) -> list:
         # ==========================================
         # DYNAMICZNA WERYFIKACJA SZABLONU
         # ==========================================
-        # Sprawdzamy czy fizycznie mamy plik, np. app/templates/exercises/running.html
-        if not card_type or not (EXERCISES_DIR / f"{card_type}.html").is_file():
+        # Sprawdzamy czy fizycznie mamy plik, np. app/templates/blocks/running.html
+        if not card_type or not (BLOCKS_DIR / f"{card_type}.html").is_file():
             data_obj["original_type"] = card_type or "brak"
             card_type = "deprecated"
 

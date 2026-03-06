@@ -19,10 +19,9 @@
     {% include "_sidebar.html" %}
 
     <main class="main-content">
-
-        <form id="form" action="/save" method="post" class="node" data-children-key="items">
+        <div id="form" class="node" data-children-key="items">
             {% include "_workout_content.html" %}
-        </form>
+        </div>
     </main>
 
     <script type="module" src="{{ url_for('static', path='main.js') }}?v=2"></script>
