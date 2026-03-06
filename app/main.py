@@ -178,25 +178,6 @@ async def custom_field(request: Request, label: str = ""):
         },
     )
 
-
-@app.get("/test_form", response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("test_form.html", {"request": request})
-
-
-@app.post("/add-input/{input_type}", response_class=HTMLResponse)
-def add_input(input_type: str):
-    if input_type not in {"text", "number"}:
-        return ""
-
-    return f"""
-    <div class="field">
-      <input type="{input_type}" name="value" value="1">
-      <input type="hidden" name="type" value="{input_type}">
-    </div>
-    """
-
-
 @app.post("/card/repetition/{uid}", response_class=HTMLResponse)
 async def duplicate_series(request: Request, uid: str):
     form_data = await request.form()
