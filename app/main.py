@@ -21,7 +21,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 async def field_fragment(
     request: Request,
     size: str = "",
-    type: str = "running",
+    type: str = "",
     value: str = "",
     label: str = "",
     list_type: str = "bullet",
