@@ -8,7 +8,9 @@ import datetime
 import secrets
 import json
 import shutil
+from pathlib import Path
 from app.utils import SETTINGS, DATA_DIR, get_header_level, get_recent_workouts, process_spider_json
+import traceback
 
 
 app = FastAPI()
@@ -298,6 +300,9 @@ async def save(request: Request):
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     except Exception as e:
+        print("\n--- BŁĄD ZAPISU AUTO-SAVE ---")
+        traceback.print_exc()
+        print("-----------------------------\n")
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
 
 
