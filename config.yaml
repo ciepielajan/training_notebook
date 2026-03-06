@@ -6,35 +6,12 @@ system:
 
 data_dir: "/home/janek/Dokumenty/my/training_notebook/outputs"
 
-activities:
-  running:
-    - Bieg
-    - Sprint
-    - Trucht
-    - Marszobieg
-    - Interwały
-    - Bieg z przeszkodami
-
-  exercise:
-    - Wieloskok
-    - Pompki
-    - Przysiady
-    - Brzuszki
-    - Burpees
-    - Podciąganie
-
-  gym:
-    - Wyciskanie
-    - Martwy ciąg
-
 block_names:
-  running: "Bieganie"
-  exercise: "Ćwiczenie"
-  gym: "Siłownia"
-  gym2: "Siłownia"
   table: "Tabela serii"
   list: "Lista punktowa"
-  text: "Tekst"
+  notes: "Tekst"
+  metadata: "Metadane"
+  deprecated: "Przestarzały element"
   text_1: "Nagłówek H1"
   text_2: "Nagłówek H2"
   text_3: "Nagłówek H3"

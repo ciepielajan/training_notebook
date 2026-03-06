@@ -4,30 +4,28 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Test styli</title>
+    <title>Trening App</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=1">
-    <!-- HTMX (CDN) - bardzo mała biblioteka -->
     <script src="https://unpkg.com/htmx.org"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=2">
 </head>
 
-<body class="p-4">
-    <div id="fields-container" class="container">
-        {% include "_card.html" %}
-    </div>
-    <div class="container controls" hx-target="#fields-container" hx-swap="beforeend">
-        <button type="button" hx-get="/card?type=running">
-            bieganie
-        </button>
-        <button type="button" hx-get="/card?type=exercise">
-            ćwiczenie
-        </button>
-        <button type="button" hx-get="/card?type=gym">
-            siłownia
-        </button>
-    </div>
+<body>
+
+    {% include "_sidebar.html" %}
+
+    <main class="main-content">
+
+        <form id="form" action="/save" method="post" class="node" data-children-key="items">
+            {% include "_workout_content.html" %}
+        </form>
+    </main>
+
+    <script type="module" src="{{ url_for('static', path='main.js') }}?v=2"></script>
 
 </body>
 

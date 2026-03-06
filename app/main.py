@@ -4,117 +4,18 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-import secrets
 import datetime
+import secrets
 import json
-from pathlib import Path
-import yaml
-import os
 import shutil
+from app.utils import SETTINGS, DATA_DIR, get_header_level, get_recent_workouts, process_spider_json
 
-
-def load_settings(path):
-    """Wczytuje opcje z pliku YAML. Jeśli błąd, zwraca domyślne."""
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f)
-    except FileNotFoundError:
-        print(f"⚠️ Plik {path} nie istnieje.")
-    except:
-        print("⚠️ Nieznany błąd")
-
-
-SETTINGS = load_settings(path="config.yaml")
-DATA_DIR = Path(SETTINGS.get("data_dir"))
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
 # --- SETTINGS globalnie dla wszystkich szablonów ---
 templates.env.globals["SETTINGS"] = SETTINGS
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-
-def get_recent_workouts():
-    """Funkcja pobiera pliki JSON z folderu i sortuje je od najnowszego."""
-    if not DATA_DIR.exists() or not DATA_DIR.is_dir():
-        print(f"BŁĄD: Folder z danymi nie istnieje: {DATA_DIR}")
-        return []
-
-    # Pobieramy tylko pliki .json i sortujemy po dacie modyfikacji (od najnowszego)
-    files = sorted(DATA_DIR.glob("*.json"), key=os.path.getmtime, reverse=True)
-
-    workouts = []
-    for f in files:
-        workouts.append({"filename": f.name, "name": f.stem})
-    return workouts
-
-
-def get_header_level(size_class: str) -> int:
-    """Zwraca poziom nagłówka na podstawie klasy rozmiaru (np. fs-1 -> 1)."""
-    if not size_class:
-        return 0
-    level_map = {"fs-1": 1, "fs-2": 2, "fs-3": 3, "fs-4": 4}
-    return next((v for k, v in level_map.items() if k in size_class), 0)
-
-
-def process_spider_json(spider_data):
-    processed_cards = []
-
-    for card in spider_data.get("items", []):
-        card_type = card.get("type")
-
-        # 1. SPRYTNE ROZPAKOWANIE DANYCH (Usunięto wadliwy wyjątek dla "list")
-        # Rozpakowujemy wiersz, JEŚLI ma wewnętrzną strukturę `items` z danymi
-        if (
-            card.get("items")
-            and isinstance(card["items"], list)
-            and len(card["items"]) > 0
-            and isinstance(card["items"][0], dict)
-        ):
-            data_obj = card["items"][0]
-        else:
-            data_obj = card
-
-        if not card_type:
-            card_type = data_obj.get("type")
-
-        # 2. UJEDNOLICENIE I ZABEZPIECZENIE TYPÓW
-        if card_type in ["running", "exercise", "running2", "gym", "gym2"]:
-            data_obj["activity"] = {"value": data_obj.get("head", ""), "label": data_obj.get("label", "")}
-            if card_type == "running2":
-                if not isinstance(data_obj.get("sets"), list):
-                    data_obj["sets"] = []
-            else:
-                if not isinstance(data_obj.get("details"), list):
-                    data_obj["details"] = []
-
-        if card_type == "list":
-            if "items" not in data_obj:
-                data_obj["items"] = []
-
-        # 3. ZARZĄDZANIE WIDOCZNOŚCIĄ (level i collapsed)
-        # Pobieramy stan z głównego 'card' (jeśli istnieje) lub jako fallback z 'data_obj'
-        if card_type == "text":
-            calc_level = get_header_level(data_obj.get("size", ""))
-        else:
-            calc_level = int(card.get("level", data_obj.get("level", 0)))
-
-        c_val = card.get("collapsed", data_obj.get("collapsed", "false"))
-        is_collapsed = "true" if str(c_val).lower() == "true" else "false"
-
-        # Nadpisujemy wartości w data_obj, bo Jinja2 odczytuje to przez {{ data.level }}
-        data_obj["level"] = calc_level
-        data_obj["collapsed"] = is_collapsed
-
-        processed_cards.append(
-            {
-                "unique_id": card.get("id") or secrets.token_hex(4),
-                "type": card_type,
-                "data": data_obj,
-                "options": SETTINGS.get("activities", {}).get(card_type, []),
-            }
-        )
-    return processed_cards
 
 
 @app.get("/card", response_class=HTMLResponse)
@@ -177,6 +78,7 @@ async def custom_field(request: Request, label: str = ""):
             "values": {"value": "", "label": label},
         },
     )
+
 
 @app.post("/card/repetition/{uid}", response_class=HTMLResponse)
 async def duplicate_series(request: Request, uid: str):
@@ -342,7 +244,7 @@ async def index(request: Request):
         "recent_workouts": recent_workouts,
         "current_filename": "",
     }
-    return templates.TemplateResponse("index_form.html", context)
+    return templates.TemplateResponse("index.html", context)
 
 
 @app.get("/load_workout/{filename}", response_class=HTMLResponse)
