@@ -18,11 +18,9 @@ def load_settings(path: str = "config.yaml") -> dict:
 
 # Globalna inicjalizacja konfiguracji
 SETTINGS = load_settings()
-DATA_DIR = Path(SETTINGS.get("data_dir", "outputs"))
-
-# NOWOŚĆ: Ścieżka bazowa i folder z naszymi szablonami bloków
-BASE_DIR = Path(__file__).resolve().parent
-EXERCISES_DIR = BASE_DIR / "templates" / "exercises"
+PATHS = SETTINGS.get("paths", {})
+DATA_DIR = Path(PATHS.get("data_dir")).resolve()
+EXERCISES_DIR = Path(PATHS.get("exercises_dir")).resolve()
 
 
 def get_recent_workouts() -> list:

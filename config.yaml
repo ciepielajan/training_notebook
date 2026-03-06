@@ -4,7 +4,9 @@ system:
   app_name: "Dziennik Treningowy"
   version: 1.0
 
-data_dir: "/home/janek/Dokumenty/my/training_notebook/outputs"
+paths:
+  data_dir: "/home/janek/Dokumenty/my/training_notebook/outputs"
+  exercises_dir: "app/templates/exercises"
 
 block_names:
   table: "Tabela serii"

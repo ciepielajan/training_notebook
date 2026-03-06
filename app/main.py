@@ -13,7 +13,6 @@ from app.utils import SETTINGS, DATA_DIR, get_header_level, get_recent_workouts,
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
-# --- SETTINGS globalnie dla wszystkich szablonów ---
 templates.env.globals["SETTINGS"] = SETTINGS
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
