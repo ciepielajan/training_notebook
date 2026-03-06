@@ -497,3 +497,76 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
     animation: spin 1s linear infinite;
     color: #0d6efd; /* Niebieski kolor bootstrapa oznaczający proces w tle */
 }
+
+
+/* STYLIZACJA PASKA AKCJI (PRZYCISKU) */
+.action-sidebar {
+    /* Domyślne zachowanie (wspólne) */
+    position: absolute;
+    z-index: 100;
+    transition: all 0.2s ease-out;
+}
+
+/* --- WERSJA DESKTOP (md i większe) --- */
+@media (min-width: 768px) {
+    .action-sidebar {
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 4.5rem;
+        /* ZWIĘKSZONE: robi miejsce na dwa przyciski */
+        display: flex;
+        flex-direction: row;
+        /* ZMIANA: przyciski układają się obok siebie */
+        justify-content: flex-start;
+        /* Zaczynamy od lewej krawędzi */
+        align-items: center;
+        /* Wyśrodkowanie w pionie */
+        gap: 4px;
+        /* Odstęp między przyciskami */
+        opacity: 1;
+        /* Zawsze widoczny */
+        pointer-events: auto;
+    }
+
+    /* Zapewniamy, że treść nie najedzie na szerszy pasek boczny */
+    .content-wrapper {
+        padding-left: 4.5rem !important;
+    }
+}
+
+/* --- WERSJA MOBILE (poniżej 768px) --- */
+@media (max-width: 767.98px) {
+    .action-sidebar {
+        /* Pozycjonowanie "DYMKA" pod wierszem */
+        left: 0;
+        top: 100%;
+        margin-top: -18px;
+        height: auto;
+        width: auto;
+
+        /* Wygląd przycisku na mobile */
+        background: white;
+        border-radius: 6px;
+        padding: 2px 4px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+        border: 1px solid #dee2e6;
+
+        /* Układ flex poziomy */
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+
+        /* Ukrywanie/Pokazywanie */
+        opacity: 0;
+        transform: translateY(5px);
+        pointer-events: none;
+    }
+
+    .exercise-row:focus-within .action-sidebar {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+        z-index: 1050;
+    }
+}
