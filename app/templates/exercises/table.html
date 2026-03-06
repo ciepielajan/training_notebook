@@ -3,111 +3,83 @@
 {% set default_headers = ["Ćwiczenie", "Powtórzenia", "Przerwa"] %}
 
 <div class="node mb-3 text-start" id="table-{{ unique_id }}">
-    
+
     <input type="hidden" name="type" value="table">
     <input type="hidden" name="num_rows" value="{{ num_rows }}">
     <input type="hidden" name="num_cols" value="{{ num_cols }}">
 
-    <style>
-        .wrapper-{{ unique_id }} {
-            border: 1px solid #dee2e6;
-            border-radius: 0.375rem;
-            overflow-x: auto;
-            background-color: #fff;
-            display: inline-block; 
-            max-width: 100%;       
-        }
-        .wrapper-{{ unique_id }} th,
-        .wrapper-{{ unique_id }} td {
-            border: 1px solid #dee2e6;
-            border-top: none;
-            border-left: none;
-        }
-        .wrapper-{{ unique_id }} th { border-bottom: none; }
-        .wrapper-{{ unique_id }} th:last-child,
-        .wrapper-{{ unique_id }} td:last-child { border-right: none; }
-        .wrapper-{{ unique_id }} tbody tr:last-child td { border-bottom: none; }
-    </style>
+    <div class="exercise-table-wrapper">
 
-    <div class="wrapper-{{ unique_id }}">
-        
         <table class="table w-auto mb-0 align-middle text-start" style="border-style: hidden; table-layout: fixed;">
-            
+
             <thead>
                 <tr>
                     {% for c in range(1, num_cols + 1) %}
-                    
-                        {% set h_val = data['h' ~ c] if data['h' ~ c] is defined else (default_headers[c-1] if c <= default_headers|length else 'Nowa') %}
-                        
-                        {% set stored_w = data['w' ~ c] %}
-                        {% if stored_w %}
-                            {% set set_width = stored_w %}
-                        {% elif h_val|lower == 'seria' %}
-                            {% set set_width = '60px' %}
-                        {% elif h_val|lower == 'ćwiczenie' %}
-                            {% set set_width = '180px' %}
-                        {% else %}
-                            {% set set_width = '100px' %}
-                        {% endif %}
 
-                    <th scope="col" class="p-0" style="width: {{ set_width }};">
-                        
+                    {% set h_val = data['h' ~ c] if data['h' ~ c] is defined else (default_headers[c-1] if c <=
+                        default_headers|length else 'Nowa' ) %} {% set stored_w=data['w' ~ c] %} {% if stored_w %} {%
+                        set set_width=stored_w %} {% elif h_val|lower=='seria' %} {% set set_width='60px' %} {% elif
+                        h_val|lower=='ćwiczenie' %} {% set set_width='180px' %} {% else %} {% set set_width='100px' %}
+                        {% endif %} <th scope="col" class="p-0" style="width: {{ set_width }};">
+
                         <input type="hidden" name="w{{ c }}" value="{{ set_width }}">
 
                         <div class="d-flex justify-content-between align-items-center ps-2 pe-1 pt-2 pb-0">
-                            
-                            <input type="text" class="form-control form-control-sm border-0 bg-transparent text-secondary shadow-none p-0 text-start fw-bold flex-grow-1"
-                                   style="font-size: 0.85rem; line-height: 1; min-width: 0;" 
-                                   name="h{{ c }}" value="{{ h_val }}">
+
+                            <input type="text"
+                                class="form-control form-control-sm border-0 bg-transparent text-secondary shadow-none p-0 text-start fw-bold flex-grow-1"
+                                style="font-size: 0.85rem; line-height: 1; min-width: 0;" name="h{{ c }}"
+                                value="{{ h_val }}">
                         </div>
-                    </th>
-                    {% endfor %}
+                        </th>
+                        {% endfor %}
                 </tr>
             </thead>
-            
+
             <tbody>
                 {% for r in range(1, num_rows + 1) %}
                 <tr>
                     {% for c in range(1, num_cols + 1) %}
-                    
+
                     {% set is_merged = data['m_r' ~ r ~ 'c' ~ c] == '1' %}
-                    
+
                     {% if is_merged %}
-                        <input type="hidden" name="m_r{{ r }}c{{ c }}" value="1">
+                    <input type="hidden" name="m_r{{ r }}c{{ c }}" value="1">
                     {% else %}
-                        {% set ns = namespace(rs=1, stop=false) %}
-                        {% for i in range(r + 1, num_rows + 1) %}
-                            {% if not ns.stop %}
-                                {% if data['m_r' ~ i ~ 'c' ~ c] == '1' %}
-                                    {% set ns.rs = ns.rs + 1 %}
-                                {% else %}
-                                    {% set ns.stop = true %}
-                                {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                        
-                        <td class="p-0 align-middle" rowspan="{{ ns.rs }}">
-                            {% set cell_val = data['r' ~ r ~ 'c' ~ c] if data['r' ~ r ~ 'c' ~ c] is defined else '' %}
-                            {% set padding_class = 'pt-0 pb-2' if r == 1 else 'py-2' %}
-                            
-                            <div class="d-flex justify-content-between align-items-center ps-2 pe-1 h-100 {{ padding_class }}">
-                                
-                                <input type="text" class="form-control border-0 shadow-none p-0 text-start bg-transparent w-100 h-100"
-                                       name="r{{ r }}c{{ c }}" value="{{ cell_val }}">
-                                
-                                {% set h_val = data['h' ~ c] if data['h' ~ c] is defined else (default_headers[c-1] if c <= default_headers|length else 'Nowa') %}
-                                {% with unique_id=unique_id, col_index=c, row_index=r, h_val=h_val, rowspan=ns.rs %}
-                                    {% include "exercises/_table_menu.html" %}
-                                {% endwith %}
-                            </div>
-                        </td>
+                    {% set ns = namespace(rs=1, stop=false) %}
+                    {% for i in range(r + 1, num_rows + 1) %}
+                    {% if not ns.stop %}
+                    {% if data['m_r' ~ i ~ 'c' ~ c] == '1' %}
+                    {% set ns.rs = ns.rs + 1 %}
+                    {% else %}
+                    {% set ns.stop = true %}
                     {% endif %}
-                    
+                    {% endif %}
+                    {% endfor %}
+
+                    <td class="p-0 align-middle" rowspan="{{ ns.rs }}">
+                        {% set cell_val = data['r' ~ r ~ 'c' ~ c] if data['r' ~ r ~ 'c' ~ c] is defined else '' %}
+                        {% set padding_class = 'pt-0 pb-2' if r == 1 else 'py-2' %}
+
+                        <div
+                            class="d-flex justify-content-between align-items-center ps-2 pe-1 h-100 {{ padding_class }}">
+
+                            <input type="text"
+                                class="form-control border-0 shadow-none p-0 text-start bg-transparent w-100 h-100"
+                                name="r{{ r }}c{{ c }}" value="{{ cell_val }}">
+
+                            {% set h_val = data['h' ~ c] if data['h' ~ c] is defined else (default_headers[c-1] if c <=
+                                default_headers|length else 'Nowa' ) %} {% with unique_id=unique_id, col_index=c,
+                                row_index=r, h_val=h_val, rowspan=ns.rs %} {% include "exercises/_table_menu.html" %} {%
+                                endwith %} </div>
+                    </td>
+                    {% endif %}
+
                     {% endfor %}
                 </tr>
                 {% endfor %}
             </tbody>
-            
+
         </table>
     </div>
 </div>
