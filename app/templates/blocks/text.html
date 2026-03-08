@@ -17,4 +17,7 @@
             <input type="hidden" name="size" value="{{ data.size }}">
         </div>
     </div>
+    {% if data.get('level', 0)|int > 0 %}
+    <div class="collapse-summary text-primary ps-4 pb-2" style="font-size: 0.8rem; display: none;"></div>
+    {% endif %}
 </div>

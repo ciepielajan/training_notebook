@@ -597,9 +597,8 @@ async def rename_workout(request: Request, filename: str):
     if old_path.exists() and not new_path.exists():
         old_path.rename(new_path)
 
-    # Mówimy HTMX-owi: "Udało się, odśwież całą stronę"
     response = Response(status_code=200)
-    response.headers["HX-Refresh"] = "true"
+    response.headers["HX-Trigger"] = "updateSidebar"
     return response
 
 
@@ -615,7 +614,7 @@ async def delete_workout(filename: str):
         file_path.unlink()
 
     response = Response(status_code=200)
-    response.headers["HX-Refresh"] = "true"
+    response.headers["HX-Trigger"] = "updateSidebar"
     return response
 
 
@@ -645,7 +644,7 @@ async def duplicate_workout(filename: str):
     shutil.copy2(old_path, new_path)
 
     response = Response(status_code=200)
-    response.headers["HX-Refresh"] = "true"
+    response.headers["HX-Trigger"] = "updateSidebar"
     return response
 
 
