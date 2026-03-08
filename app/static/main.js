@@ -4,6 +4,7 @@ import { initImportExport } from './import_export.js';
 import { triggerSave, debounce, htmlTreeToJson } from './storage.js';
 import { initCollapsible } from './collapsible.js';
 import { initLists } from './lists.js';
+import { initTable } from './table.js';
 
 // Eksponowanie funkcji dla atrybutów HTML (onclick="") oraz eventów HTMX
 window.triggerSave = triggerSave;
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initImportExport();
     initCollapsible();
     initLists();
+    initTable();
 
     // 2. Podpięcie przycisków ręcznych dla zapisu i eksportu
     document.getElementById('sidebar-save-btn')?.addEventListener('click', (e) => { 

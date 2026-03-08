@@ -1,0 +1,15 @@
+{% set padding_class = 'pt-0 pb-2' if r == 1 else 'py-2' %}
+
+<div class="d-flex justify-content-between align-items-center ps-2 pe-1 h-100 {{ padding_class }}">
+
+    {% if h_val|lower in ['ćwiczenie', 'produkt', 'składnik'] %}
+    {% include "blocks/table_dropdown_item.html" %}
+    {% else %}
+    <input type="text" class="form-control border-0 shadow-none p-0 text-start bg-transparent w-100 h-100"
+        name="r{{ r }}c{{ c }}" value="{{ cell_val }}">
+    {% endif %}
+
+    {% with unique_id=unique_id, col_index=c, row_index=r, h_val=h_val, rowspan=ns.rs %}
+    {% include "blocks/table_menu.html" %}
+    {% endwith %}
+</div>

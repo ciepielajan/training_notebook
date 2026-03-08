@@ -1,0 +1,54 @@
+<div class="dropdown w-100 h-100 d-flex align-items-center me-1">
+    <i class="bi bi-box-seam text-secondary me-2"></i>
+
+    <button class="btn btn-sm text-start flex-grow-1 border-0 shadow-none p-0 text-truncate" type="button"
+        data-bs-toggle="dropdown" aria-expanded="false" data-bs-popper-config='{"strategy":"fixed"}'
+        style="outline: none;">
+        <span class="item-name fw-medium" style="font-size: 14px;">
+            {{ cell_val if cell_val else 'Wybierz...' }}
+        </span>
+    </button>
+
+    <input type="hidden" name="r{{ r }}c{{ c }}" class="item-value-input" value="{{ cell_val }}">
+    <input type="hidden" name="r{{ r }}c{{ c }}_id" class="item-id-input"
+        value="{{ data['r' ~ r ~ 'c' ~ c ~ '_id'] | default('') }}">
+
+    <ul class="dropdown-menu shadow-sm" style="min-width: 260px; z-index: 1050;">
+
+        <li>
+            <h6 class="dropdown-header">Baza główna</h6>
+        </li>
+        <li>
+            <button class="dropdown-item d-flex align-items-center py-2" type="button"
+                onclick="selectItem(this, 'sys-1', 'Pozycja pierwsza')">
+                <i class="bi bi-heptagon-half me-2 text-primary"></i> Pozycja pierwsza
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item d-flex align-items-center py-2" type="button"
+                onclick="selectItem(this, 'sys-2', 'Pozycja druga')">
+                <i class="bi bi-heptagon-half me-2 text-primary"></i> Pozycja druga
+            </button>
+        </li>
+
+        <li>
+            <hr class="dropdown-divider">
+        </li>
+
+        <li>
+            <h6 class="dropdown-header">Twoje własne</h6>
+        </li>
+        <li>
+            <button class="dropdown-item d-flex align-items-center py-2" type="button"
+                onclick="selectItem(this, 'usr-1', 'Ulubiona pozycja')">
+                <i class="bi bi-person-fill me-2 text-success"></i> Ulubiona pozycja
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item text-primary fw-bold mt-1" type="button"
+                onclick="alert('Tu będzie logika dodawania nowego elementu')">
+                <i class="bi bi-plus-circle me-1"></i> Dodaj nowe...
+            </button>
+        </li>
+    </ul>
+</div>
