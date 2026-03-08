@@ -658,42 +658,6 @@ async def add_list_item(request: Request, parent_id: str, list_type: str = "bull
     )
 
 
-@app.post("/card/repetition/duplicate/{uid}", response_class=HTMLResponse)
-async def duplicate_card(request: Request, uid: str):
-    form_data = await request.form()
-    json_body = form_data.get("json_body")
-
-    if not json_body:
-        return HTMLResponse("Błąd: Brak danych strukturalnych", status_code=400)
-
-    data_tree = json.loads(json_body)
-
-    # 1. Szukamy karty o podanym ID
-    target_card = None
-    for card in data_tree.get("items", []):
-        if card.get("id") == uid:
-            target_card = card
-            break
-
-    if not target_card:
-        return HTMLResponse("Nie znaleziono karty do duplikacji", status_code=404)
-
-    # 2. CLEAN CODE: Jawnie usuwamy stare ID z obiektu.
-    # Co prawda szablon _card.html i tak zignoruje to pole (nadpisze je zmienną {{ unique_id }}),
-    # ale usunięcie go gwarantuje, że nie przenosimy "martwych" danych w backendzie.
-    target_card.pop("id", None)
-
-    # 3. Przetwarzamy kartę przez nasz standardowy pipeline – dostanie nowy `unique_id`
-    dummy_spider = {"items": [target_card]}
-    processed_cards = process_spider_json(dummy_spider)
-
-    if not processed_cards:
-        return HTMLResponse("Błąd przetwarzania karty", status_code=500)
-
-    # 4. Renderujemy nową kartę
-    return templates.TemplateResponse("_card.html", {"request": request, **processed_cards[0]})
-
-
 @app.get("/recent_workouts_html")
 async def recent_workouts_html(request: Request):
     recent_workouts = get_recent_workouts()
@@ -747,3 +711,82 @@ async def transform_card(request: Request, uid: str):
             "options": SETTINGS.get("activities", {}).get(new_type, []),
         },
     )
+
+
+# app/main.py
+
+
+@app.post("/card/to_clipboard/{uid}", response_class=HTMLResponse)
+async def to_clipboard(request: Request, uid: str):
+    form_data = await request.form()
+    json_body = form_data.get("json_body")
+    current_filename = form_data.get("current_filename", "")
+
+    if not json_body:
+        return Response(status_code=400)
+
+    data_tree = json.loads(json_body)
+    target_card = next((card for card in data_tree.get("items", []) if card.get("id") == uid), None)
+
+    if not target_card:
+        return Response(status_code=404)
+
+    target_card.pop("id", None)  # Czyścimy ID pod duplikację
+
+    # SCENARIUSZ A: Jesteśmy wewnątrz schowka (wyzwalamy OOB swap)
+    if current_filename == "clipboard.json":
+        dummy_spider = {"items": [target_card]}
+        processed = process_spider_json(dummy_spider)
+        new_card_html = templates.get_template("_card.html").render({"request": request, **processed[0]})
+        return HTMLResponse(f'<div id="fields-container" hx-swap-oob="afterbegin">{new_card_html}</div>')
+
+    # SCENARIUSZ B: Jesteśmy w zwykłym treningu (zapisujemy do pliku)
+    clipboard_path = DATA_DIR / "clipboard.json"
+    clipboard_data = {"items": []}
+
+    if clipboard_path.exists():
+        try:
+            with open(clipboard_path, "r", encoding="utf-8") as f:
+                clipboard_data = json.load(f)
+        except json.JSONDecodeError:
+            pass
+
+    clipboard_data["items"].insert(0, target_card)
+    with open(clipboard_path, "w", encoding="utf-8") as f:
+        json.dump(clipboard_data, f, ensure_ascii=False, indent=4)
+
+    response = HTMLResponse("")
+    response.headers["HX-Trigger"] = "updateSidebar"
+    return response
+
+
+@app.post("/card/paste/{uid}", response_class=HTMLResponse)
+async def paste_card(request: Request, uid: str):
+    clipboard_path = DATA_DIR / "clipboard.json"
+
+    # Jeśli użytkownik usunął plik lub schowek jest pusty, nic nie robimy
+    if not clipboard_path.exists():
+        return HTMLResponse("", status_code=200)
+
+    try:
+        with open(clipboard_path, "r", encoding="utf-8") as f:
+            clipboard_data = json.load(f)
+    except json.JSONDecodeError:
+        return HTMLResponse("", status_code=200)
+
+    items = clipboard_data.get("items", [])
+    if not items:
+        return HTMLResponse("", status_code=200)
+
+    # Bierzemy ZAWSZE pierwszy element z góry
+    target_card = items[0]
+
+    # Zabezpieczenie: Przetwarzamy go naszym silnikiem, aby dostał nowe, unikalne ID
+    dummy_spider = {"items": [target_card]}
+    processed_cards = process_spider_json(dummy_spider)
+
+    if not processed_cards:
+        return HTMLResponse("Błąd generowania karty", status_code=500)
+
+    # Zwracamy wyrenderowaną kartę, która zostanie wklejona PONIŻEJ
+    return templates.TemplateResponse("_card.html", {"request": request, **processed_cards[0]})

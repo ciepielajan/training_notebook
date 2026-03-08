@@ -74,12 +74,17 @@ document.body.addEventListener('htmx:afterOnLoad', function(evt) {
     }
 });
 
-// Dołączanie zaktualizowanego JSON-a do żądań HTMX (np. powielanie treningu)
+
 document.body.addEventListener('htmx:configRequest', function (evt) {
-    if (evt.detail.path.includes('/card/repetition/')) {
+    if (evt.detail.path.includes('/card/repetition/') || evt.detail.path.includes('/card/to_clipboard/')) {
         const rootElement = document.getElementById('form');
         const structure = htmlTreeToJson(rootElement);
         evt.detail.parameters['json_body'] = JSON.stringify(structure);
+
+        const filenameInput = document.getElementById('visible-filename');
+        if (filenameInput) {
+            evt.detail.parameters['current_filename'] = filenameInput.value;
+        }
     }
 });
 

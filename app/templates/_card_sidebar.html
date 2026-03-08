@@ -19,14 +19,7 @@
             </li>
             <li>
                 <button class="dropdown-item" type="button" hx-get="/card?type=table">
-                    <i class="bi bi-table me-2"></i>Tabela serii
-                </button>
-            </li>
-            <li>
-                <button class="dropdown-item fw-bold text-success" type="button"
-                    hx-post="/card/repetition/duplicate/{{ unique_id }}" hx-target="closest .exercise-row"
-                    hx-swap="afterend">
-                    <i class="bi bi-copy me-2"></i>Duplikuj element
+                    <i class="bi bi-table me-2"></i>Ćwiczenie
                 </button>
             </li>
             <li>
@@ -138,6 +131,24 @@
                 <hr class="dropdown-divider">
             </li>
             {% endif %}
+            <li>
+                <button class="dropdown-item fw-bold text-warning" type="button"
+                    hx-post="/card/to_clipboard/{{ unique_id }}" hx-target="closest .exercise-row" hx-swap="outerHTML">
+                    <i class="bi bi-scissors me-2"></i>Wytnij element
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item fw-bold text-success" type="button"
+                    hx-post="/card/to_clipboard/{{ unique_id }}" hx-swap="none">
+                    <i class="bi bi-copy me-2"></i>Kopiuj element
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item fw-bold text-info" type="button" hx-post="/card/paste/{{ unique_id }}"
+                    hx-target="closest .exercise-row" hx-swap="afterend">
+                    <i class="bi bi-clipboard-plus me-2"></i>Wklej (poniżej)
+                </button>
+            </li>
             <li>
                 <button class="dropdown-item text-danger" type="button"
                     onclick="this.closest('.exercise-row').remove()">
