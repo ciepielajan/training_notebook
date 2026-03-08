@@ -698,3 +698,52 @@ async def duplicate_card(request: Request, uid: str):
 async def recent_workouts_html(request: Request):
     recent_workouts = get_recent_workouts()
     return templates.TemplateResponse("_recent_list.html", {"request": request, "recent_workouts": recent_workouts})
+
+
+@app.post("/card/transform/{uid}", response_class=HTMLResponse)
+async def transform_card(request: Request, uid: str):
+    form_data = await request.form()
+
+    # 1. Z hx-vals odbieramy pożądany NOWY typ i konfigurację
+    new_type = form_data.get("new_type", "text")
+    new_size = form_data.get("new_size", "")
+    new_list_type = form_data.get("new_list_type", "bullet")
+
+    # Pobieramy stan zagnieżdżenia
+    current_collapsed = form_data.get("collapsed", "false")
+
+    data_obj = {
+        "level": get_header_level(new_size) if new_type == "text" else 0,
+        "collapsed": current_collapsed,
+    }
+
+    # 2. Przetwarzamy dane w zależności od nowego typu
+    if new_type in ["text", "notes"]:
+        data_obj["head"] = form_data.get("head", "")
+        data_obj["size"] = new_size
+
+    elif new_type == "list":
+        data_obj["list_type"] = new_list_type
+
+        # Zbieramy wszystkie aktualne punkty listy wysłane przez HTMX
+        contents = form_data.getlist("content")
+
+        # Budujemy na nowo listę elementów (domyślnie zdejmujemy zaznaczenie "is_checked" przy transformacji)
+        items = [{"content": c, "is_checked": False} for c in contents]
+
+        if not items:
+            items = [{"content": "", "is_checked": False}]
+
+        data_obj["items"] = items
+
+    # 3. Zwracamy na nowo wyrenderowaną kartę, zachowując ten sam ID
+    return templates.TemplateResponse(
+        "_card.html",
+        {
+            "request": request,
+            "unique_id": uid,
+            "type": new_type,
+            "data": data_obj,
+            "options": SETTINGS.get("activities", {}).get(new_type, []),
+        },
+    )
