@@ -713,9 +713,6 @@ async def transform_card(request: Request, uid: str):
     )
 
 
-# app/main.py
-
-
 @app.post("/card/to_clipboard/{uid}", response_class=HTMLResponse)
 async def to_clipboard(request: Request, uid: str):
     form_data = await request.form()

@@ -1,6 +1,7 @@
 Serwer run
 ```
 uvicorn app.main:app --reload
+uvicorn app.main:app --reload --reload-include "*.yaml" --reload-include "*.html"
 ```
 
 Serwer debug

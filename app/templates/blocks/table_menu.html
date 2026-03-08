@@ -18,7 +18,13 @@
             </button>
         </li>
         {% endfor %}
-
+        <li>
+            <button class="dropdown-item" type="button" hx-post="/card/table/action/{{ unique_id }}"
+                hx-vals='{"action": "add_col", "col_index": {{ col_index }}, "col_name": ""}'
+                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
+                <i class="bi bi-pencil-square me-2"></i>Własne pole
+            </button>
+        </li>
         <li>
             <button class="dropdown-item fw-bold text-primary" type="button"
                 hx-post="/card/table/action/{{ unique_id }}"
@@ -36,13 +42,6 @@
         </li>
         <li>
             <hr class="dropdown-divider">
-        </li>
-        <li>
-            <button class="dropdown-item" type="button" hx-post="/card/table/action/{{ unique_id }}"
-                hx-vals='{"action": "add_col", "col_index": {{ col_index }}, "col_name": ""}'
-                hx-include="#table-{{ unique_id }} input" hx-target="#table-{{ unique_id }}" hx-swap="outerHTML">
-                <i class="bi bi-pencil-square me-2"></i>Własne pole
-            </button>
         </li>
         <li>
             <button class="dropdown-item fw-bold text-primary" type="button"

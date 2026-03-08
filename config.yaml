@@ -18,3 +18,18 @@ block_names:
   text_2: "Nagłówek H2"
   text_3: "Nagłówek H3"
   text_4: "Nagłówek H4"
+
+
+database:
+  system_items:
+    sys-1: "Wyciskanie sztangi leżąc"
+    sys-2: "Martwy ciąg"
+    sys-3: "Przysiady ze sztangą"
+    sys-4: "Wyciskanie żołnierskie"
+    sys-5: "Podciąganie na drążku"
+    sys-6: "Podciąganie na drążku nachwytem i podchwytem na zmianę"
+    sys-7: "Pompki z obciążeniem oburącz"
+  
+  user_items:
+    usr-1: "Ulubione pompki z obciążeniem"
+    usr-2: "Sprinty pod górę"

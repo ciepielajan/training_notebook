@@ -1,5 +1,4 @@
 <div class="dropdown w-100 h-100 d-flex align-items-center me-1">
-    <i class="bi bi-box-seam text-secondary me-2"></i>
 
     <button class="btn btn-sm text-start flex-grow-1 border-0 shadow-none p-0 text-truncate" type="button"
         data-bs-toggle="dropdown" aria-expanded="false" data-bs-popper-config='{"strategy":"fixed"}'
@@ -16,20 +15,16 @@
     <ul class="dropdown-menu shadow-sm" style="min-width: 260px; z-index: 1050;">
 
         <li>
-            <h6 class="dropdown-header">Baza główna</h6>
+            <h6 class="dropdown-header">Systemowe</h6>
         </li>
+        {% for item_id, item_name in SETTINGS.get('database', {}).get('system_items', {}).items() %}
         <li>
             <button class="dropdown-item d-flex align-items-center py-2" type="button"
-                onclick="selectItem(this, 'sys-1', 'Pozycja pierwsza')">
-                <i class="bi bi-heptagon-half me-2 text-primary"></i> Pozycja pierwsza
+                onclick="selectItem(this, '{{ item_id }}', '{{ item_name }}')">
+                <i class="bi bi-heptagon-half me-2 text-primary"></i> {{ item_name }}
             </button>
         </li>
-        <li>
-            <button class="dropdown-item d-flex align-items-center py-2" type="button"
-                onclick="selectItem(this, 'sys-2', 'Pozycja druga')">
-                <i class="bi bi-heptagon-half me-2 text-primary"></i> Pozycja druga
-            </button>
-        </li>
+        {% endfor %}
 
         <li>
             <hr class="dropdown-divider">
@@ -38,15 +33,20 @@
         <li>
             <h6 class="dropdown-header">Twoje własne</h6>
         </li>
+        {% for item_id, item_name in SETTINGS.get('database', {}).get('user_items', {}).items() %}
         <li>
             <button class="dropdown-item d-flex align-items-center py-2" type="button"
-                onclick="selectItem(this, 'usr-1', 'Ulubiona pozycja')">
-                <i class="bi bi-person-fill me-2 text-success"></i> Ulubiona pozycja
+                onclick="selectItem(this, '{{ item_id }}', '{{ item_name }}')">
+                <i class="bi bi-person-fill me-2 text-success"></i> {{ item_name }}
             </button>
         </li>
+        {% endfor %}
+
         <li>
-            <button class="dropdown-item text-primary fw-bold mt-1" type="button"
-                onclick="alert('Tu będzie logika dodawania nowego elementu')">
+            <hr class="dropdown-divider">
+        </li>
+        <li>
+            <button class="dropdown-item text-primary fw-bold mt-1" type="button">
                 <i class="bi bi-plus-circle me-1"></i> Dodaj nowe...
             </button>
         </li>
