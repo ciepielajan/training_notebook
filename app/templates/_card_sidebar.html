@@ -1,0 +1,149 @@
+<div class="action-sidebar ps-1">
+    <div class="dropdown">
+        <button
+            class="btn btn-sm btn-link text-secondary text-decoration-none p-0 d-flex align-items-center justify-content-center"
+            type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 30px; height: 30px;"
+            data-bs-popper-config='{"strategy":"fixed"}' title="{{ block_name }}">
+            <i class="bi bi-plus-lg fs-5"></i>
+        </button>
+
+        <ul class="dropdown-menu shadow" hx-target="closest .exercise-row" hx-swap="afterend" style="z-index: 1000;">
+
+            <li>
+                <h6 class="dropdown-header">Dodaj:</h6>
+            </li>
+            <li>
+                <button class="dropdown-item fw-bold text-primary" type="button" hx-get="/card?type=metadata">
+                    <i class="bi bi-card-heading me-2"></i>Panel: Metadane
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" hx-get="/card?type=table">
+                    <i class="bi bi-table me-2"></i>Tabela serii
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item fw-bold text-success" type="button"
+                    hx-post="/card/repetition/duplicate/{{ unique_id }}" hx-target="closest .exercise-row"
+                    hx-swap="afterend">
+                    <i class="bi bi-copy me-2"></i>Duplikuj element
+                </button>
+            </li>
+            <li>
+                <hr class="dropdown-divider">
+            </li>
+            <li>
+                <h6 class="dropdown-header">Tekst:</h6>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" hx-get="/card?type=notes">
+                    <i class="bi bi-justify me-2"></i>Tekst
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" hx-get="/card?type=text&size=fs-4 fw-bold">
+                    <i class="bi bi-type-h1 me-2"></i>Nagłówek
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" hx-get="/card?type=list&list_type=bullet">
+                    <i class="bi bi-list-ul me-2"></i>Lista
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" hx-get="/card?type=list&list_type=checklist">
+                    <i class="bi bi-ui-checks me-2"></i>Lista zadań (Checklista)
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="dropdown">
+        <button
+            class="btn btn-sm btn-link text-secondary text-decoration-none p-0 d-flex align-items-center justify-content-center"
+            type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 30px; height: 30px;"
+            data-bs-popper-config='{"strategy":"fixed"}' title="Opcje wiersza">
+            <i class="bi bi-three-dots-vertical fs-5"></i>
+        </button>
+
+        <ul class="dropdown-menu shadow" style="z-index: 1000;">
+            {% if type in ['text', 'notes', 'list'] %}
+            <li>
+                <h6 class="dropdown-header">Zamień na:</h6>
+            </li>
+
+            {% if type in ['text', 'notes'] %}
+            <li>
+                <button class="dropdown-item" type="button" hx-post="/card/transform/{{ unique_id }}"
+                    hx-vals='{"new_type": "text", "new_size": "fs-1 fw-bold"}' hx-include="closest .exercise-row"
+                    hx-target="closest .exercise-row" hx-swap="outerHTML">
+                    <i class="bi bi-type-h1 me-2"></i>Nagłówek H1
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" hx-post="/card/transform/{{ unique_id }}"
+                    hx-vals='{"new_type": "text", "new_size": "fs-2 fw-bold"}' hx-include="closest .exercise-row"
+                    hx-target="closest .exercise-row" hx-swap="outerHTML">
+                    <i class="bi bi-type-h2 me-2"></i>Nagłówek H2
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" hx-post="/card/transform/{{ unique_id }}"
+                    hx-vals='{"new_type": "text", "new_size": "fs-3 fw-bold"}' hx-include="closest .exercise-row"
+                    hx-target="closest .exercise-row" hx-swap="outerHTML">
+                    <i class="bi bi-type-h3 me-2"></i>Nagłówek H3
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" hx-post="/card/transform/{{ unique_id }}"
+                    hx-vals='{"new_type": "text", "new_size": "fs-4 fw-bold"}' hx-include="closest .exercise-row"
+                    hx-target="closest .exercise-row" hx-swap="outerHTML">
+                    <i class="bi bi-type-h4 me-2"></i>Nagłówek H4
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" hx-post="/card/transform/{{ unique_id }}"
+                    hx-vals='{"new_type": "notes", "new_size": ""}' hx-include="closest .exercise-row"
+                    hx-target="closest .exercise-row" hx-swap="outerHTML">
+                    <i class="bi bi-justify me-2"></i>Tekst
+                </button>
+            </li>
+
+            {% elif type == 'list' %}
+            {% set current_list_type = data.get('list_type', 'bullet') %}
+
+            <li>
+                <button class="dropdown-item" type="button" hx-post="/card/transform/{{ unique_id }}"
+                    hx-vals='{"new_type": "list", "new_list_type": "bullet"}' hx-include="closest .exercise-row"
+                    hx-target="closest .exercise-row" hx-swap="outerHTML">
+                    <i class="bi bi-list-ul me-2"></i>Lista punktowa
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" hx-post="/card/transform/{{ unique_id }}"
+                    hx-vals='{"new_type": "list", "new_list_type": "numbered"}' hx-include="closest .exercise-row"
+                    hx-target="closest .exercise-row" hx-swap="outerHTML">
+                    <i class="bi bi-list-ol me-2"></i>Lista numerowana
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" type="button" hx-post="/card/transform/{{ unique_id }}"
+                    hx-vals='{"new_type": "list", "new_list_type": "checklist"}' hx-include="closest .exercise-row"
+                    hx-target="closest .exercise-row" hx-swap="outerHTML">
+                    <i class="bi bi-ui-checks me-2"></i>Lista zadań (Checklista)
+                </button>
+            </li>
+            {% endif %}
+            <li>
+                <hr class="dropdown-divider">
+            </li>
+            {% endif %}
+            <li>
+                <button class="dropdown-item text-danger" type="button"
+                    onclick="this.closest('.exercise-row').remove()">
+                    <i class="bi bi-trash me-2"></i>Usuń
+                </button>
+            </li>
+        </ul>
+    </div>
+</div>
