@@ -23,7 +23,14 @@ export function htmlTreeToJson(element) {
     allNodes.forEach(node => {
         const parentNode = node.parentElement.closest('.node');
         if (parentNode === element) {
-            items.push(htmlTreeToJson(node));
+            const childData = htmlTreeToJson(node);
+                
+            // Oddzielamy zdefiniowane kolekcje (jak nagłówek) od ogólnej listy kart (items)
+            if (node.dataset.arrayName) {
+                data[node.dataset.arrayName] = childData[node.dataset.childrenKey || 'items'] || [];
+            } else {
+                items.push(childData);
+            }
         }
     });
 

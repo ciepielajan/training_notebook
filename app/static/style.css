@@ -604,3 +604,71 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
 .exercise-table-wrapper tbody tr:last-child td { 
     border-bottom: none; 
 }
+
+
+
+/* ========================================== */
+/* 8. GOOGLE DOCS HEADER STYLES               */
+/* ========================================== */
+
+.header-docs {
+    /* Ujemny margin niweluje boczny padding kontenera main-content, 
+       aby nagłówek dolegał do krawędzi (jak w aplikacjach webowych) */
+    margin: -18px -2rem 18px -2rem; 
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    background-color: #fdfdfd !important;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.doc-title-input {
+    border-radius: 4px;
+    transition: background-color 0.2s, border-color 0.2s;
+    border: 1px solid transparent !important;
+    outline: none !important;
+}
+
+.doc-title-input:hover {
+    border-color: #dadce0 !important;
+}
+
+.doc-title-input:focus {
+    border-color: #1a73e8 !important;
+    background-color: #fff !important;
+    box-shadow: none !important;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #5f6368 !important;
+}
+
+.btn-icon:hover {
+    background-color: #f1f3f4;
+}
+
+.doc-menu-links .menu-item {
+    padding: 4px 6px;
+    border-radius: 4px;
+    color: #444746;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.doc-menu-links .menu-item:hover {
+    background-color: #f1f3f4;
+    color: #202124 !important;
+}
+
+/* Usunięcie denerwującej strzałki z rozwijanych menu imitujących pasek zakładek */
+.doc-menu-links .dropdown-toggle::after {
+    display: none; 
+}

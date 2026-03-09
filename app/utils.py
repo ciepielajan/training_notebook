@@ -1,3 +1,5 @@
+import json
+
 import yaml
 import secrets
 from pathlib import Path
@@ -47,7 +49,10 @@ def process_spider_json(spider_data: dict) -> list:
     """Przetwarza surowy JSON na strukturę gotową do wyrenderowania w szablonach."""
     processed_cards = []
 
-    for card in spider_data.get("items", []):
+    # Zabezpieczenie wsteczne na stare pliki: trwale usuwamy błąkające się sieroty z 'items'
+    raw_items = [c for c in spider_data.get("items", []) if c.get("type") not in ("athletes", "metadata")]
+
+    for card in raw_items:
         card_type = card.get("type")
 
         # Rozpakowujemy wiersz, JEŚLI ma wewnętrzną strukturę `items`
@@ -65,19 +70,23 @@ def process_spider_json(spider_data: dict) -> list:
             card_type = data_obj.get("type")
 
         # ==========================================
-        # DYNAMICZNA WERYFIKACJA SZABLONU
+        # DOCELOWY MECHANIZM DEPRECATED
         # ==========================================
-        # Sprawdzamy czy fizycznie mamy plik, np. app/templates/blocks/running.html
-        if not card_type or not (BLOCKS_DIR / f"{card_type}.html").is_file():
-            data_obj["original_type"] = card_type or "brak"
-            card_type = "deprecated"
+        # Sprawdzamy czy fizycznie mamy plik. (Dostosuj ścieżkę BLOCKS_DIR, jeśli to potrzebne)
+        if not card_type or not Path(f"app/templates/blocks/{card_type}.html").is_file():
+            # Jeżeli jest to już karta 'deprecated' pomijamy pakowanie w kolejny raw_data
+            if card_type != "deprecated":
+                data_obj = {
+                    "original_type": card_type or "brak",
+                    "raw_data": json.dumps(card, ensure_ascii=False),  # Zapisujemy nienaruszony, stary json!
+                }
+                card_type = "deprecated"
 
-        # Logika tylko dla aktualnie wspieranych, nietypowych bloków
         if card_type == "list":
             if "items" not in data_obj:
                 data_obj["items"] = []
 
-        # ZARZĄDZANIE WIDOCZNOŚCIĄ (level i collapsed)
+        # ZARZĄDZANIE WIDOCZNOŚCIĄ
         if card_type == "text":
             calc_level = get_header_level(data_obj.get("size", ""))
         else:

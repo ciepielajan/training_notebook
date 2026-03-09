@@ -1,54 +1,173 @@
 {% set w_data = workout_data | default({}) %}
 
-<div class="card shadow-sm mb-3 border-0 bg-light">
-    <div class="card-body p-2 px-3 d-flex flex-wrap flex-md-nowrap align-items-center gap-3">
-
-        <div class="form-floating flex-grow-1" style="min-width: 250px;">
-            <input type="text" class="form-control fw-bold border-secondary-subtle shadow-none bg-white"
-                id="visible-filename" name="current_filename" placeholder="Nazwa treningu"
-                value="{{ current_filename or w_data.get('current_filename', '') }}">
-            <label class="text-secondary" for="visible-filename">
-                <i class="bi bi-file-earmark-text me-1"></i> Nazwa pliku
-            </label>
+<div class="d-flex align-items-center justify-content-between bg-white px-4 py-2 border-bottom mb-4 header-docs">
+    
+    <div class="d-flex align-items-center">
+        
+        <div class="me-3" style="margin-top: -4px;">
+            <i class="bi bi-file-earmark-text-fill text-primary" style="font-size: 2.4rem; line-height: 1;"></i>
         </div>
+        
+        <div class="d-flex flex-column justify-content-center">
+            
+            <div class="d-flex align-items-center mb-1">
+                <input type="text" 
+                       class="form-control doc-title-input px-2 py-0 shadow-none fw-medium text-dark" 
+                       name="current_filename" 
+                       value="{{ current_filename or w_data.get('current_filename', '') }}" 
+                       placeholder="Nazwa treningu"
+                       style="width: 300px; font-size: 1.15rem; background: transparent; height: 26px;">
+                       
+                <button type="button" class="btn btn-sm btn-icon text-secondary ms-1 shadow-none" title="Oznacz gwiazdką">
+                    <i class="bi bi-star"></i>
+                </button>
+                
+                <div class="dropdown d-inline-block">
+                    <button type="button" class="btn btn-sm btn-icon text-secondary ms-1 shadow-none" data-bs-toggle="dropdown" title="Przenieś do folderu">
+                        <i class="bi bi-folder-symlink"></i>
+                    </button>
+                    <ul class="dropdown-menu shadow-sm fs-7">
+                        <li><h6 class="dropdown-header">Wybierz folder</h6></li>
+                        <li><button type="button" class="dropdown-item" onclick="updateHeaderInput('folder_input', '/')"><i class="bi bi-folder2-open me-2"></i>/ Główny</button></li>
+                        <li><button type="button" class="dropdown-item" onclick="updateHeaderInput('folder_input', '/mikrocykl_1')"><i class="bi bi-folder2 me-2"></i>/ Mikrocykl 1</button></li>
+                        <li><button type="button" class="dropdown-item" onclick="updateHeaderInput('folder_input', '/testy')"><i class="bi bi-folder2 me-2"></i>/ Testy</button></li>
+                    </ul>
+                    <input type="hidden" name="workout_folder" id="folder_input" value="{{ w_data.get('workout_folder', '/') }}">
+                </div>
 
-        <div class="form-floating" style="flex: 0 0 180px;">
-            <select class="form-select border-secondary-subtle shadow-none bg-white cursor-pointer"
-                name="workout_category">
-                <option value="default" {% if w_data.get('workout_category')=='default' %}selected{% endif %}>Ogólne
-                </option>
-                <option value="sprint" {% if w_data.get('workout_category')=='sprint' %}selected{% endif %}>Sprint
-                </option>
-                <option value="strength" {% if w_data.get('workout_category')=='strength' %}selected{% endif %}>Siła
-                </option>
-                <option value="endurance" {% if w_data.get('workout_category')=='endurance' %}selected{% endif %}>
-                    Wytrzymałość</option>
-                <option value="recovery" {% if w_data.get('workout_category')=='recovery' %}selected{% endif %}>
-                    Regeneracja</option>
-            </select>
-            <label class="text-secondary"><i class="bi bi-tag me-1"></i> Kategoria</label>
+                <button type="button" class="btn btn-sm btn-icon text-secondary ms-1 shadow-none" id="sidebar-save-btn" onclick="triggerSave('save', false)" title="Zapisano w bazie">
+                    <i class="bi bi-cloud-check"></i>
+                </button>
+            </div>
+            
+            <div class="d-flex align-items-center doc-menu-links gap-1" style="margin-left: 2px;">
+                <span class="menu-item">Plik</span>
+                <span class="menu-item">Edycja</span>
+                <span class="menu-item">Widok</span>
+                
+                <div class="dropdown d-inline-block">
+                    <span class="menu-item dropdown-toggle" data-bs-toggle="dropdown">Kategoria</span>
+                    <ul class="dropdown-menu shadow-sm fs-7">
+                        <li><h6 class="dropdown-header">Kategoria treningu</h6></li>
+                        <li><button type="button" class="dropdown-item {% if w_data.get('workout_category')=='default' %}active{% endif %}" onclick="updateHeaderInput('category_input', 'default')">Ogólne</button></li>
+                        <li><button type="button" class="dropdown-item {% if w_data.get('workout_category')=='sprint' %}active{% endif %}" onclick="updateHeaderInput('category_input', 'sprint')">Sprint</button></li>
+                        <li><button type="button" class="dropdown-item {% if w_data.get('workout_category')=='strength' %}active{% endif %}" onclick="updateHeaderInput('category_input', 'strength')">Siła</button></li>
+                        <li><button type="button" class="dropdown-item {% if w_data.get('workout_category')=='endurance' %}active{% endif %}" onclick="updateHeaderInput('category_input', 'endurance')">Wytrzymałość</button></li>
+                    </ul>
+                    <input type="hidden" name="workout_category" id="category_input" value="{{ w_data.get('workout_category', 'default') }}">
+                </div>
+                <span class="menu-item">Pomoc</span>
+            </div>
         </div>
+    </div>
+    
+    <div class="d-flex align-items-center gap-3">
+        
+        {% set ns = namespace(athletes=[]) %}
+        {% if w_data.get('athletes') %}
+            {% set ns.athletes = w_data.get('athletes') %}
+        {% else %}
+            {% for item in w_data.get('items', []) %}
+                {% if item.get('type') == 'athletes' %}
+                    {% set ns.athletes = item.get('athletes', []) %}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        
+        {% set ath_state = namespace(jc=false, jk=false, rc=false, ak=false) %}
+        {% for a in ns.athletes %}
+            {% if a.name == 'Jan Ciepiela' and a.is_checked %}{% set ath_state.jc = true %}{% endif %}
+            {% if a.name == 'Jakub Krzewina' and a.is_checked %}{% set ath_state.jk = true %}{% endif %}
+            {% if a.name == 'Radek Czyż' and a.is_checked %}{% set ath_state.rc = true %}{% endif %}
+            {% if a.name == 'Anna Kowalska' and a.is_checked %}{% set ath_state.ak = true %}{% endif %}
+        {% endfor %}
 
-        <div class="form-floating" style="flex: 0 0 180px;">
-            <select class="form-select border-secondary-subtle shadow-none bg-white cursor-pointer"
-                name="workout_folder">
-                <option value="/" {% if w_data.get('workout_folder')=='/' %}selected{% endif %}>/ Główny</option>
-                <option value="/mikrocykl_1" {% if w_data.get('workout_folder')=='/mikrocykl_1' %}selected{% endif %}>/
-                    Mikrocykl 1</option>
-                <option value="/testy" {% if w_data.get('workout_folder')=='/testy' %}selected{% endif %}>/ Testy
-                </option>
-            </select>
-            <label class="text-secondary"><i class="bi bi-folder2-open me-1"></i> Folder</label>
-        </div>
+        <div class="dropdown athlete-select node d-flex align-items-center" data-array-name="athletes" data-children-key="list">
+            <input type="hidden" name="type" value="athletes">
+            
+            <div class="avatar-pile me-3 mb-0" style="width: auto;">
+                <div class="avatar-wrapper avatar-1" {% if ath_state.jc %}style="display: block;"{% endif %}><img src="https://ui-avatars.com/api/?name=Jan+Ciepiela&background=0D8ABC&color=fff" alt="Jan"></div>
+                <div class="avatar-wrapper avatar-2" {% if ath_state.jk %}style="display: block;"{% endif %}><img src="https://ui-avatars.com/api/?name=Jakub+Krzewina&background=F59E0B&color=fff" alt="Jakub"></div>
+                <div class="avatar-wrapper avatar-3" {% if ath_state.rc %}style="display: block;"{% endif %}><img src="https://ui-avatars.com/api/?name=Radek+Czyż&background=10B981&color=fff" alt="Radek"></div>
+                <div class="avatar-wrapper avatar-4" {% if ath_state.ak %}style="display: block;"{% endif %}><img src="https://ui-avatars.com/api/?name=Anna+Kowalska&background=EF4444&color=fff" alt="Anna"></div>
+            </div>
 
-        <div class="d-flex align-items-center justify-content-center px-3 border-start" style="min-width: 140px;">
-            <button type="button"
-                class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2"
-                id="sidebar-save-btn" title="Zapisz teraz" onclick="triggerSave('save', false)">
-                <i class="bi bi-floppy fs-5"></i>
-                <span class="menu-text fw-medium">Zapisz</span>
+            <button class="btn rounded-pill px-4 py-2 d-flex align-items-center shadow-sm" 
+                    type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                    style="background-color: #c2e7ff; color: #001d35; border: none; font-weight: 500; font-size: 0.95rem;">
+                <i class="bi bi-people-fill me-2 fs-5"></i> Zawodnicy
             </button>
+
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm p-2 border-secondary-subtle" style="min-width: 250px; z-index: 1055; margin-top: 10px;">
+                <li><h6 class="dropdown-header">Zawodnicy:</h6></li>
+                
+                <li class="node mb-1">
+                    <input type="hidden" name="name" value="Jan Ciepiela">
+                    <label class="d-flex align-items-center justify-content-between w-100 m-0 p-2 cursor-pointer athlete-option">
+                        <div class="d-flex align-items-center">
+                            <input class="d-none chk-athlete-1" type="checkbox" name="is_checked" {% if ath_state.jc %}checked{% endif %}>
+                            <img src="https://ui-avatars.com/api/?name=Jan+Ciepiela&background=0D8ABC&color=fff" class="rounded-circle me-2 shadow-sm" style="width: 28px; height: 28px;">
+                            <span>Jan Ciepiela</span>
+                        </div>
+                        <i class="bi bi-check-circle-fill fs-5 check-icon text-primary"></i>
+                    </label>
+                </li>
+
+                <li class="node mb-1">
+                    <input type="hidden" name="name" value="Jakub Krzewina">
+                    <label class="d-flex align-items-center justify-content-between w-100 m-0 p-2 cursor-pointer athlete-option">
+                        <div class="d-flex align-items-center">
+                            <input class="d-none chk-athlete-2" type="checkbox" name="is_checked" {% if ath_state.jk %}checked{% endif %}>
+                            <img src="https://ui-avatars.com/api/?name=Jakub+Krzewina&background=F59E0B&color=fff" class="rounded-circle me-2 shadow-sm" style="width: 28px; height: 28px;">
+                            <span>Jakub Krzewina</span>
+                        </div>
+                        <i class="bi bi-check-circle-fill fs-5 check-icon text-primary"></i>
+                    </label>
+                </li>
+
+                <li class="node mb-1">
+                    <input type="hidden" name="name" value="Radek Czyż">
+                    <label class="d-flex align-items-center justify-content-between w-100 m-0 p-2 cursor-pointer athlete-option">
+                        <div class="d-flex align-items-center">
+                            <input class="d-none chk-athlete-3" type="checkbox" name="is_checked" {% if ath_state.rc %}checked{% endif %}>
+                            <img src="https://ui-avatars.com/api/?name=Radek+Czyż&background=10B981&color=fff" class="rounded-circle me-2 shadow-sm" style="width: 28px; height: 28px;">
+                            <span>Radek Czyż</span>
+                        </div>
+                        <i class="bi bi-check-circle-fill fs-5 check-icon text-primary"></i>
+                    </label>
+                </li>
+
+                <li class="node mb-1">
+                    <input type="hidden" name="name" value="Anna Kowalska">
+                    <label class="d-flex align-items-center justify-content-between w-100 m-0 p-2 cursor-pointer athlete-option">
+                        <div class="d-flex align-items-center">
+                            <input class="d-none chk-athlete-4" type="checkbox" name="is_checked" {% if ath_state.ak %}checked{% endif %}>
+                            <img src="https://ui-avatars.com/api/?name=Anna+Kowalska&background=EF4444&color=fff" class="rounded-circle me-2 shadow-sm" style="width: 28px; height: 28px;">
+                            <span>Anna Kowalska</span>
+                        </div>
+                        <i class="bi bi-check-circle-fill fs-5 check-icon text-primary"></i>
+                    </label>
+                </li>
+            </ul>
         </div>
 
+        <div class="ms-2">
+            <img src="https://ui-avatars.com/api/?name=T&background=795548&color=fff" class="rounded-circle shadow-sm cursor-pointer" style="width: 40px; height: 40px;" title="Twoje konto">
+        </div>
     </div>
 </div>
+
+<script>
+    function updateHeaderInput(id, val) {
+        const input = document.getElementById(id);
+        if (input.value !== val) {
+            input.value = val;
+            input.dispatchEvent(new Event('change', { bubbles: true })); // Wymusza AutoSave
+            
+            // Odświeżenie wyglądu aktywnych opcji (tylko kosmetyka)
+            const menu = input.closest('.dropdown').querySelector('.dropdown-menu');
+            menu.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+    }
+</script>

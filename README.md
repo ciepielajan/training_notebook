@@ -1,7 +1,16 @@
 Serwer run
 ```
-uvicorn app.main:app --reload
 uvicorn app.main:app --reload --reload-include "*.yaml" --reload-include "*.html"
+
+```
+tips
+```
+# run serwer with reload for other file them .py
+uvicorn app.main:app --reload --reload-include "*.yaml" --reload-include "*.html"
+
+# after bad cloase server you can restart be:
+fg
+
 ```
 
 Serwer debug
