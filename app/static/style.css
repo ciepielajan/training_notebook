@@ -672,3 +672,32 @@ button { padding:8px 12px; font-size:14px; cursor:pointer; }
 .doc-menu-links .dropdown-toggle::after {
     display: none; 
 }
+
+
+/* ========================================== */
+/* 9. TRYB ZAZNACZANIA KART (BULK ACTIONS)    */
+/* ========================================== */
+
+.selection-mode .card-selection-checkbox {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.selection-mode .card-controls {
+    display: none !important;
+}
+
+/* W trybie zaznaczania wymuszamy pojawienie się ukrytego
+   paska z lewej strony również na telefonach */
+.selection-mode .action-sidebar {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: translateY(0) !important;
+    z-index: 1050;
+}
+
+/* Upewnienie się, że pływający pasek akcji jest zawsze na wierzchu */
+#bulk-action-bar {
+    z-index: 1100;
+}

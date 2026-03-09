@@ -1,5 +1,5 @@
 // main.js
-import { initSidebar } from './ui.js';
+import { initSidebar, initBulkSelection } from './ui.js';
 import { initImportExport } from './import_export.js';
 import { triggerSave, debounce, htmlTreeToJson } from './storage.js';
 import { initCollapsible } from './collapsible.js';
@@ -13,6 +13,7 @@ window.htmlTreeToJson = htmlTreeToJson;
 document.addEventListener('DOMContentLoaded', function() {
     // 1. Inicjalizacja modułów UI
     initSidebar();
+    initBulkSelection();
     initImportExport();
     initCollapsible();
     initLists();
