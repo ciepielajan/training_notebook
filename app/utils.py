@@ -49,15 +49,21 @@ def process_spider_json(spider_data: dict) -> list:
     """Przetwarza surowy JSON na strukturę gotową do wyrenderowania w szablonach."""
     processed_cards = []
 
-    # Zabezpieczenie wsteczne na stare pliki: trwale usuwamy błąkające się sieroty z 'items'
-    raw_items = [c for c in spider_data.get("items", []) if c.get("type") not in ("athletes", "metadata")]
+    # Kuloodporność: Zabezpieczenie przed brakiem 'items' lub innym typem danych
+    items = spider_data.get("items", [])
+    if not isinstance(items, list):
+        items = []
 
-    for card in raw_items:
+    for card in items:
+        # Kuloodporność: Ignorujemy np. stringi wbite w listę
+        if not isinstance(card, dict):
+            continue
+
         card_type = card.get("type")
 
         # Rozpakowujemy wiersz, JEŚLI ma wewnętrzną strukturę `items`
         if (
-            card.get("items")
+            "items" in card
             and isinstance(card["items"], list)
             and len(card["items"]) > 0
             and isinstance(card["items"][0], dict)
@@ -70,23 +76,25 @@ def process_spider_json(spider_data: dict) -> list:
             card_type = data_obj.get("type")
 
         # ==========================================
-        # DOCELOWY MECHANIZM DEPRECATED
+        # KULOODPORNA WALIDACJA TYPU
         # ==========================================
-        # Sprawdzamy czy fizycznie mamy plik. (Dostosuj ścieżkę BLOCKS_DIR, jeśli to potrzebne)
-        if not card_type or not Path(f"app/templates/blocks/{card_type}.html").is_file():
-            # Jeżeli jest to już karta 'deprecated' pomijamy pakowanie w kolejny raw_data
-            if card_type != "deprecated":
-                data_obj = {
-                    "original_type": card_type or "brak",
-                    "raw_data": json.dumps(card, ensure_ascii=False),  # Zapisujemy nienaruszony, stary json!
-                }
-                card_type = "deprecated"
+        # Jeśli obiekt w tablicy w ogóle nie ma atrybutu "type", oznacza to, że to śmieci
+        # lub metadane (np. zagnieżdżeni zawodnicy), a nie faktyczny blok treningowy.
+        if not card_type or not isinstance(card_type, str) or not card_type.strip():
+            continue
 
+        # Sprawdzamy czy fizycznie mamy plik, np. app/templates/blocks/running.html
+        if not (BLOCKS_DIR / f"{card_type}.html").is_file():
+            # Skoro wpis miał type (np. "gym"), a szablonu nie ma - wtedy jest "deprecated"
+            data_obj["original_type"] = card_type
+            card_type = "deprecated"
+
+        # Logika tylko dla aktualnie wspieranych, nietypowych bloków
         if card_type == "list":
             if "items" not in data_obj:
                 data_obj["items"] = []
 
-        # ZARZĄDZANIE WIDOCZNOŚCIĄ
+        # ZARZĄDZANIE WIDOCZNOŚCIĄ (level i collapsed)
         if card_type == "text":
             calc_level = get_header_level(data_obj.get("size", ""))
         else:

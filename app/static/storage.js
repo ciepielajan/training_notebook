@@ -24,10 +24,12 @@ export function htmlTreeToJson(element) {
         const parentNode = node.parentElement.closest('.node');
         if (parentNode === element) {
             const childData = htmlTreeToJson(node);
-                
-            // Oddzielamy zdefiniowane kolekcje (jak nagłówek) od ogólnej listy kart (items)
-            if (node.dataset.arrayName) {
-                data[node.dataset.arrayName] = childData[node.dataset.childrenKey || 'items'] || [];
+            
+            // NOWOŚĆ: Jeżeli węzeł ma zdefiniowany data-prop-name,
+            // zapisujemy go pod tym kluczem w rodzicu, a nie w tablicy items.
+            const propName = node.dataset.propName;
+            if (propName) {
+                data[propName] = childData[node.dataset.childrenKey || 'items'] || childData;
             } else {
                 items.push(childData);
             }
@@ -41,6 +43,7 @@ export function htmlTreeToJson(element) {
 
     return data;
 }
+// ... reszta pliku zostaje bez zmian
 
 // 2. Główna funkcja zapisu
 export async function triggerSave(actionType, isAutoSave = false) {
