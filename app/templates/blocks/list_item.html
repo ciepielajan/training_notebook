@@ -1,9 +1,9 @@
 <div class="node list-item-row d-flex align-items-center mb-1">
     {% if list_type == 'checklist' %}
-    <input class="form-check-input me-2 mt-0 shadow-none border-secondary" type="checkbox" name="is_checked" {% if
-        item.is_checked %}checked{% endif %}>
+        <input class="form-check-input me-2 mt-0 shadow-none border-secondary" type="checkbox"
+         name="is_checked" {% if item.is_checked %}checked{% endif %}>
     {% else %}
-    <span class="me-2 text-secondary list-marker"></span>
+        <span class="me-2 text-secondary list-marker"></span>
     {% endif %}
 
     <input type="text" class="form-control form-control-sm border-0 shadow-none bg-transparent p-0" name="content"

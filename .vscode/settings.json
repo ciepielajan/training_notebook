@@ -1,3 +1,20 @@
 {
-    "python-envs.defaultEnvManager": "ms-python.python:system"
+    // Rozpoznawanie plików .html jako Jinja HTML
+    "files.associations": {
+        "*.html": "jinja-html"
+    },
+
+    // Wsparcie dla Emmet w plikach Jinja (ułatwia pisanie HTML)
+    "emmet.includeLanguages": {
+        "jinja-html": "html"
+    },
+
+    // Ustawienie domyślnego interpretera (VS Code sam znajdzie środowisko Poetry)
+    // Jeśli środowisko nie aktywuje się samo, upewnij się, że raz wybrałeś 
+    // interpreter przez Ctrl+Shift+P -> "Python: Select Interpreter"
+    "python.terminal.activateEnvironment": true,
+
+    // Usunięcie blokady na systemowy manager - pozwoli to na wykrycie Poetry
+    "python.defaultInterpreterPath": "", 
+
 }
