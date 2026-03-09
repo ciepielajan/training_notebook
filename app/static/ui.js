@@ -29,6 +29,7 @@ export function initSidebar() {
     }
 }
 
+
 export function initBulkSelection() {
     window.toggleSelectionMode = function(cardId) {
         const form = document.getElementById('form');
@@ -51,6 +52,20 @@ export function initBulkSelection() {
         updateBulkActionBar();
     };
 
+    // INTELIGENTNE USUWANIE - korzysta z MutationObservera z main.js
+    window.deleteSelectedCards = function() {
+        const selected = document.querySelectorAll('.card-select-cb:checked');
+        if (selected.length === 0) return;
+
+        if (confirm(`Czy na pewno chcesz usunąć zaznaczone elementy (${selected.length})?`)) {
+            selected.forEach(cb => {
+                const row = cb.closest('.exercise-row');
+                if (row) row.remove(); // To automatycznie wyzwala Twój autoSave!
+            });
+            exitSelectionMode();
+        }
+    };
+
     // Nasłuchiwanie zmian na checkboxach w celu aktualizacji licznika
     document.body.addEventListener('change', function(e) {
         if (e.target.classList.contains('card-select-cb')) {
@@ -59,20 +74,14 @@ export function initBulkSelection() {
     });
 
     function updateBulkActionBar() {
-        const form = document.getElementById('form');
-        const bar = document.getElementById('bulk-action-bar');
-        if (!bar || !form) return;
+        // Liczymy tylko zaznaczone checkboxy
+        const count = document.querySelectorAll('.card-select-cb:checked').length;
+        
+        const countEl = document.getElementById('selected-count');
+        if (countEl) countEl.textContent = count;
 
-        if (form.classList.contains('selection-mode')) {
-            bar.classList.remove('d-none');
-            bar.classList.add('d-flex');
-            
-            const count = document.querySelectorAll('.card-select-cb:checked').length;
-            const countEl = document.getElementById('selected-count');
-            if (countEl) countEl.textContent = count;
-        } else {
-            bar.classList.remove('d-flex');
-            bar.classList.add('d-none');
-        }
+        // Włącz / Wyłącz guzik usuwania (tylko z włączonymi checkboxami)
+        const deleteBtn = document.getElementById('bulk-delete-btn');
+        if (deleteBtn) deleteBtn.disabled = (count === 0);
     }
 }

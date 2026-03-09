@@ -1,173 +1,182 @@
 {% set w_data = workout_data | default({}) %}
 
-<div class="d-flex align-items-center justify-content-between bg-white px-4 py-2 border-bottom mb-4 header-docs">
-    
-    <div class="d-flex align-items-center">
-        
-        <div class="me-3" style="margin-top: -4px;">
-            <i class="bi bi-file-earmark-text-fill text-primary" style="font-size: 2.4rem; line-height: 1;"></i>
+<div class="card shadow-sm mb-3 border-0 bg-white">
+    <div class="card-body p-2 px-3 d-flex flex-wrap align-items-center gap-3">
+
+        <div class="form-floating flex-grow-1" style="min-width: 200px;">
+            <input type="text" class="form-control fw-bold border-0 bg-light shadow-none"
+                id="visible-filename" name="current_filename" placeholder="Nazwa pliku"
+                value="{{ current_filename or w_data.get('current_filename', '') }}">
+            <label class="text-secondary" for="visible-filename">
+                <i class="bi bi-file-earmark-text me-1"></i> Nazwa pliku
+            </label>
         </div>
-        
-        <div class="d-flex flex-column justify-content-center">
-            
-            <div class="d-flex align-items-center mb-1">
-                <input type="text" 
-                       class="form-control doc-title-input px-2 py-0 shadow-none fw-medium text-dark" 
-                       name="current_filename" 
-                       value="{{ current_filename or w_data.get('current_filename', '') }}" 
-                       placeholder="Nazwa treningu"
-                       style="width: 300px; font-size: 1.15rem; background: transparent; height: 26px;">
-                       
-                <button type="button" class="btn btn-sm btn-icon text-secondary ms-1 shadow-none" title="Oznacz gwiazdką">
-                    <i class="bi bi-star"></i>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+
+            <div class="dropdown">
+                <button class="btn btn-sm rounded-pill bg-info-subtle text-primary-emphasis fw-medium d-flex align-items-center gap-2 border-0 px-3 py-2" 
+                        type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                    <i class="bi bi-calendar-event-fill"></i> <span id="pill-datetime">Brak daty</span>
                 </button>
-                
-                <div class="dropdown d-inline-block">
-                    <button type="button" class="btn btn-sm btn-icon text-secondary ms-1 shadow-none" data-bs-toggle="dropdown" title="Przenieś do folderu">
-                        <i class="bi bi-folder-symlink"></i>
-                    </button>
-                    <ul class="dropdown-menu shadow-sm fs-7">
-                        <li><h6 class="dropdown-header">Wybierz folder</h6></li>
-                        <li><button type="button" class="dropdown-item" onclick="updateHeaderInput('folder_input', '/')"><i class="bi bi-folder2-open me-2"></i>/ Główny</button></li>
-                        <li><button type="button" class="dropdown-item" onclick="updateHeaderInput('folder_input', '/mikrocykl_1')"><i class="bi bi-folder2 me-2"></i>/ Mikrocykl 1</button></li>
-                        <li><button type="button" class="dropdown-item" onclick="updateHeaderInput('folder_input', '/testy')"><i class="bi bi-folder2 me-2"></i>/ Testy</button></li>
-                    </ul>
-                    <input type="hidden" name="workout_folder" id="folder_input" value="{{ w_data.get('workout_folder', '/') }}">
+                <div class="dropdown-menu p-3 shadow-sm border-secondary-subtle" style="min-width: 220px;">
+                    <label class="form-label text-secondary small fw-bold mb-1">Data</label>
+                    <input type="date" class="form-control mb-3 shadow-none" name="date" id="meta-date" value="{{ w_data.get('date', '') }}" onchange="updateMetaUI()">
+                    <label class="form-label text-secondary small fw-bold mb-1">Godzina</label>
+                    <input type="time" class="form-control shadow-none" name="time" id="meta-time" value="{{ w_data.get('time', '') }}" onchange="updateMetaUI()">
                 </div>
+            </div>
 
-                <button type="button" class="btn btn-sm btn-icon text-secondary ms-1 shadow-none" id="sidebar-save-btn" onclick="triggerSave('save', false)" title="Zapisano w bazie">
-                    <i class="bi bi-cloud-check"></i>
+            <div class="dropdown">
+                <button class="btn btn-sm rounded-pill bg-info-subtle text-primary-emphasis fw-medium d-flex align-items-center gap-2 border-0 px-3 py-2" 
+                        type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                    <i class="bi bi-geo-alt-fill"></i> <span id="pill-location">Lokalizacja</span>
                 </button>
-            </div>
-            
-            <div class="d-flex align-items-center doc-menu-links gap-1" style="margin-left: 2px;">
-                <span class="menu-item">Plik</span>
-                <span class="menu-item">Edycja</span>
-                <span class="menu-item">Widok</span>
-                
-                <div class="dropdown d-inline-block">
-                    <span class="menu-item dropdown-toggle" data-bs-toggle="dropdown">Kategoria</span>
-                    <ul class="dropdown-menu shadow-sm fs-7">
-                        <li><h6 class="dropdown-header">Kategoria treningu</h6></li>
-                        <li><button type="button" class="dropdown-item {% if w_data.get('workout_category')=='default' %}active{% endif %}" onclick="updateHeaderInput('category_input', 'default')">Ogólne</button></li>
-                        <li><button type="button" class="dropdown-item {% if w_data.get('workout_category')=='sprint' %}active{% endif %}" onclick="updateHeaderInput('category_input', 'sprint')">Sprint</button></li>
-                        <li><button type="button" class="dropdown-item {% if w_data.get('workout_category')=='strength' %}active{% endif %}" onclick="updateHeaderInput('category_input', 'strength')">Siła</button></li>
-                        <li><button type="button" class="dropdown-item {% if w_data.get('workout_category')=='endurance' %}active{% endif %}" onclick="updateHeaderInput('category_input', 'endurance')">Wytrzymałość</button></li>
-                    </ul>
-                    <input type="hidden" name="workout_category" id="category_input" value="{{ w_data.get('workout_category', 'default') }}">
+                <div class="dropdown-menu p-2 shadow-sm border-secondary-subtle" style="min-width: 200px;">
+                    <label class="form-label text-secondary small fw-bold mb-1 ms-1">Wybierz miejsce</label>
+                    <select class="form-select shadow-none" name="place" id="meta-place" onchange="updateMetaUI()">
+                        <option value="">Nieznane</option>
+                        <option value="AWF Stadion" {% if w_data.get('place') == 'AWF Stadion' %}selected{% endif %}>AWF Stadion</option>
+                        <option value="Siłownia McFit" {% if w_data.get('place') == 'Siłownia McFit' %}selected{% endif %}>Siłownia McFit</option>
+                        <option value="Las Wolski" {% if w_data.get('place') == 'Las Wolski' %}selected{% endif %}>Las Wolski</option>
+                        <option value="Hala KS" {% if w_data.get('place') == 'Hala KS' %}selected{% endif %}>Hala KS</option>
+                    </select>
                 </div>
-                <span class="menu-item">Pomoc</span>
-            </div>
-        </div>
-    </div>
-    
-    <div class="d-flex align-items-center gap-3">
-        
-        {% set ns = namespace(athletes=[]) %}
-        {% if w_data.get('athletes') %}
-            {% set ns.athletes = w_data.get('athletes') %}
-        {% else %}
-            {% for item in w_data.get('items', []) %}
-                {% if item.get('type') == 'athletes' %}
-                    {% set ns.athletes = item.get('athletes', []) %}
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-        
-        {% set ath_state = namespace(jc=false, jk=false, rc=false, ak=false) %}
-        {% for a in ns.athletes %}
-            {% if a.name == 'Jan Ciepiela' and a.is_checked %}{% set ath_state.jc = true %}{% endif %}
-            {% if a.name == 'Jakub Krzewina' and a.is_checked %}{% set ath_state.jk = true %}{% endif %}
-            {% if a.name == 'Radek Czyż' and a.is_checked %}{% set ath_state.rc = true %}{% endif %}
-            {% if a.name == 'Anna Kowalska' and a.is_checked %}{% set ath_state.ak = true %}{% endif %}
-        {% endfor %}
-
-        <div class="dropdown athlete-select node d-flex align-items-center" data-array-name="athletes" data-children-key="list">
-            <input type="hidden" name="type" value="athletes">
-            
-            <div class="avatar-pile me-3 mb-0" style="width: auto;">
-                <div class="avatar-wrapper avatar-1" {% if ath_state.jc %}style="display: block;"{% endif %}><img src="https://ui-avatars.com/api/?name=Jan+Ciepiela&background=0D8ABC&color=fff" alt="Jan"></div>
-                <div class="avatar-wrapper avatar-2" {% if ath_state.jk %}style="display: block;"{% endif %}><img src="https://ui-avatars.com/api/?name=Jakub+Krzewina&background=F59E0B&color=fff" alt="Jakub"></div>
-                <div class="avatar-wrapper avatar-3" {% if ath_state.rc %}style="display: block;"{% endif %}><img src="https://ui-avatars.com/api/?name=Radek+Czyż&background=10B981&color=fff" alt="Radek"></div>
-                <div class="avatar-wrapper avatar-4" {% if ath_state.ak %}style="display: block;"{% endif %}><img src="https://ui-avatars.com/api/?name=Anna+Kowalska&background=EF4444&color=fff" alt="Anna"></div>
             </div>
 
-            <button class="btn rounded-pill px-4 py-2 d-flex align-items-center shadow-sm" 
-                    type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
-                    style="background-color: #c2e7ff; color: #001d35; border: none; font-weight: 500; font-size: 0.95rem;">
-                <i class="bi bi-people-fill me-2 fs-5"></i> Zawodnicy
+            <div class="dropdown">
+                <button class="btn btn-sm rounded-pill bg-info-subtle text-primary-emphasis fw-medium d-flex align-items-center gap-2 border-0 px-3 py-2" 
+                        type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                    <i id="pill-weather-icon" class="bi bi-cloud-sun-fill"></i> 
+                    <span id="pill-weather-temp">--°C</span>
+                </button>
+                <div class="dropdown-menu p-3 shadow-sm border-secondary-subtle" style="min-width: 250px;">
+                    <div class="d-flex gap-2">
+                        <div style="width: 40%;">
+                            <label class="form-label text-secondary small fw-bold mb-1">Temp.</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" class="form-control shadow-none" name="weather_temp" id="meta-w-temp" value="{{ w_data.get('weather_temp', '') }}" oninput="updateMetaUI()">
+                                <span class="input-group-text bg-light border-secondary-subtle">°C</span>
+                            </div>
+                        </div>
+                        <div style="width: 60%;">
+                            <label class="form-label text-secondary small fw-bold mb-1">Stan</label>
+                            <select class="form-select form-select-sm shadow-none" name="weather_icon" id="meta-w-icon" onchange="updateMetaUI()">
+                                <option value="bi-sun-fill" {% if w_data.get('weather_icon') == 'bi-sun-fill' %}selected{% endif %}>☀️ Słonecznie</option>
+                                <option value="bi-cloud-sun-fill" {% if w_data.get('weather_icon') == 'bi-cloud-sun-fill' %}selected{% endif %}>⛅ Częśc. zachm.</option>
+                                <option value="bi-cloud-fill" {% if w_data.get('weather_icon') == 'bi-cloud-fill' %}selected{% endif %}>☁️ Pochmurno</option>
+                                <option value="bi-cloud-rain-fill" {% if w_data.get('weather_icon') == 'bi-cloud-rain-fill' %}selected{% endif %}>🌧️ Deszcz</option>
+                                <option value="bi-snow" {% if w_data.get('weather_icon') == 'bi-snow' %}selected{% endif %}>❄️ Śnieg</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dropdown node athlete-select" data-children-key="athletes">
+                <button class="btn btn-sm rounded-pill bg-info-subtle text-primary-emphasis fw-medium d-flex align-items-center gap-2 border-0 px-3 py-2" 
+                        type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                    <i class="bi bi-people-fill"></i> <span>Zawodnicy</span>
+                    
+                    <div class="avatar-pile ms-1 mb-0" style="height: 20px; min-width: 0;">
+                        {% set ns = namespace(jc=false, jk=false, rc=false, ak=false) %}
+                        {% for a in w_data.get('athletes', []) %}
+                            {% if a.name == 'Jan Ciepiela' and a.is_checked %}{% set ns.jc = true %}{% endif %}
+                            {% if a.name == 'Jakub Krzewina' and a.is_checked %}{% set ns.jk = true %}{% endif %}
+                            {% if a.name == 'Radek Czyż' and a.is_checked %}{% set ns.rc = true %}{% endif %}
+                            {% if a.name == 'Anna Kowalska' and a.is_checked %}{% set ns.ak = true %}{% endif %}
+                        {% endfor %}
+                        
+                        <div class="avatar-wrapper avatar-1" style="width:20px;height:20px;border-width:1px;"><img src="https://ui-avatars.com/api/?name=Jan+Ciepiela&background=0D8ABC&color=fff"></div>
+                        <div class="avatar-wrapper avatar-2" style="width:20px;height:20px;border-width:1px;"><img src="https://ui-avatars.com/api/?name=Jakub+Krzewina&background=F59E0B&color=fff"></div>
+                        <div class="avatar-wrapper avatar-3" style="width:20px;height:20px;border-width:1px;"><img src="https://ui-avatars.com/api/?name=Radek+Czyż&background=10B981&color=fff"></div>
+                        <div class="avatar-wrapper avatar-4" style="width:20px;height:20px;border-width:1px;"><img src="https://ui-avatars.com/api/?name=Anna+Kowalska&background=EF4444&color=fff"></div>
+                    </div>
+                </button>
+
+                <ul class="dropdown-menu shadow-sm p-2 border-secondary-subtle" style="min-width: 250px; z-index: 1055;">
+                    <li class="node mb-1">
+                        <input type="hidden" name="name" value="Jan Ciepiela">
+                        <label class="d-flex align-items-center justify-content-between w-100 m-0 p-2 cursor-pointer athlete-option">
+                            <div class="d-flex align-items-center">
+                                <input class="d-none chk-athlete-1" type="checkbox" name="is_checked" {% if ns.jc %}checked{% endif %} onchange="if(window.autoSave) window.autoSave()">
+                                <img src="https://ui-avatars.com/api/?name=Jan+Ciepiela&background=0D8ABC&color=fff" class="rounded-circle me-2 shadow-sm" style="width: 24px; height: 24px;">
+                                <span class="small fw-medium">Jan Ciepiela</span>
+                            </div>
+                            <i class="bi bi-check-circle-fill text-primary check-icon"></i>
+                        </label>
+                    </li>
+                    <li class="node mb-1">
+                        <input type="hidden" name="name" value="Jakub Krzewina">
+                        <label class="d-flex align-items-center justify-content-between w-100 m-0 p-2 cursor-pointer athlete-option">
+                            <div class="d-flex align-items-center">
+                                <input class="d-none chk-athlete-2" type="checkbox" name="is_checked" {% if ns.jk %}checked{% endif %} onchange="if(window.autoSave) window.autoSave()">
+                                <img src="https://ui-avatars.com/api/?name=Jakub+Krzewina&background=F59E0B&color=fff" class="rounded-circle me-2 shadow-sm" style="width: 24px; height: 24px;">
+                                <span class="small fw-medium">Jakub Krzewina</span>
+                            </div>
+                            <i class="bi bi-check-circle-fill text-primary check-icon"></i>
+                        </label>
+                    </li>
+                    <li class="node mb-1">
+                        <input type="hidden" name="name" value="Radek Czyż">
+                        <label class="d-flex align-items-center justify-content-between w-100 m-0 p-2 cursor-pointer athlete-option">
+                            <div class="d-flex align-items-center">
+                                <input class="d-none chk-athlete-3" type="checkbox" name="is_checked" {% if ns.rc %}checked{% endif %} onchange="if(window.autoSave) window.autoSave()">
+                                <img src="https://ui-avatars.com/api/?name=Radek+Czyż&background=10B981&color=fff" class="rounded-circle me-2 shadow-sm" style="width: 24px; height: 24px;">
+                                <span class="small fw-medium">Radek Czyż</span>
+                            </div>
+                            <i class="bi bi-check-circle-fill text-primary check-icon"></i>
+                        </label>
+                    </li>
+                </ul>
+            </div>
+
+            <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 py-2 ms-auto d-flex align-items-center gap-2" id="sidebar-save-btn" onclick="triggerSave('save', false)">
+                <i class="bi bi-floppy"></i>
+                <span class="fw-medium">Zapisz</span>
             </button>
 
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm p-2 border-secondary-subtle" style="min-width: 250px; z-index: 1055; margin-top: 10px;">
-                <li><h6 class="dropdown-header">Zawodnicy:</h6></li>
-                
-                <li class="node mb-1">
-                    <input type="hidden" name="name" value="Jan Ciepiela">
-                    <label class="d-flex align-items-center justify-content-between w-100 m-0 p-2 cursor-pointer athlete-option">
-                        <div class="d-flex align-items-center">
-                            <input class="d-none chk-athlete-1" type="checkbox" name="is_checked" {% if ath_state.jc %}checked{% endif %}>
-                            <img src="https://ui-avatars.com/api/?name=Jan+Ciepiela&background=0D8ABC&color=fff" class="rounded-circle me-2 shadow-sm" style="width: 28px; height: 28px;">
-                            <span>Jan Ciepiela</span>
-                        </div>
-                        <i class="bi bi-check-circle-fill fs-5 check-icon text-primary"></i>
-                    </label>
-                </li>
-
-                <li class="node mb-1">
-                    <input type="hidden" name="name" value="Jakub Krzewina">
-                    <label class="d-flex align-items-center justify-content-between w-100 m-0 p-2 cursor-pointer athlete-option">
-                        <div class="d-flex align-items-center">
-                            <input class="d-none chk-athlete-2" type="checkbox" name="is_checked" {% if ath_state.jk %}checked{% endif %}>
-                            <img src="https://ui-avatars.com/api/?name=Jakub+Krzewina&background=F59E0B&color=fff" class="rounded-circle me-2 shadow-sm" style="width: 28px; height: 28px;">
-                            <span>Jakub Krzewina</span>
-                        </div>
-                        <i class="bi bi-check-circle-fill fs-5 check-icon text-primary"></i>
-                    </label>
-                </li>
-
-                <li class="node mb-1">
-                    <input type="hidden" name="name" value="Radek Czyż">
-                    <label class="d-flex align-items-center justify-content-between w-100 m-0 p-2 cursor-pointer athlete-option">
-                        <div class="d-flex align-items-center">
-                            <input class="d-none chk-athlete-3" type="checkbox" name="is_checked" {% if ath_state.rc %}checked{% endif %}>
-                            <img src="https://ui-avatars.com/api/?name=Radek+Czyż&background=10B981&color=fff" class="rounded-circle me-2 shadow-sm" style="width: 28px; height: 28px;">
-                            <span>Radek Czyż</span>
-                        </div>
-                        <i class="bi bi-check-circle-fill fs-5 check-icon text-primary"></i>
-                    </label>
-                </li>
-
-                <li class="node mb-1">
-                    <input type="hidden" name="name" value="Anna Kowalska">
-                    <label class="d-flex align-items-center justify-content-between w-100 m-0 p-2 cursor-pointer athlete-option">
-                        <div class="d-flex align-items-center">
-                            <input class="d-none chk-athlete-4" type="checkbox" name="is_checked" {% if ath_state.ak %}checked{% endif %}>
-                            <img src="https://ui-avatars.com/api/?name=Anna+Kowalska&background=EF4444&color=fff" class="rounded-circle me-2 shadow-sm" style="width: 28px; height: 28px;">
-                            <span>Anna Kowalska</span>
-                        </div>
-                        <i class="bi bi-check-circle-fill fs-5 check-icon text-primary"></i>
-                    </label>
-                </li>
-            </ul>
-        </div>
-
-        <div class="ms-2">
-            <img src="https://ui-avatars.com/api/?name=T&background=795548&color=fff" class="rounded-circle shadow-sm cursor-pointer" style="width: 40px; height: 40px;" title="Twoje konto">
         </div>
     </div>
 </div>
 
 <script>
-    function updateHeaderInput(id, val) {
-        const input = document.getElementById(id);
-        if (input.value !== val) {
-            input.value = val;
-            input.dispatchEvent(new Event('change', { bubbles: true })); // Wymusza AutoSave
+    function updateMetaUI() {
+        // Data i Godzina z obsługą polskich nazw dni
+        const dateInput = document.getElementById('meta-date').value;
+        const timeInput = document.getElementById('meta-time').value;
+        const datePill = document.getElementById('pill-datetime');
+        
+        if (dateInput) {
+            const dateObj = new Date(dateInput);
+            const days = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So'];
+            const dayName = days[dateObj.getDay()];
+            // Zamiana YYYY-MM-DD na DD.MM.YYYY
+            const parts = dateInput.split('-');
+            const formattedDate = `${parts[2]}.${parts[1]}.${parts[0]}`;
             
-            // Odświeżenie wyglądu aktywnych opcji (tylko kosmetyka)
-            const menu = input.closest('.dropdown').querySelector('.dropdown-menu');
-            menu.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
-            event.target.classList.add('active');
+            datePill.textContent = `${formattedDate} (${dayName}) ${timeInput}`;
+        } else {
+            datePill.textContent = "Wybierz datę";
         }
+
+        // Lokalizacja
+        const placeInput = document.getElementById('meta-place');
+        const placePill = document.getElementById('pill-location');
+        if(placeInput.value) {
+            placePill.textContent = placeInput.options[placeInput.selectedIndex].text;
+        } else {
+            placePill.textContent = "Lokalizacja";
+        }
+
+        // Pogoda
+        const tempInput = document.getElementById('meta-w-temp').value;
+        const iconInput = document.getElementById('meta-w-icon').value;
+        document.getElementById('pill-weather-temp').textContent = tempInput ? `${tempInput}°C` : '--°C';
+        document.getElementById('pill-weather-icon').className = `bi ${iconInput}`;
     }
+
+    // Odpal raz przy załadowaniu, aby ustawić poprawne wartości początkowe
+    document.addEventListener('DOMContentLoaded', updateMetaUI);
+    document.body.addEventListener('htmx:afterOnLoad', updateMetaUI);
 </script>

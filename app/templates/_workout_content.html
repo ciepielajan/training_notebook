@@ -4,11 +4,15 @@
     {% include "_cards_list.html" %}
 </div>
 
-<div id="bulk-action-bar" class="position-fixed bottom-0 start-50 translate-middle-x mb-4 shadow rounded-pill bg-white border border-secondary-subtle px-4 py-2 d-none align-items-center gap-3 z-3">
+<div id="bulk-action-bar" class="position-fixed top-0 start-50 translate-middle-x mt-4 shadow rounded-pill bg-white border border-secondary-subtle px-4 py-2 align-items-center gap-3">
     <span class="fw-bold text-primary"><span id="selected-count">1</span> zaznaczono</span>
     <div class="vr"></div>
     <button type="button" class="btn btn-sm btn-light text-secondary fw-medium" onclick="exitSelectionMode()">Anuluj</button>
-    <button type="button" class="btn btn-sm btn-outline-danger" disabled><i class="bi bi-trash"></i> Usuń</button>
+    
+    <button type="button" id="bulk-delete-btn" class="btn btn-sm btn-outline-danger" onclick="deleteSelectedCards()" disabled>
+        <i class="bi bi-trash"></i> Usuń
+    </button>
+    
     <button type="button" class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-copy"></i> Kopiuj</button>
 </div>
 
