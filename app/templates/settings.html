@@ -1,0 +1,55 @@
+<div class="card shadow-sm border-0 bg-white mb-3">
+    <div class="card-body p-4">
+        <h4 class="card-title mb-4 text-dark">
+            <i class="bi bi-gear me-2"></i> Ustawienia aplikacji
+        </h4>
+        
+        {% if success_message %}
+        <div class="alert alert-success py-2 d-flex align-items-center">
+            <i class="bi bi-check-circle-fill me-2"></i> {{ success_message }}
+        </div>
+        {% endif %}
+
+        <form hx-post="/settings" hx-target="#form" hx-swap="innerHTML">
+            
+            {% for category, items in settings.items() %}
+            <div class="mb-4 p-3 bg-light rounded border border-light-subtle">
+                <h5 class="text-primary border-bottom pb-2 mb-3">
+                    <i class="bi bi-folder2 me-1"></i> {{ category | capitalize }}
+                </h5>
+                
+                <div class="row">
+                    {% for key, val in items.items() %}
+                        {% if val is mapping %}
+                            <div class="col-12 mt-2 mb-1">
+                                <h6 class="text-secondary border-bottom pb-1">
+                                    <i class="bi bi-list-nested me-1"></i> {{ key }}
+                                </h6>
+                            </div>
+                            {% for subkey, subval in val.items() %}
+                            <div class="col-md-6 mb-3 ps-4 border-start border-2 border-light-subtle">
+                                <label class="form-label text-secondary small fw-bold mb-1">{{ subkey }}</label>
+                                <input type="text" class="form-control shadow-none border-secondary-subtle" 
+                                       name="{{ category }}.{{ key }}.{{ subkey }}" value="{{ subval }}">
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-secondary small fw-bold mb-1">{{ key }}</label>
+                                <input type="text" class="form-control shadow-none border-secondary-subtle" 
+                                       name="{{ category }}.{{ key }}" value="{{ val }}">
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary d-flex align-items-center">
+                    <i class="bi bi-floppy me-2"></i> Zapisz zmiany
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

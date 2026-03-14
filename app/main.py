@@ -9,9 +9,9 @@ import secrets
 import json
 import shutil
 from pathlib import Path
-from app.utils import SETTINGS, DATA_DIR, get_header_level, get_recent_workouts, process_spider_json
+from app.utils import SETTINGS, DATA_DIR, get_header_level, get_recent_workouts, process_spider_json, load_settings
 import traceback
-
+import yaml
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
@@ -787,3 +787,51 @@ async def paste_card(request: Request, uid: str):
 
     # Zwracamy wyrenderowaną kartę, która zostanie wklejona PONIŻEJ
     return templates.TemplateResponse("_card.html", {"request": request, **processed_cards[0]})
+
+
+# ==========================================
+# USTAWIENIA (CONFIG.YAML)
+# ==========================================
+@app.post("/settings", response_class=HTMLResponse)
+async def save_settings(request: Request):
+    form_data = await request.form()
+
+    new_settings = {}
+    for key, value in form_data.items():
+        # Proste typowanie
+        parsed_value = value
+        if value.isdigit():
+            parsed_value = int(value)
+        else:
+            try:
+                parsed_value = float(value)
+            except ValueError:
+                pass
+
+        # Obsługa nieskończonego zagnieżdżenia (podział po kropkach)
+        parts = key.split(".")
+        current_level = new_settings
+
+        for i, part in enumerate(parts):
+            if i == len(parts) - 1:
+                # Ostatni element (klucz docelowy) - przypisujemy wartość
+                current_level[part] = parsed_value
+            else:
+                # Głębsze zagnieżdżenie - tworzymy słownik, jeśli nie istnieje
+                if part not in current_level:
+                    current_level[part] = {}
+                # Przesuwamy wskaźnik głębiej
+                current_level = current_level[part]
+
+    # Zapis do fizycznego pliku config.yaml
+    with open("config.yaml", "w", encoding="utf-8") as f:
+        yaml.dump(new_settings, f, allow_unicode=True, sort_keys=False)
+
+    # Aktualizacja globalnego obiektu w pamięci RAM
+    SETTINGS.clear()
+    SETTINGS.update(new_settings)
+
+    return templates.TemplateResponse(
+        "settings.html",
+        {"request": request, "settings": new_settings, "success_message": "Zapisano zmiany w pliku konfiguracyjnym."},
+    )

@@ -1,35 +1,28 @@
-#config.yaml
-
 system:
-  app_name: "Dziennik Treningowy"
+  app_name: Dziennik Treningowy
   version: 1.0
-
 paths:
-  data_dir: "/home/janek/Dokumenty/my/training_notebook/outputs"
-  blocks_dir: "app/templates/blocks"
-
+  data_dir: /home/janek/Dokumenty/my/training_notebook/outputs
+  blocks_dir: app/templates/blocks
 block_names:
-  table: "Tabela serii"
-  list: "Lista punktowa"
-  notes: "Tekst"
-  metadata: "Metadane"
-  deprecated: "Przestarzały element"
-  text_1: "Nagłówek H1"
-  text_2: "Nagłówek H2"
-  text_3: "Nagłówek H3"
-  text_4: "Nagłówek H4"
-
-
+  table: Tabela serii
+  list: Lista punktowa
+  notes: Tekst
+  metadata: Metadane
+  deprecated: Przestarzały element
+  text_1: Nagłówek H1
+  text_2: Nagłówek H2
+  text_3: Nagłówek H3
+  text_4: Nagłówek H4
 database:
   system_items:
-    sys-1: "Wyciskanie sztangi leżąc"
-    sys-2: "Martwy ciąg"
-    sys-3: "Przysiady ze sztangą"
-    sys-4: "Wyciskanie żołnierskie"
-    sys-5: "Podciąganie na drążku"
-    sys-6: "Podciąganie na drążku nachwytem i podchwytem na zmianę"
-    sys-7: "Pompki z obciążeniem oburącz"
-  
+    sys-1: Wyciskanie sztangi leżąc
+    sys-2: Martwy ciąg
+    sys-3: Przysiady ze sztangą
+    sys-4: Wyciskanie żołnierskie
+    sys-5: Podciąganie na drążku
+    sys-6: Podciąganie na drążku nachwytem i podchwytem na zmianę
+    sys-7: Pompki z obciążeniem oburącz
   user_items:
-    usr-1: "Ulubione pompki z obciążeniem"
-    usr-2: "Sprinty pod górę"
+    usr-1: Ulubione pompki z obciążeniem
+    usr-2: Sprinty pod górę
