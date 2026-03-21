@@ -9,7 +9,7 @@ import secrets
 import json
 import shutil
 from pathlib import Path
-from app.utils import SETTINGS, DATA_DIR, get_header_level, get_recent_workouts, process_spider_json, load_settings
+from app.utils import SETTINGS, DATA_DIR, get_header_level, get_recent_workouts, process_spider_json, get_all_exercises
 import traceback
 import yaml
 
@@ -28,6 +28,7 @@ yaml.representer.SafeRepresenter.add_representer(str, multiline_presenter)
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["SETTINGS"] = SETTINGS
+templates.env.globals["get_all_exercises"] = get_all_exercises
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
@@ -864,4 +865,25 @@ async def save_settings(request: Request):
     return templates.TemplateResponse(
         "settings.html",
         {"request": request, "settings": new_settings, "success_message": "Zapisano zmiany w pliku konfiguracyjnym."},
+    )
+
+
+# ==========================================
+# MODALE I SZCZEGÓŁY
+# ==========================================
+@app.get("/exercise_details", response_class=HTMLResponse)
+async def exercise_details(request: Request, name: str):
+
+    exercises = get_all_exercises()
+    tags = []
+
+    for ex in exercises:
+        if ex["name"] == name:
+            # Wstrzykujemy źródło na pierwsze miejsce listy tagów
+            tags = [ex["source"]] + ex["tags"]
+            break
+
+    return templates.TemplateResponse(
+        "blocks/exercise_modal.html",
+        {"request": request, "name": name, "tags": tags},
     )

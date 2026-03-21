@@ -115,3 +115,33 @@ def process_spider_json(spider_data: dict) -> list:
             }
         )
     return processed_cards
+
+
+def get_all_exercises() -> list:
+    """
+    Pobiera i parsuje ćwiczenia systemowe oraz użytkownika.
+    Zwraca zunifikowaną listę słowników gotową do użycia w całej aplikacji.
+    """
+    sys_raw = SETTINGS.get("database", {}).get("system_items", "")
+    usr_raw = SETTINGS.get("database", {}).get("user_items", "")
+
+    exercises = []
+
+    for source_label, raw_text in [("Systemowe", sys_raw), ("Własne", usr_raw)]:
+        if not raw_text:
+            continue
+
+        for line in raw_text.split("\n"):
+            if not line.strip():
+                continue
+
+            parts = [p.strip() for p in line.split(",")]
+            name = parts[0]
+            tags = [t for t in parts[1:] if t]  # Wyciągamy tagi i ignorujemy puste
+
+            # Pierwszy tag traktujemy jako główną kategorię (do filtru w UI)
+            category = tags[0].lower() if tags else ""
+
+            exercises.append({"name": name, "source": source_label, "tags": tags, "category": category})
+
+    return exercises

@@ -12,66 +12,87 @@
     <input type="hidden" name="r{{ r }}c{{ c }}_id" class="item-id-input"
         value="{{ data['r' ~ r ~ 'c' ~ c ~ '_id'] | default('') }}">
 
-    <ul class="dropdown-menu shadow-sm" style="min-width: 260px; z-index: 1050;">
+    {% set all_exercises = get_all_exercises() %}
+    
+    {% set ns = namespace(categories=[]) %}
+    {% for ex in all_exercises %}
+        {% if ex.category and ex.category not in ns.categories %}
+            {% set _ = ns.categories.append(ex.category) %}
+        {% endif %}
+    {% endfor %}
 
-        <li><h6 class="dropdown-header">Systemowe</h6></li>
-        
-        {% set sys_raw = SETTINGS.get('database', {}).get('system_items', '') %}
-        {% for line in sys_raw.split('\n') %}
-            {% set clean_line = line|trim %}
-            {% if clean_line %}
-                {% set parts = clean_line.split(',') %}
-                {% set item_name = parts[0]|trim %}
-                {% set val1 = parts[1]|trim if parts|length > 1 else '' %}
+    <ul class="dropdown-menu shadow-sm pt-0 pb-0" 
+        style="min-width: 320px; z-index: 1050; max-height: 350px; overflow-y: auto; overflow-x: hidden;"
+        _="on filterItems
+             set searchEl to the first .search-input in me
+             set catEl to the first .category-select in me
+             set searchText to searchEl.value.toLowerCase()
+             set catFilter to catEl.value.toLowerCase()
+             
+             for el in <.exercise-item/> in me
+                set matchText to (el.textContent.toLowerCase() contains searchText)
+                set itemCat to el@data-category
+                set matchCat to (catFilter == '' or itemCat == catFilter)
                 
-                <li>
-                    <button class="dropdown-item d-flex justify-content-between align-items-center py-2" type="button"
-                            _="on click 
-                               set the value of <.item-value-input/> in closest .dropdown to '{{ item_name }}'
-                               set the value of <.item-id-input/> in closest .dropdown to '{{ item_name }}'
-                               put '{{ item_name }}' into <.item-name/> in closest .dropdown
-                               if window.autoSave call window.autoSave()">
-                        <span><i class="bi bi-heptagon-half me-2 text-primary"></i> {{ item_name }}</span>
+                if matchText and matchCat
+                    show el
+                else
+                    hide el
+                end
+             end">
+
+        <li class="position-sticky top-0 bg-white p-2 border-bottom d-flex gap-2" style="z-index: 10;"
+            _="on click call event.stopPropagation()">
+            
+            <input type="text" class="form-control form-control-sm shadow-none border-secondary-subtle search-input" 
+                   placeholder="Szukaj..."
+                   _="on input trigger filterItems on closest .dropdown-menu">
+                   
+            <select class="form-select form-select-sm shadow-none border-secondary-subtle category-select" 
+                    style="width: 130px; cursor: pointer;"
+                    _="on change trigger filterItems on closest .dropdown-menu">
+                <option value="">Wszystkie</option>
+                {% for cat in ns.categories|sort %}
+                    <option value="{{ cat }}">{{ cat|capitalize }}</option>
+                {% endfor %}
+            </select>
+        </li>
+
+        {% for ex in all_exercises %}
+            <li class="exercise-item" data-category="{{ ex.category }}">
+                <button class="dropdown-item d-flex justify-content-between align-items-center py-2" type="button"
+                        _="on click 
+                           set the value of <.item-value-input/> in closest .dropdown to '{{ ex.name }}'
+                           set the value of <.item-id-input/> in closest .dropdown to '{{ ex.name }}'
+                           put '{{ ex.name }}' into <.item-name/> in closest .dropdown
+                           if window.autoSave call window.autoSave()">
+                           
+                    <span class="text-truncate me-2 d-flex align-items-center">
+                        <i class="bi bi-info-circle text-secondary me-2 fs-6" 
+                            title="Pokaż szczegóły ćwiczenia"
+                            hx-get="/exercise_details?name={{ ex.name|urlencode }}"
+                            hx-target="#modal-container"
+                            hx-trigger="showModal"
+                            _="on click halt the event then trigger showModal"></i>
                         
-                        {% if val1 %}
-                            <span class="badge bg-light text-secondary border">{{ val1 }}</span>
+                        {% if ex.source == 'Systemowe' %}
+                            <i class="bi bi-heptagon-half me-2 text-primary"></i>
+                        {% else %}
+                            <i class="bi bi-person-fill me-2 text-success"></i>
                         {% endif %}
-                    </button>
-                </li>
-            {% endif %}
+                        
+                        <span>{{ ex.name }}</span>
+                    </span>
+                    
+                    {% if ex.tags %}
+                        <span class="badge bg-light text-secondary border">{{ ex.tags[0] }}</span>
+                    {% endif %}
+                </button>
+            </li>
         {% endfor %}
 
-        <li><hr class="dropdown-divider"></li>
-
-        <li><h6 class="dropdown-header">Twoje własne</h6></li>
-        
-        {% set usr_raw = SETTINGS.get('database', {}).get('user_items', '') %}
-        {% for line in usr_raw.split('\n') %}
-            {% set clean_line = line|trim %}
-            {% if clean_line %}
-                {% set parts = clean_line.split(',') %}
-                {% set item_name = parts[0]|trim %}
-                {% set val1 = parts[1]|trim if parts|length > 1 else '' %}
-                
-                <li>
-                    <button class="dropdown-item d-flex justify-content-between align-items-center py-2" type="button"
-                            _="on click 
-                               set the value of <.item-value-input/> in closest .dropdown to '{{ item_name }}'
-                               set the value of <.item-id-input/> in closest .dropdown to '{{ item_name }}'
-                               put '{{ item_name }}' into <.item-name/> in closest .dropdown
-                               if window.autoSave call window.autoSave()">
-                        <span><i class="bi bi-person-fill me-2 text-success"></i> {{ item_name }}</span>
-                        {% if val1 %}
-                            <span class="badge bg-light text-secondary border">{{ val1 }}</span>
-                        {% endif %}
-                    </button>
-                </li>
-            {% endif %}
-        {% endfor %}
-
-        <li><hr class="dropdown-divider"></li>
-        <li>
-            <button class="dropdown-item text-primary fw-bold mt-1" type="button">
+        <li class="position-sticky bottom-0 bg-white p-1 border-top" style="z-index: 10;">
+            <button class="dropdown-item text-primary fw-bold rounded py-2" type="button">
                 <i class="bi bi-plus-circle me-1"></i> Dodaj nowe...
             </button>
         </li>

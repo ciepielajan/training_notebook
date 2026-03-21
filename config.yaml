@@ -22,9 +22,10 @@ database:
     Wyciskanie żołnierskie, barki, sztanga
     Podciąganie na drążku, plecy, własna masa
     Pompki z obciążeniem oburącz, klatka, własna masa
-    Nowe,brak,brak
   user_items: |-
     Ulubione pompki z obciążeniem, klatka
     Sprinty pod górę, kondycja
+    Nowe,brak,brak
+    Hej,brak,sztanga
 options:
   units: x, kg, lbs, km, m, s, min, h, %, bpm, kcal
