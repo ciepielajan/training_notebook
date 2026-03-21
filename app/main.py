@@ -13,6 +13,18 @@ from app.utils import SETTINGS, DATA_DIR, get_header_level, get_recent_workouts,
 import traceback
 import yaml
 
+
+def multiline_presenter(dumper, data):
+    if "\n" in data:
+        # Użyj stylu blokowego '|' dla stringów z enterami
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+yaml.add_representer(str, multiline_presenter)
+# Zabezpieczenie, gdyby użyto SafeDumpera
+yaml.representer.SafeRepresenter.add_representer(str, multiline_presenter)
+
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["SETTINGS"] = SETTINGS
@@ -390,14 +402,16 @@ async def table_action(request: Request, uid: str):
             data[f"w{c+1}"] = data.get(f"w{c}", "")
             for r in range(1, num_rows + 1):
                 data[f"r{r}c{c+1}"] = data.get(f"r{r}c{c}", "")
-                data[f"m_r{r}c{c+1}"] = data.get(f"m_r{r}c{c}", "")  # <--- NOWOŚĆ: Przesuwamy info o złączeniu
+                data[f"m_r{r}c{c+1}"] = data.get(f"m_r{r}c{c}", "")
+                data[f"u_r{r}c{c+1}"] = data.get(f"u_r{r}c{c}", "")
 
         # Wstawiamy nową kolumnę
         data[f"h{col_idx+1}"] = col_name
         data[f"w{col_idx+1}"] = col_width
         for r in range(1, num_rows + 1):
             data[f"r{r}c{col_idx+1}"] = ""
-            data.pop(f"m_r{r}c{col_idx+1}", None)  # <--- NOWOŚĆ: Nowa kolumna na pewno nie jest złączona
+            data.pop(f"m_r{r}c{col_idx+1}", None)
+            data.pop(f"u_r{r}c{col_idx+1}", None)
 
         data["num_cols"] = num_cols + 1
 
@@ -413,12 +427,14 @@ async def table_action(request: Request, uid: str):
                 for r in range(1, num_rows + 1):
                     data[f"r{r}c{c}"] = data.get(f"r{r}c{c+1}", "")
                     data[f"m_r{r}c{c}"] = data.get(f"m_r{r}c{c+1}", "")  # <--- NOWOŚĆ: Przesuwamy info o złączeniu
+                    data[f"u_r{r}c{c}"] = data.get(f"u_r{r}c{c+1}", "")
 
             data.pop(f"h{num_cols}", None)
             data.pop(f"w{num_cols}", None)
             for r in range(1, num_rows + 1):
                 data.pop(f"r{r}c{num_cols}", None)  # <--- POPRAWKA BŁĘDU: Było r{num_rows}, a powinno być r{r}
                 data.pop(f"m_r{r}c{num_cols}", None)  # <--- NOWOŚĆ: Czyścimy info o złączeniu z usuniętej kolumny
+                data.pop(f"u_r{r}c{num_cols}", None)
 
             data["num_cols"] = num_cols - 1
 
@@ -434,12 +450,14 @@ async def table_action(request: Request, uid: str):
         for r in range(num_rows, row_idx, -1):
             for c in range(1, num_cols + 1):
                 data[f"r{r+1}c{c}"] = data.get(f"r{r}c{c}", "")
-                data[f"m_r{r+1}c{c}"] = data.get(f"m_r{r}c{c}", "")  # <--- NOWOŚĆ: Złączenia jadą w dół z wierszem
+                data[f"m_r{r+1}c{c}"] = data.get(f"m_r{r}c{c}", "")
+                data[f"u_r{r+1}c{c}"] = data.get(f"u_r{r}c{c}", "")
 
         # Czyścimy nowo powstały wiersz
         for c in range(1, num_cols + 1):
             data[f"r{row_idx+1}c{c}"] = ""
-            data.pop(f"m_r{row_idx+1}c{c}", None)  # <--- NOWOŚĆ: Nowy wiersz domyślnie nie jest z niczym złączony
+            data.pop(f"m_r{row_idx+1}c{c}", None)
+            data.pop(f"u_r{row_idx+1}c{c}", None)
 
         # Zwiększamy licznik wierszy
         data["num_rows"] = num_rows + 1
@@ -453,12 +471,14 @@ async def table_action(request: Request, uid: str):
             for r in range(row_idx, num_rows):
                 for c in range(1, num_cols + 1):
                     data[f"r{r}c{c}"] = data.get(f"r{r+1}c{c}", "")
-                    data[f"m_r{r}c{c}"] = data.get(f"m_r{r+1}c{c}", "")  # <--- NOWOŚĆ: Złączenia jadą w górę
+                    data[f"m_r{r}c{c}"] = data.get(f"m_r{r+1}c{c}", "")
+                    data[f"u_r{r}c{c}"] = data.get(f"u_r{r+1}c{c}", "")
 
             # Usuwamy "osierocone" dane z ostatniego wiersza
             for c in range(1, num_cols + 1):
                 data.pop(f"r{num_rows}c{c}", None)
-                data.pop(f"m_r{num_rows}c{c}", None)  # <--- NOWOŚĆ
+                data.pop(f"m_r{num_rows}c{c}", None)
+                data.pop(f"u_r{num_rows}c{c}", None)
 
             # Zmniejszamy licznik wierszy
             data["num_rows"] = num_rows - 1
@@ -530,7 +550,7 @@ async def table_action(request: Request, uid: str):
                 for old_r in range(1, num_rows + 1):
                     new_c = old_r + 1
                     new_data[f"r{new_r}c{new_c}"] = data.get(f"r{old_r}c{old_c}", "")
-
+                    new_data[f"u_r{new_r}c{new_c}"] = data.get(f"u_r{old_r}c{old_c}", "")
         else:
             # --- TRYB: POZIOMY -> PIONOWY (Cofnięcie do oryginału) ---
             new_data["num_rows"] = num_cols - 1
@@ -557,6 +577,7 @@ async def table_action(request: Request, uid: str):
                 for old_c in range(2, num_cols + 1):
                     new_r = old_c - 1
                     new_data[f"r{new_r}c{new_c}"] = data.get(f"r{old_r}c{old_c}", "")
+                    new_data[f"u_r{new_r}c{new_c}"] = data.get(f"u_r{old_r}c{old_c}", "")
 
         # Nadpisujemy stary stan czystą, nowo zmapowaną macierzą
         data = new_data
@@ -792,12 +813,21 @@ async def paste_card(request: Request, uid: str):
 # ==========================================
 # USTAWIENIA (CONFIG.YAML)
 # ==========================================
+@app.get("/settings", response_class=HTMLResponse)
+async def get_settings(request: Request):
+    return templates.TemplateResponse("settings.html", {"request": request, "settings": SETTINGS})
+
+
 @app.post("/settings", response_class=HTMLResponse)
 async def save_settings(request: Request):
     form_data = await request.form()
 
     new_settings = {}
     for key, value in form_data.items():
+
+        if isinstance(value, str):
+            value = value.replace("\r\n", "\n").strip()
+
         # Proste typowanie
         parsed_value = value
         if value.isdigit():

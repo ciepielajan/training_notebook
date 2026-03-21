@@ -14,37 +14,62 @@
 
     <ul class="dropdown-menu shadow-sm" style="min-width: 260px; z-index: 1050;">
 
-        <li>
-            <h6 class="dropdown-header">Systemowe</h6>
-        </li>
-        {% for item_id, item_name in SETTINGS.get('database', {}).get('system_items', {}).items() %}
-        <li>
-            <button class="dropdown-item d-flex align-items-center py-2" type="button"
-                onclick="selectItem(this, '{{ item_id }}', '{{ item_name }}')">
-                <i class="bi bi-heptagon-half me-2 text-primary"></i> {{ item_name }}
-            </button>
-        </li>
+        <li><h6 class="dropdown-header">Systemowe</h6></li>
+        
+        {% set sys_raw = SETTINGS.get('database', {}).get('system_items', '') %}
+        {% for line in sys_raw.split('\n') %}
+            {% set clean_line = line|trim %}
+            {% if clean_line %}
+                {% set parts = clean_line.split(',') %}
+                {% set item_name = parts[0]|trim %}
+                {% set val1 = parts[1]|trim if parts|length > 1 else '' %}
+                
+                <li>
+                    <button class="dropdown-item d-flex justify-content-between align-items-center py-2" type="button"
+                            _="on click 
+                               set the value of <.item-value-input/> in closest .dropdown to '{{ item_name }}'
+                               set the value of <.item-id-input/> in closest .dropdown to '{{ item_name }}'
+                               put '{{ item_name }}' into <.item-name/> in closest .dropdown
+                               if window.autoSave call window.autoSave()">
+                        <span><i class="bi bi-heptagon-half me-2 text-primary"></i> {{ item_name }}</span>
+                        
+                        {% if val1 %}
+                            <span class="badge bg-light text-secondary border">{{ val1 }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+            {% endif %}
         {% endfor %}
 
-        <li>
-            <hr class="dropdown-divider">
-        </li>
+        <li><hr class="dropdown-divider"></li>
 
-        <li>
-            <h6 class="dropdown-header">Twoje własne</h6>
-        </li>
-        {% for item_id, item_name in SETTINGS.get('database', {}).get('user_items', {}).items() %}
-        <li>
-            <button class="dropdown-item d-flex align-items-center py-2" type="button"
-                onclick="selectItem(this, '{{ item_id }}', '{{ item_name }}')">
-                <i class="bi bi-person-fill me-2 text-success"></i> {{ item_name }}
-            </button>
-        </li>
+        <li><h6 class="dropdown-header">Twoje własne</h6></li>
+        
+        {% set usr_raw = SETTINGS.get('database', {}).get('user_items', '') %}
+        {% for line in usr_raw.split('\n') %}
+            {% set clean_line = line|trim %}
+            {% if clean_line %}
+                {% set parts = clean_line.split(',') %}
+                {% set item_name = parts[0]|trim %}
+                {% set val1 = parts[1]|trim if parts|length > 1 else '' %}
+                
+                <li>
+                    <button class="dropdown-item d-flex justify-content-between align-items-center py-2" type="button"
+                            _="on click 
+                               set the value of <.item-value-input/> in closest .dropdown to '{{ item_name }}'
+                               set the value of <.item-id-input/> in closest .dropdown to '{{ item_name }}'
+                               put '{{ item_name }}' into <.item-name/> in closest .dropdown
+                               if window.autoSave call window.autoSave()">
+                        <span><i class="bi bi-person-fill me-2 text-success"></i> {{ item_name }}</span>
+                        {% if val1 %}
+                            <span class="badge bg-light text-secondary border">{{ val1 }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+            {% endif %}
         {% endfor %}
 
-        <li>
-            <hr class="dropdown-divider">
-        </li>
+        <li><hr class="dropdown-divider"></li>
         <li>
             <button class="dropdown-item text-primary fw-bold mt-1" type="button">
                 <i class="bi bi-plus-circle me-1"></i> Dodaj nowe...

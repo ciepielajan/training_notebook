@@ -29,15 +29,29 @@
                             {% for subkey, subval in val.items() %}
                             <div class="col-md-6 mb-3 ps-4 border-start border-2 border-light-subtle">
                                 <label class="form-label text-secondary small fw-bold mb-1">{{ subkey }}</label>
-                                <input type="text" class="form-control shadow-none border-secondary-subtle" 
-                                       name="{{ category }}.{{ key }}.{{ subkey }}" value="{{ subval }}">
+                                
+                                {% if subval is string and '\n' in subval %}
+                                    <textarea class="form-control shadow-none border-secondary-subtle" 
+                                              name="{{ category }}.{{ key }}.{{ subkey }}" rows="5">{{ subval }}</textarea>
+                                {% else %}
+                                    <input type="text" class="form-control shadow-none border-secondary-subtle" 
+                                           name="{{ category }}.{{ key }}.{{ subkey }}" value="{{ subval }}">
+                                {% endif %}
+                                
                             </div>
                             {% endfor %}
                         {% else %}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-secondary small fw-bold mb-1">{{ key }}</label>
-                                <input type="text" class="form-control shadow-none border-secondary-subtle" 
-                                       name="{{ category }}.{{ key }}" value="{{ val }}">
+                                
+                                {% if val is string and '\n' in val %}
+                                    <textarea class="form-control shadow-none border-secondary-subtle" 
+                                              name="{{ category }}.{{ key }}" rows="5">{{ val }}</textarea>
+                                {% else %}
+                                    <input type="text" class="form-control shadow-none border-secondary-subtle" 
+                                           name="{{ category }}.{{ key }}" value="{{ val }}">
+                                {% endif %}
+                                
                             </div>
                         {% endif %}
                     {% endfor %}

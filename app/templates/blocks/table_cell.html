@@ -3,13 +3,57 @@
 <div class="d-flex justify-content-between align-items-center ps-2 pe-1 h-100 {{ padding_class }}">
 
     {% if h_val|lower in ['ćwiczenie', 'produkt', 'składnik'] %}
-    {% include "blocks/table_dropdown_item.html" %}
+        {% include "blocks/table_dropdown_item.html" %}
     {% else %}
-    <input type="text" class="form-control border-0 shadow-none p-0 text-start bg-transparent w-100 h-100"
-        name="r{{ r }}c{{ c }}" value="{{ cell_val }}">
+        <div class="d-flex align-items-center w-100 h-100">
+            <input type="text" class="form-control border-0 shadow-none p-0 text-start bg-transparent w-100 h-100"
+                name="r{{ r }}c{{ c }}" value="{{ cell_val }}">
+            
+            {% set unit_val = data.get('u_r' ~ r ~ 'c' ~ c, '') %}
+            <div class="dropdown d-flex align-items-center">
+                <button class="btn btn-sm text-secondary border-0 shadow-none p-0 ms-1 d-flex align-items-center fw-medium" 
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false" 
+                        data-bs-popper-config='{"strategy":"fixed"}' style="font-size: 0.75rem;">
+                    <span class="unit-name">{{ unit_val if unit_val else '---' }}</span>
+                </button>
+
+                <input type="hidden" name="u_r{{ r }}c{{ c }}" class="unit-value-input" value="{{ unit_val }}">
+
+                <ul class="dropdown-menu shadow-sm" style="min-width: auto; z-index: 1050;">
+                    
+                    <li>
+                        <button class="dropdown-item px-3 py-1 text-center text-muted" type="button" 
+                                _="on click 
+                                   set the value of <.unit-value-input/> in closest .dropdown to ''
+                                   put '---' into <.unit-name/> in closest .dropdown
+                                   if window.autoSave call window.autoSave()">
+                            Brak
+                        </button>
+                    </li>
+
+                    {% set raw_units = SETTINGS.get('options', {}).get('units', 'kg, lbs, km, m, s, min, h, %, bpm, W') %}
+                    
+                    {% for u_raw in raw_units.split(',') %}
+                        {% set u = u_raw|trim %}
+                        
+                        {% if u %}
+                        <li>
+                            <button class="dropdown-item px-3 py-1 text-center" type="button" 
+                                    _="on click 
+                                       set the value of <.unit-value-input/> in closest .dropdown to '{{ u }}'
+                                       put '{{ u }}' into <.unit-name/> in closest .dropdown
+                                       if window.autoSave call window.autoSave()">
+                                {{ u }}
+                            </button>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
     {% endif %}
 
     {% with unique_id=unique_id, col_index=c, row_index=r, h_val=h_val, rowspan=ns.rs %}
-    {% include "blocks/table_menu.html" %}
+        {% include "blocks/table_menu.html" %}
     {% endwith %}
 </div>
