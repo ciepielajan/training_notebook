@@ -1,23 +1,26 @@
-{% if recent_workouts %}
-{% for workout in recent_workouts %}
+{% if recent_files %}
+{% for file in recent_files %}
 <li class="d-flex align-items-center justify-content-between workout-item">
 
-    <a href="#" class="nav-link flex-grow-1 text-truncate pe-1" hx-get="/load_workout/{{ workout.filename }}"
+    <a href="#" class="nav-link flex-grow-1 text-truncate pe-1" hx-get="/load_file/{{ file.filename }}"
         hx-target="#form">
-        <i class="bi bi-chat-left-text"></i>
-        <span class="menu-text">{{ workout.name }}</span>
+        {% if file.filename.startswith('item_') %}
+            <i class="bi bi-box-seam text-success"></i>
+        {% else %}
+            <i class="bi bi-chat-left-text text-primary"></i>
+        {% endif %}
+        <span class="menu-text">{{ file.name }}</span>
     </a>
 
     <div class="dropdown me-2 menu-options">
-        <button class="btn btn-sm text-secondary shadow-none p-1" type="button" data-bs-toggle="dropdown"
-            aria-expanded="false">
+        <button class="btn btn-sm text-secondary shadow-none p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-three-dots-vertical"></i>
         </button>
 
         <ul class="dropdown-menu dropdown-menu-dark shadow">
             <li><a class="dropdown-item" href="#"><i class="bi bi-pin-angle me-2"></i>Przypnij</a></li>
             <li>
-                <button class="dropdown-item" hx-post="/duplicate_workout/{{ workout.filename }}" hx-swap="none">
+                <button class="dropdown-item" hx-post="/duplicate_file/{{ file.filename }}" hx-swap="none">
                     <i class="bi bi-copy me-2"></i>Duplikuj
                 </button>
             </li>
@@ -28,13 +31,13 @@
 
             <li>
                 <button class="dropdown-item"
-                    onclick="let val = prompt('Podaj nową nazwę dla treningu:', '{{ workout.name }}'); if(val && val.trim() !== '') { htmx.ajax('POST', '/rename_workout/{{ workout.filename }}', {headers: {'HX-Prompt': val}}); }">
+                    onclick="let val = prompt('Podaj nową nazwę:', '{{ file.name | replace('\'', '\\\'') }}'); if(val && val.trim() !== '') { htmx.ajax('POST', '/rename_file/{{ file.filename }}', {headers: {'HX-Prompt': val}, swap: 'none'}); }">
                     <i class="bi bi-pencil me-2"></i>Zmień nazwę
                 </button>
             </li>
             <li>
-                <button class="dropdown-item text-danger fw-bold" hx-delete="/delete_workout/{{ workout.filename }}"
-                    hx-confirm="Czy na pewno chcesz bezpowrotnie usunąć trening '{{ workout.name }}'?" hx-swap="none">
+                <button class="dropdown-item text-danger fw-bold" hx-delete="/delete_file/{{ file.filename }}"
+                    hx-confirm="Czy na pewno chcesz usunąć '{{ file.name }}'?" hx-swap="none">
                     <i class="bi bi-trash me-2"></i>Usuń
                 </button>
             </li>
@@ -46,7 +49,7 @@
 <li>
     <a href="#" class="nav-link pe-none" style="color: #8e8e8e;">
         <i class="bi bi-info-circle"></i>
-        <span class="menu-text fst-italic">Brak treningów</span>
+        <span class="menu-text fst-italic">Brak elementów</span>
     </a>
 </li>
 {% endif %}

@@ -5,11 +5,13 @@
 
         <div class="form-floating flex-grow-1" style="min-width: 200px;">
             <input type="text" class="form-control fw-bold border-0 bg-light shadow-none"
-                id="visible-filename" name="current_filename" placeholder="Nazwa pliku"
-                value="{{ current_filename or w_data.get('current_filename', '') }}">
-            <label class="text-secondary" for="visible-filename">
-                <i class="bi bi-file-earmark-text me-1"></i> Nazwa pliku
+                placeholder="Tytuł" value="{{ display_name | default('Nowy plik') }}" 
+                readonly title="Aby zmienić nazwę pliku, użyj opcji w menu bocznym">
+            <label class="text-secondary">
+                <i class="bi bi-file-earmark-text me-1"></i> Nazwa (Zmień w menu bocznym)
             </label>
+            
+            <input type="hidden" name="current_filename" value="{{ current_filename }}">
         </div>
 
         <div class="d-flex flex-wrap align-items-center gap-2">
@@ -140,6 +142,8 @@
     </div>
 </div>
 
+<input type="hidden" name="file_context" id="hidden-file-context" value="{{ file_context | default('note') }}">
+
 <script>
     function updateMetaUI() {
         // Data i Godzina z obsługą polskich nazw dni
@@ -180,3 +184,5 @@
     document.addEventListener('DOMContentLoaded', updateMetaUI);
     document.body.addEventListener('htmx:afterOnLoad', updateMetaUI);
 </script>
+
+

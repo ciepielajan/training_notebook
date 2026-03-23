@@ -88,6 +88,11 @@ document.body.addEventListener('htmx:configRequest', function (evt) {
         if (filenameInput) {
             evt.detail.parameters['current_filename'] = filenameInput.value;
         }
+
+        const contextInput = document.getElementById('hidden-file-context');
+        if (contextInput) {
+            evt.detail.parameters['file_context'] = contextInput.value;
+        }
     }
 });
 

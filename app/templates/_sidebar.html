@@ -7,9 +7,15 @@
     </div>
 
     <div class="mb-2">
-        <a href="#" class="nav-link" hx-get="/new_workout" hx-target="#form" hx-swap="innerHTML">
-            <i class="bi bi-plus-lg"></i>
-            <span class="menu-text">Nowy trening</span>
+        <a href="#" class="nav-link" hx-get="/new/note" hx-target="#form" hx-swap="innerHTML">
+            <i class="bi bi-journal-plus text-primary"></i>
+            <span class="menu-text">Nowa notatka</span>
+        </a>
+    </div>
+    <div class="mb-2">
+        <a href="#" class="nav-link" hx-get="/new/item" hx-target="#form" hx-swap="innerHTML">
+            <i class="bi bi-box-seam text-success"></i>
+            <span class="menu-text">Nowy element bazy</span>
         </a>
     </div>
 
@@ -63,15 +69,20 @@
         </ul>
     </div>
     <div class="recent-workouts-container mt-2">
-        <div class="sidebar-heading menu-text">
-            Ostatnie
-        </div>
+        <div class="sidebar-heading menu-text">Ostatnie Notatki</div>
+        <ul class="list-unstyled mb-0" id="recent-notes-list" hx-get="/recent_html/note" hx-trigger="updateSidebar from:body">
+            {% with recent_files=recent_notes %}
+                {% include "_recent_list.html" %}
+            {% endwith %}
+        </ul>
+    </div>
 
-        <ul class="list-unstyled mb-0" id="recent-workouts-list" hx-get="/recent_workouts_html"
-            hx-trigger="updateSidebar from:body">
-
-            {% include "_recent_list.html" %}
-
+    <div class="recent-workouts-container mt-2" style="flex: 4 1 0;">
+        <div class="sidebar-heading menu-text">Baza Elementów</div>
+        <ul class="list-unstyled mb-0" id="recent-items-list" hx-get="/recent_html/item" hx-trigger="updateSidebar from:body">
+            {% with recent_files=recent_items %}
+                {% include "_recent_list.html" %}
+            {% endwith %}
         </ul>
     </div>
 
@@ -82,3 +93,15 @@
         </a>
     </div>
 </nav>
+
+
+
+
+
+
+
+
+
+
+    
+    

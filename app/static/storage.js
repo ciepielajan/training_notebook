@@ -58,6 +58,9 @@ export async function triggerSave(actionType, isAutoSave = false) {
     const filenameInput = document.querySelector('input[name="current_filename"]');
     const currentFilename = filenameInput ? filenameInput.value : '';
 
+    const contextInput = document.getElementById('hidden-file-context');
+    const fileContext = contextInput ? contextInput.value : 'note';
+
     // ==============================================
     // OPCJA A: EKSPORT (Pobieranie pliku w oknie)
     // ==============================================
@@ -100,6 +103,7 @@ export async function triggerSave(actionType, isAutoSave = false) {
         const formData = new FormData();
         formData.append('json_body', jsonString);
         formData.append('current_filename', currentFilename);
+        formData.append('file_context', fileContext);
 
         const response = await fetch('/save', { method: 'POST', body: formData });
         

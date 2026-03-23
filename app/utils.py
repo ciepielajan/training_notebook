@@ -1,5 +1,6 @@
 import json
-
+import os
+from urllib.parse import unquote
 import yaml
 import secrets
 from pathlib import Path
@@ -23,18 +24,38 @@ SETTINGS = load_settings()
 PATHS = SETTINGS.get("paths", {})
 DATA_DIR = Path(PATHS.get("data_dir")).resolve()
 BLOCKS_DIR = Path(PATHS.get("blocks_dir")).resolve()
+INDEX_FILE = DATA_DIR / "index.json"
 
 
-def get_recent_workouts() -> list:
-    """Pobiera pliki JSON z folderu i sortuje je od najnowszego."""
-    import os
+def load_index() -> dict:
+    """Ładuje indeks plików (mapa: nazwa_pliku -> ładny_tytuł)."""
+    if INDEX_FILE.exists():
+        with open(INDEX_FILE, "r", encoding="utf-8") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return {}
+    return {}
 
-    if not DATA_DIR.exists() or not DATA_DIR.is_dir():
-        print(f"BŁĄD: Folder z danymi nie istnieje: {DATA_DIR}")
-        return []
 
-    files = sorted(DATA_DIR.glob("*.json"), key=os.path.getmtime, reverse=True)
-    return [{"filename": f.name, "name": f.stem} for f in files]
+def save_index(index_data: dict):
+    """Zapisuje zaktualizowany indeks na dysk."""
+    with open(INDEX_FILE, "w", encoding="utf-8") as f:
+        json.dump(index_data, f, ensure_ascii=False, indent=4)
+
+
+def get_recent_files(file_prefix: str) -> list:
+    """Zwraca listę z indeksu, sortując po dacie OSTATNIEJ MODYFIKACJI na dysku."""
+    index = load_index()
+
+    # Wyciągamy tylko klucze (ID) pasujące do prefiksu (note_ lub item_)
+    filtered_keys = [k for k in index.keys() if k.startswith(file_prefix)]
+
+    # Sortujemy malejąco po dacie modyfikacji pliku (getmtime)
+    # Jeśli pliku jakimś cudem nie ma na dysku, dajemy mu czas 0 (spadnie na dół)
+    filtered_keys.sort(key=lambda k: os.path.getmtime(DATA_DIR / k) if (DATA_DIR / k).exists() else 0, reverse=True)
+
+    return [{"filename": k, "name": index[k]} for k in filtered_keys]
 
 
 def get_header_level(size_class: str) -> int:
