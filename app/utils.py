@@ -44,18 +44,45 @@ def save_index(index_data: dict):
         json.dump(index_data, f, ensure_ascii=False, indent=4)
 
 
-def get_recent_files(file_prefix: str) -> list:
-    """Zwraca listę z indeksu, sortując po dacie OSTATNIEJ MODYFIKACJI na dysku."""
+def get_recent_files(file_prefix: str, include_deleted: bool = False) -> list:
+    """Zwraca listę z indeksu, obsługując miękkie usuwanie i przypinanie."""
     index = load_index()
+    filtered = []
 
-    # Wyciągamy tylko klucze (ID) pasujące do prefiksu (note_ lub item_)
-    filtered_keys = [k for k in index.keys() if k.startswith(file_prefix)]
+    for k, v in index.items():
+        if not k.startswith(file_prefix):
+            continue
 
-    # Sortujemy malejąco po dacie modyfikacji pliku (getmtime)
-    # Jeśli pliku jakimś cudem nie ma na dysku, dajemy mu czas 0 (spadnie na dół)
-    filtered_keys.sort(key=lambda k: os.path.getmtime(DATA_DIR / k) if (DATA_DIR / k).exists() else 0, reverse=True)
+        # Zabezpieczenie (w locie transformuje stare wpisy ze stringów na słowniki)
+        if isinstance(v, str):
+            v = {"title": v, "is_deleted": False, "is_favorite": False, "project_ids": []}
 
-    return [{"filename": k, "name": index[k]} for k in filtered_keys]
+        # Filtrowanie Kosza
+        is_deleted = v.get("is_deleted", False)
+        if is_deleted and not include_deleted:
+            continue
+        if not is_deleted and include_deleted:
+            continue
+
+        filtered.append(
+            {
+                "filename": k,
+                "name": v.get("title", "Bez nazwy"),
+                "is_favorite": v.get("is_favorite", False),
+                "project_ids": v.get("project_ids", []),
+            }
+        )
+
+    # Sortowanie: 1. Ulubione na górze, 2. Data modyfikacji dyskowej
+    filtered.sort(
+        key=lambda x: (
+            x["is_favorite"],
+            os.path.getmtime(DATA_DIR / x["filename"]) if (DATA_DIR / x["filename"]).exists() else 0,
+        ),
+        reverse=True,
+    )
+
+    return filtered
 
 
 def get_header_level(size_class: str) -> int:

@@ -1,0 +1,106 @@
+<div class="container-fluid py-4" style="max-width: 800px; margin: 0 auto;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+        <h4 class="mb-0 fw-bold text-dark">
+            {% if is_trash_view %}
+                <i class="bi bi-trash3 text-danger me-2"></i>Kosz
+            {% elif context_name == 'item' %}
+                <i class="bi bi-box-seam text-success me-2"></i>Baza Elementów
+            {% else %}
+                <i class="bi bi-journal-text text-primary me-2"></i>Wszystkie Notatki
+            {% endif %}
+        </h4>
+        <span class="badge bg-light text-secondary border rounded-pill">{{ files | length }} elementów</span>
+    </div>
+
+    <div class="px-2 mb-3">
+        <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+            <input type="search" class="form-control border-start-0 shadow-none" name="q" value="{{ search_query }}"
+                placeholder="Zacznij pisać, aby wyszukać..." autocomplete="off"
+                hx-get="/list_view/{{ context_name }}?deleted={{ 'true' if is_trash_view else 'false' }}"
+                hx-trigger="keyup changed delay:300ms, search"
+                hx-target="#list-container"
+                hx-select="#list-container"
+                hx-swap="outerHTML">
+        </div>
+    </div>
+
+    <div id="list-container" class="bg-white rounded-3 shadow-sm border py-2">
+        
+        <h6 class="dropdown-header px-4 mb-1" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+            {% if is_trash_view %}
+                USUNIĘTE POZYCJE
+            {% else %}
+                ZAPISANE POZYCJE
+            {% endif %}
+        </h6>
+
+        <div class="list-group list-group-flush">
+            {% if files %}
+                {% for file in files %}
+                <div class="list-group-item list-group-item-action border-0 px-4 py-2 d-flex justify-content-between align-items-center {% if is_trash_view %}bg-light{% endif %}" style="transition: background-color 0.2s;">
+                    
+                    <a href="#" class="text-decoration-none flex-grow-1 text-dark d-flex align-items-center {% if is_trash_view %}pe-none text-muted{% endif %}"
+                       {% if not is_trash_view %}hx-get="/load_file/{{ file.filename }}" hx-target="#form"{% endif %}>
+                        
+                        <span style="width: 30px;">
+                            {% if file.is_favorite %}
+                                <i class="bi bi-star-fill text-warning fs-5"></i>
+                            {% elif file.filename.startswith('item_') %}
+                                <i class="bi bi-heptagon-half text-success fs-5"></i>
+                            {% else %}
+                                <i class="bi bi-journal-text text-primary fs-5"></i>
+                            {% endif %}
+                        </span>
+                        
+                        <span class="item-name fw-medium ms-1 {% if is_trash_view %}text-decoration-line-through{% endif %}" style="font-size: 15px;">
+                            {{ file.name }}
+                        </span>
+                    </a>
+
+                    <div class="dropdown ms-3">
+                        <button class="btn btn-sm text-secondary shadow-none p-1 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots-vertical fs-5"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border: 1px solid rgba(0,0,0,0.1) !important;">
+                            {% if is_trash_view %}
+                                <li>
+                                    <button class="dropdown-item text-success" hx-post="/restore_file/{{ file.filename }}" hx-swap="none" hx-on::after-request="htmx.trigger('body', 'refreshListView')">
+                                        <i class="bi bi-arrow-counterclockwise me-2"></i>Przywróć
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item text-danger fw-bold" hx-delete="/hard_delete_file/{{ file.filename }}" hx-confirm="Usunąć trwale?" hx-swap="none" hx-on::after-request="htmx.trigger('body', 'refreshListView')">
+                                    <i class="bi bi-trash-fill me-2"></i>Usuń trwale
+                                </button></li>
+                            {% else %}
+                                <li>
+                                    <button class="dropdown-item" hx-post="/toggle_favorite/{{ file.filename }}" hx-swap="none" hx-on::after-request="htmx.trigger('body', 'refreshListView')">
+                                        {% if file.is_favorite %}<i class="bi bi-star me-2"></i>Odepnij{% else %}<i class="bi bi-star-fill text-warning me-2"></i>Przypnij{% endif %}
+                                    </button>
+                                </li>
+                                <li><button class="dropdown-item" hx-post="/duplicate_file/{{ file.filename }}" hx-swap="none" hx-on::after-request="htmx.trigger('body', 'refreshListView')"><i class="bi bi-copy me-2"></i>Duplikuj</button></li>
+                                <li>
+                                    <button class="dropdown-item"
+                                        onclick="let val = prompt('Podaj nową nazwę:', '{{ file.name | replace('\'', '\\\'') }}'); if(val && val.trim() !== '') { htmx.ajax('POST', '/rename_file/{{ file.filename }}', {headers: {'HX-Prompt': val}, swap: 'none'}).then(() => htmx.ajax('GET', '/list_view/{{ context_name }}?q={{ search_query | default('') }}', {target: '#form'})); }">
+                                        <i class="bi bi-pencil me-2"></i>Zmień nazwę
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item text-danger fw-bold" hx-delete="/delete_file/{{ file.filename }}" hx-confirm="Przenieść do Kosza?" hx-swap="none" hx-on::after-request="htmx.trigger('body', 'refreshListView')"><i class="bi bi-trash me-2"></i>Do Kosza</button></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="px-4 py-4 text-center text-muted fst-italic">
+                    Brak wyników do wyświetlenia.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<input type="hidden" name="file_context" id="hidden-file-context" value="dashboard">

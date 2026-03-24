@@ -143,31 +143,35 @@ def create_and_render_file(request: Request, file_data: dict, file_prefix: str):
     file_path = DATA_DIR / new_filename
 
     display_name = "Nowy element" if file_prefix == "item" else "Nowa notatka"
-    file_data["file_context"] = file_prefix
-    file_data["title"] = display_name  # <--- Wpisujemy tytuł do JSONa
+
+    # Inicjujemy metadane bazy w dokumencie
+    file_data.update(
+        {
+            "file_context": file_prefix,
+            "title": display_name,
+            "is_deleted": False,
+            "is_favorite": False,
+            "project_ids": [],
+        }
+    )
 
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(file_data, f, ensure_ascii=False, indent=4)
 
-    # AKTUALIZACJA BAZY
+    # Aktualizacja indeksu
     index = load_index()
-    index[new_filename] = display_name
+    index[new_filename] = {"title": display_name, "is_deleted": False, "is_favorite": False, "project_ids": []}
     save_index(index)
 
     cards_to_render = process_spider_json(file_data)
-
-    # Tworzymy ładną nazwę do wyświetlenia u góry
-    display_name = unquote(Path(new_filename).stem.replace(f"{file_prefix}_", "", 1))
-
     context = {
         "request": request,
         "cards_list": cards_to_render,
         "current_filename": new_filename,
-        "display_name": display_name,  # NOWE
+        "display_name": display_name,
         "workout_data": file_data,
         "file_context": file_prefix,
     }
-
     response = templates.TemplateResponse("_workout_content.html", context)
     response.headers["HX-Trigger"] = "updateSidebar"
     return response
@@ -210,6 +214,93 @@ async def load_file(request: Request, filename: str):
     return templates.TemplateResponse("_workout_content.html", context)
 
 
+# --- USUWANIE ---
+@app.delete("/delete_file/{filename}")
+async def delete_file(filename: str):
+    """Miękkie usunięcie - ląduje w Koszu"""
+    file_path = DATA_DIR / filename
+    if file_path.exists():
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        data["is_deleted"] = True
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
+    index = load_index()
+    if filename in index:
+        if isinstance(index[filename], str):
+            index[filename] = {"title": index[filename]}
+        index[filename]["is_deleted"] = True
+        save_index(index)
+
+    response = Response(status_code=200)
+    response.headers["HX-Trigger"] = "updateSidebar"
+    return response
+
+
+@app.post("/restore_file/{filename}")
+async def restore_file(filename: str):
+    """Przywraca plik z Kosza"""
+    file_path = DATA_DIR / filename
+    if file_path.exists():
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        data["is_deleted"] = False
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
+    index = load_index()
+    if filename in index:
+        if isinstance(index[filename], str):
+            index[filename] = {"title": index[filename]}
+        index[filename]["is_deleted"] = False
+        save_index(index)
+
+    response = Response(status_code=200)
+    response.headers["HX-Trigger"] = "updateSidebar"
+    return response
+
+
+@app.delete("/hard_delete_file/{filename}")
+async def hard_delete_file(filename: str):
+    """Fizycznie usuwa plik (Opróżnij z Kosza)"""
+    file_path = DATA_DIR / filename
+    if file_path.exists():
+        file_path.unlink()
+
+    index = load_index()
+    if filename in index:
+        del index[filename]
+        save_index(index)
+
+    response = Response(status_code=200)
+    response.headers["HX-Trigger"] = "updateSidebar"
+    return response
+
+
+# --- ULUBIONE (Pin) ---
+@app.post("/toggle_favorite/{filename}")
+async def toggle_favorite(filename: str):
+    file_path = DATA_DIR / filename
+    if file_path.exists():
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        data["is_favorite"] = not data.get("is_favorite", False)
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
+    index = load_index()
+    if filename in index:
+        if isinstance(index[filename], str):
+            index[filename] = {"title": index[filename]}
+        index[filename]["is_favorite"] = not index[filename].get("is_favorite", False)
+        save_index(index)
+
+    response = Response(status_code=200)
+    response.headers["HX-Trigger"] = "updateSidebar"
+    return response
+
+
 # --- ZMIANA NAZWY ---
 @app.post("/rename_file/{filename}")
 async def rename_file(request: Request, filename: str):
@@ -231,30 +322,20 @@ async def rename_file(request: Request, filename: str):
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
-        # 2. Zmieniamy tytuł w bazie (index.json) - ZAMIAST RENAME NA DYSKU!
+        # 2. Zmieniamy tytuł w cache'u (index.json) szanując strukturę metadanych
         index = load_index()
-        index[filename] = safe_name
-        save_index(index)
+        if filename in index:
+            # Zabezpieczenie migracyjne na wypadek starych stringów
+            if isinstance(index[filename], str):
+                index[filename] = {
+                    "title": index[filename],
+                    "is_deleted": False,
+                    "is_favorite": False,
+                    "project_ids": [],
+                }
 
-    response = Response(status_code=200)
-    response.headers["HX-Trigger"] = "updateSidebar"
-    return response
-
-
-# --- USUWANIE ---
-@app.delete("/delete_file/{filename}")
-async def delete_file(filename: str):
-    file_path = DATA_DIR / filename
-
-    # 1. Kasujemy plik z dysku
-    if file_path.exists():
-        file_path.unlink()
-
-    # 2. Wyrzucamy go z naszej pseudo-bazy
-    index = load_index()
-    if filename in index:
-        del index[filename]
-        save_index(index)
+            index[filename]["title"] = safe_name
+            save_index(index)
 
     response = Response(status_code=200)
     response.headers["HX-Trigger"] = "updateSidebar"
@@ -273,15 +354,19 @@ async def duplicate_file(filename: str):
     with open(old_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # 2. Tworzymy nowy tytuł
+    # 2. Tworzymy nowy tytuł i czyścimy specyficzne flagi
     old_title = data.get("title", "Bez nazwy")
     new_title = f"{old_title} (kopia)"
-    data["title"] = new_title
 
-    # 3. Generujemy CAŁKOWICIE NOWE ID dla pliku (jak nowe ObjectId w Mongo)
+    data["title"] = new_title
+    data["is_favorite"] = False  # Kopia domyślnie nie jest ulubiona
+    data["is_deleted"] = False  # Kopia domyślnie nie jest w koszu (gdybyśmy duplikowali z kosza)
+    # project_ids zostawiamy bez zmian, niech kopia będzie przypisana do tych samych projektów!
+
+    # 3. Generujemy CAŁKOWICIE NOWE ID dla pliku
     prefix = data.get("file_context", "note")
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    random_id = secrets.token_hex(2)  # Zabezpieczenie przed zbyt szybkim klikaniem
+    random_id = secrets.token_hex(2)
     new_filename = f"{prefix}_{timestamp}_{random_id}.json"
     new_path = DATA_DIR / new_filename
 
@@ -289,9 +374,14 @@ async def duplicate_file(filename: str):
     with open(new_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-    # 5. Dodajemy nowy plik do indeksu
+    # 5. Dodajemy nowy plik do indeksu uwzględniając wymaganą strukturę metadanych
     index = load_index()
-    index[new_filename] = new_title
+    index[new_filename] = {
+        "title": new_title,
+        "is_favorite": False,
+        "is_deleted": False,
+        "project_ids": data.get("project_ids", []),
+    }
     save_index(index)
 
     response = Response(status_code=200)
@@ -374,16 +464,23 @@ async def save(request: Request):
         return JSONResponse(content={"status": "error", "message": "Brak danych"}, status_code=400)
 
     try:
-        data_structure = json.loads(json_body)
+        new_data_structure = json.loads(json_body)
+        file_path = DATA_DIR / current_filename
 
-        # Wpisujemy flagę do struktury przed zapisanem na dysk
-        data_structure["file_context"] = file_context
+        # Bezpiecznie wczytujemy STARE metadane, żeby JS ich nie nadpisał
+        if file_path.exists():
+            with open(file_path, "r", encoding="utf-8") as f:
+                existing_data = json.load(f)
+        else:
+            existing_data = {"title": "Bez nazwy", "is_deleted": False, "is_favorite": False, "project_ids": []}
 
-        target_filename = Path(current_filename).name
-        file_path = DATA_DIR / target_filename
+        # Aktualizujemy TYLKO drzewo bloków i kontekst
+        existing_data["items"] = new_data_structure.get("items", [])
+        existing_data["file_context"] = file_context
 
+        # Nadpisujemy dokument
         with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(data_structure, f, ensure_ascii=False, indent=4)
+            json.dump(existing_data, f, ensure_ascii=False, indent=4)
 
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
@@ -674,9 +771,11 @@ async def add_list_item(request: Request, parent_id: str, list_type: str = "bull
 
 
 @app.get("/recent_html/{context_name}")
-async def recent_html(request: Request, context_name: str):
-    recent_files = get_recent_files(context_name)
-    return templates.TemplateResponse("_recent_list.html", {"request": request, "recent_files": recent_files})
+async def recent_html(request: Request, context_name: str, deleted: bool = False):
+    recent_files = get_recent_files(context_name, include_deleted=deleted)
+    return templates.TemplateResponse(
+        "_recent_list.html", {"request": request, "recent_files": recent_files, "is_trash_view": deleted}
+    )
 
 
 @app.post("/card/transform/{uid}", response_class=HTMLResponse)
@@ -880,3 +979,25 @@ async def exercise_details(request: Request, name: str):
         "blocks/exercise_modal.html",
         {"request": request, "name": name, "tags": tags},
     )
+
+
+# --- WIDOK PEŁNEJ LISTY ---
+@app.get("/list_view/{context_name}", response_class=HTMLResponse)
+async def list_view(request: Request, context_name: str, deleted: bool = False, q: str = None):
+    """Renderuje pełnoekranową listę elementów z obsługą wyszukiwania."""
+    files = get_recent_files(context_name, include_deleted=deleted)
+
+    # Błyskawiczne filtrowanie na serwerze (Active Search)
+    if q:
+        files = [f for f in files if q.lower() in f["name"].lower()]
+
+    context = {
+        "request": request,
+        "files": files,
+        "context_name": context_name,
+        "is_trash_view": deleted,
+        "file_context": "dashboard",
+        "current_filename": "",
+        "search_query": q or "",  # Zwracamy query, żeby input o nim pamiętał
+    }
+    return templates.TemplateResponse("_list_view.html", context)
