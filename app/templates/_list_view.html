@@ -25,6 +25,24 @@
                 hx-swap="outerHTML">
         </div>
     </div>
+    {% if all_tags and not is_trash_view %}
+    <div class="px-2 mb-3 d-flex flex-wrap gap-2">
+        
+        <a href="#" class="badge {% if not active_tag %}bg-dark text-white{% else %}bg-white text-dark border{% endif %} text-decoration-none rounded-pill px-3 py-2 shadow-sm"
+           hx-get="/list_view/{{ context_name }}?q={{ search_query }}" hx-target="#form">
+           Wszystkie
+        </a>
+
+        {% for t in all_tags %}
+        <a href="#" class="badge {% if active_tag == t %}bg-primary text-white{% else %}bg-white text-primary border{% endif %} text-decoration-none rounded-pill px-3 py-2 shadow-sm"
+           style="transition: 0.2s;"
+           hx-get="/list_view/{{ context_name }}?tag={{ t }}&q={{ search_query }}" hx-target="#form">
+            #{{ t }}
+        </a>
+        {% endfor %}
+        
+    </div>
+    {% endif %}
 
     <div id="list-container" class="bg-white rounded-3 shadow-sm border py-2">
         

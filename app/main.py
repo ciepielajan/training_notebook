@@ -199,6 +199,7 @@ async def load_file(request: Request, filename: str):
         cards_to_render = []
 
     file_context = spider_json.get("file_context", filename.split("_")[0])
+    tags = spider_json.get("tags", spider_json.get("project_ids", []))
 
     # Tytuł pobieramy już bezpiecznie prosto z JSON-a
     display_name = spider_json.get("title", "Bez nazwy")
@@ -210,6 +211,7 @@ async def load_file(request: Request, filename: str):
         "display_name": display_name,
         "workout_data": spider_json,
         "file_context": file_context,
+        "tags": tags,
     }
     return templates.TemplateResponse("_workout_content.html", context)
 
@@ -981,13 +983,25 @@ async def exercise_details(request: Request, name: str):
     )
 
 
-# --- WIDOK PEŁNEJ LISTY ---
+# --- WIDOK PEŁNEJ LISTY Z WYSZUKIWARKĄ I TAGAMI ---
+# --- WIDOK PEŁNEJ LISTY Z WYSZUKIWARKĄ I TAGAMI ---
 @app.get("/list_view/{context_name}", response_class=HTMLResponse)
-async def list_view(request: Request, context_name: str, deleted: bool = False, q: str = None):
-    """Renderuje pełnoekranową listę elementów z obsługą wyszukiwania."""
+async def list_view(request: Request, context_name: str, deleted: bool = False, q: str = None, tag: str = None):
     files = get_recent_files(context_name, include_deleted=deleted)
 
-    # Błyskawiczne filtrowanie na serwerze (Active Search)
+    # 1. Wyciągamy wszystkie unikalne tagi do stworzenia przycisków
+    all_tags = set()
+    for f in files:
+        for t in f.get("tags", []):
+            all_tags.add(t)
+
+    sorted_tags = sorted(list(all_tags))
+
+    # 2. Filtrowanie plików po wybranym tagu (jeśli ktoś kliknął przycisk)
+    if tag:
+        files = [f for f in files if tag in f.get("tags", [])]
+
+    # 3. Dodatkowe filtrowanie po nazwie z pola tekstowego
     if q:
         files = [f for f in files if q.lower() in f["name"].lower()]
 
@@ -998,6 +1012,69 @@ async def list_view(request: Request, context_name: str, deleted: bool = False, 
         "is_trash_view": deleted,
         "file_context": "dashboard",
         "current_filename": "",
-        "search_query": q or "",  # Zwracamy query, żeby input o nim pamiętał
+        "search_query": q or "",
+        "all_tags": sorted_tags,
+        "active_tag": tag,
     }
     return templates.TemplateResponse("_list_view.html", context)
+
+
+# --- SYSTEM TAGÓW ---
+@app.post("/tags/add/{filename}")
+async def add_tag(request: Request, filename: str):
+    form = await request.form()
+    # Pobieramy wpis, wywalamy spacje na końcach, zmieniamy na małe litery i wyrzucamy znak #
+    new_tag = form.get("tag_name", "").strip().lower().replace("#", "")
+
+    file_path = DATA_DIR / filename
+    if not new_tag or not file_path.exists():
+        return Response(status_code=204)
+
+    # 1. Dodajemy do Głównego Źródła (plik)
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # Zgodność wsteczna: używamy 'tags' albo 'project_ids'
+    tags = data.get("tags", data.get("project_ids", []))
+
+    if new_tag not in tags:
+        tags.append(new_tag)
+        data["tags"] = tags
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
+        # 2. Aktualizujemy Cache (index.json)
+        index = load_index()
+        if filename in index:
+            index[filename]["tags"] = tags
+            save_index(index)
+
+    # Zwracamy zaktualizowany komponent HTML
+    return templates.TemplateResponse(
+        "_tags_editor.html", {"request": request, "current_filename": filename, "tags": tags}
+    )
+
+
+@app.delete("/tags/remove/{filename}/{tag_name}")
+async def remove_tag(request: Request, filename: str, tag_name: str):
+    file_path = DATA_DIR / filename
+    if file_path.exists():
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        tags = data.get("tags", data.get("project_ids", []))
+        if tag_name in tags:
+            tags.remove(tag_name)
+            data["tags"] = tags
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+
+            index = load_index()
+            if filename in index:
+                index[filename]["tags"] = tags
+                save_index(index)
+
+        return templates.TemplateResponse(
+            "_tags_editor.html", {"request": request, "current_filename": filename, "tags": tags}
+        )
+    return Response(status_code=404)

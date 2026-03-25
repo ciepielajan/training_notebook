@@ -1,0 +1,23 @@
+<div id="document-tags-container" class="d-flex align-items-center flex-wrap gap-2 mb-3">
+    
+    <i class="bi bi-tags text-secondary me-1"></i>
+    
+    {% for tag in tags %}
+        <span class="badge bg-primary text-white d-flex align-items-center rounded-pill px-3 py-2 shadow-sm" style="font-weight: 500;">
+            #{{ tag }}
+            <i class="bi bi-x-circle-fill ms-2 opacity-75" style="cursor: pointer; font-size: 0.9rem;"
+               hx-delete="/tags/remove/{{ current_filename }}/{{ tag }}"
+               hx-target="#document-tags-container"
+               hx-swap="outerHTML"
+               title="Usuń tag"></i>
+        </span>
+    {% endfor %}
+
+    <form hx-post="/tags/add/{{ current_filename }}"
+          hx-target="#document-tags-container"
+          hx-swap="outerHTML"
+          class="m-0">
+        <input type="text" name="tag_name" class="form-control form-control-sm border-0 bg-light rounded-pill px-3"
+               placeholder="+ dodaj tag..." style="width: 120px; font-size: 0.85rem;" autocomplete="off">
+    </form>
+</div>

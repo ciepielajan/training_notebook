@@ -69,7 +69,7 @@ def get_recent_files(file_prefix: str, include_deleted: bool = False) -> list:
                 "filename": k,
                 "name": v.get("title", "Bez nazwy"),
                 "is_favorite": v.get("is_favorite", False),
-                "project_ids": v.get("project_ids", []),
+                "tags": v.get("tags", v.get("project_ids", [])),
             }
         )
 
