@@ -13,11 +13,49 @@
         </span>
     {% endfor %}
 
-    <form hx-post="/tags/add/{{ current_filename }}"
-          hx-target="#document-tags-container"
-          hx-swap="outerHTML"
-          class="m-0">
-        <input type="text" name="tag_name" class="form-control form-control-sm border-0 bg-light rounded-pill px-3"
-               placeholder="+ dodaj tag..." style="width: 120px; font-size: 0.85rem;" autocomplete="off">
-    </form>
+    <div class="d-flex align-items-center bg-light rounded-pill pe-1 shadow-sm border">
+        <form hx-post="/tags/add/{{ current_filename }}"
+              hx-target="#document-tags-container"
+              hx-swap="outerHTML"
+              class="m-0">
+            
+            <input type="text" name="tag_name" class="form-control form-control-sm border-0 bg-transparent px-3 shadow-none"
+                   placeholder="+ dodaj tag..." style="width: 120px; font-size: 0.85rem;" autocomplete="off"
+                   list="available-tags"> <datalist id="available-tags">
+                {% for t in all_available_tags %}
+                    {% if t not in tags %}
+                        <option value="{{ t }}"></option>
+                    {% endif %}
+                {% endfor %}
+            </datalist>
+        </form>
+
+        <div class="dropdown">
+            <button class="btn btn-sm text-secondary border-0 shadow-none rounded-circle px-2" type="button" data-bs-toggle="dropdown" title="Wybierz z listy">
+                <i class="bi bi-caret-down-fill" style="font-size: 0.7rem;"></i>
+            </button>
+            <ul class="dropdown-menu shadow border-0" style="max-height: 250px; overflow-y: auto; font-size: 0.9rem;">
+                <li class="dropdown-header">Dostępne tagi</li>
+                {% set has_options = false %}
+                {% for t in all_available_tags %}
+                    {% if t not in tags %}
+                    <li>
+                        <a class="dropdown-item py-2" href="#" 
+                           hx-post="/tags/add/{{ current_filename }}" 
+                           hx-vals='{"tag_name": "{{ t }}"}' 
+                           hx-target="#document-tags-container" 
+                           hx-swap="outerHTML">
+                            #{{ t }}
+                        </a>
+                    </li>
+                    {% set has_options = true %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if not all_available_tags or not has_options %}
+                    <li><span class="dropdown-item-text text-muted small">Brak innych tagów.</span></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
 </div>

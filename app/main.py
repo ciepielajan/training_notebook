@@ -19,9 +19,17 @@ from app.utils import (
     save_index,
     load_index,
 )
-import traceback
 import yaml
-from urllib.parse import quote, unquote
+
+
+def get_all_existing_tags() -> list:
+    """Szybko wyciąga wszystkie unikalne tagi ze wszystkich plików w indeksie."""
+    index = load_index()
+    all_tags = set()
+    for v in index.values():
+        if isinstance(v, dict):
+            all_tags.update(v.get("tags", []))
+    return sorted(list(all_tags))
 
 
 def multiline_presenter(dumper, data):
@@ -200,6 +208,7 @@ async def load_file(request: Request, filename: str):
 
     file_context = spider_json.get("file_context", filename.split("_")[0])
     tags = spider_json.get("tags", spider_json.get("project_ids", []))
+    all_tags = get_all_existing_tags()
 
     # Tytuł pobieramy już bezpiecznie prosto z JSON-a
     display_name = spider_json.get("title", "Bez nazwy")
@@ -212,6 +221,7 @@ async def load_file(request: Request, filename: str):
         "workout_data": spider_json,
         "file_context": file_context,
         "tags": tags,
+        "all_available_tags": all_tags,
     }
     return templates.TemplateResponse("_workout_content.html", context)
 
@@ -1049,9 +1059,10 @@ async def add_tag(request: Request, filename: str):
             index[filename]["tags"] = tags
             save_index(index)
 
-    # Zwracamy zaktualizowany komponent HTML
+    all_tags = get_all_existing_tags()
     return templates.TemplateResponse(
-        "_tags_editor.html", {"request": request, "current_filename": filename, "tags": tags}
+        "_tags_editor.html",
+        {"request": request, "current_filename": filename, "tags": tags, "all_available_tags": all_tags},
     )
 
 
@@ -1074,7 +1085,6 @@ async def remove_tag(request: Request, filename: str, tag_name: str):
                 index[filename]["tags"] = tags
                 save_index(index)
 
-        return templates.TemplateResponse(
-            "_tags_editor.html", {"request": request, "current_filename": filename, "tags": tags}
-        )
+        all_tags = get_all_existing_tags()
+        return templates.TemplateResponse("_tags_editor.html", {"request": request, "current_filename": filename, "tags": tags, "all_available_tags": all_tags})
     return Response(status_code=404)
