@@ -193,3 +193,8 @@ def get_all_exercises() -> list:
             exercises.append({"name": name, "source": source_label, "tags": tags, "category": category})
 
     return exercises
+
+
+
+
+

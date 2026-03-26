@@ -42,14 +42,38 @@ def get_db_exercises() -> list:
     return sorted(exercise_objects, key=lambda x: x["name"].lower())
 
 
-def get_all_existing_tags() -> list:
-    """Szybko wyciąga wszystkie unikalne tagi ze wszystkich plików w indeksie."""
+def get_all_existing_tags(context_name: str) -> dict:
+    """
+    Wyciąga unikalne tagi, filtrując je po kontekście (note / item).
+    Zwraca słownik: { "Nazwa Grupy": ["tag1", "tag2"] }
+    """
     index = load_index()
-    all_tags = set()
-    for v in index.values():
+    all_tags = {}
+
+    for filename, v in index.items():
+        # Separacja: notatki widzą tylko tagi z notatek, itemy z itemów
+        if not filename.startswith(context_name):
+            continue
+
         if isinstance(v, dict):
-            all_tags.update(v.get("tags", []))
-    return sorted(list(all_tags))
+            # Zgodność wsteczna
+            file_tags = normalize_tags(v.get("tags", []))
+
+            for group, tags_list in file_tags.items():
+                if group not in all_tags:
+                    all_tags[group] = set()
+                all_tags[group].update(tags_list)
+
+    return {k: sorted(list(v)) for k, v in all_tags.items()}
+
+
+def normalize_tags(tags_data) -> dict:
+    """Migruje stare płaskie listy tagów do nowej struktury opartej na grupach."""
+    if isinstance(tags_data, dict):
+        return tags_data
+    if isinstance(tags_data, list):
+        return {"Ogólne": tags_data} if tags_data else {}
+    return {}
 
 
 def multiline_presenter(dumper, data):
@@ -180,6 +204,7 @@ def create_and_render_file(request: Request, file_data: dict, file_prefix: str):
             "is_deleted": False,
             "is_favorite": False,
             "project_ids": [],
+            "tags": {},  # Dodajemy pusty słownik tagów do struktury nowego pliku
         }
     )
 
@@ -188,10 +213,17 @@ def create_and_render_file(request: Request, file_data: dict, file_prefix: str):
 
     # Aktualizacja indeksu
     index = load_index()
-    index[new_filename] = {"title": display_name, "is_deleted": False, "is_favorite": False, "project_ids": []}
+    index[new_filename] = {
+        "title": display_name,
+        "is_deleted": False,
+        "is_favorite": False,
+        "project_ids": [],
+        "tags": {},
+    }
     save_index(index)
 
     cards_to_render = process_spider_json(file_data)
+
     context = {
         "request": request,
         "cards_list": cards_to_render,
@@ -199,7 +231,10 @@ def create_and_render_file(request: Request, file_data: dict, file_prefix: str):
         "display_name": display_name,
         "workout_data": file_data,
         "file_context": file_prefix,
+        "tags": {},  # <--- DODANO PUSTE TAGI
+        "all_available_tags": get_all_existing_tags(file_prefix),  # <--- DODANO BAZĘ TAGÓW
     }
+
     response = templates.TemplateResponse("_workout_content.html", context)
     response.headers["HX-Trigger"] = "updateSidebar"
     return response
@@ -227,8 +262,8 @@ async def load_file(request: Request, filename: str):
         cards_to_render = []
 
     file_context = spider_json.get("file_context", filename.split("_")[0])
-    tags = spider_json.get("tags", spider_json.get("project_ids", []))
-    all_tags = get_all_existing_tags()
+    tags = normalize_tags(spider_json.get("tags", spider_json.get("project_ids", [])))
+    all_tags = get_all_existing_tags(file_context)
     db_exercises = get_db_exercises()
 
     # Tytuł pobieramy już bezpiecznie prosto z JSON-a
@@ -455,35 +490,10 @@ async def index(request: Request):
         "recent_items": recent_items,
         "current_filename": "",
         "file_context": "note",
+        "tags": {},  # <--- DODANO PUSTE TAGI
+        "all_available_tags": get_all_existing_tags("note"),  # <--- DODANO BAZĘ TAGÓW
     }
     return templates.TemplateResponse("index.html", context)
-
-    # Tworzymy pełną ścieżkę do klikniętego pliku
-    file_path = DATA_DIR / filename
-    spider_json = {}
-
-    try:
-        # 1. Wczytujemy plik z dysku
-        with open(file_path, "r", encoding="utf-8") as f:
-            spider_json = json.load(f)
-
-        # 2. Przetwarzamy dane funkcją
-        cards_to_render = process_spider_json(spider_json)
-
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"BŁĄD: Nie można wczytać pliku {filename}: {e}")
-        cards_to_render = []
-
-    # 3. Zwracamy PEŁNĄ paczkę (Nagłówek + Karty + Inputy) i przekazujemy workout_data
-    context = {
-        "request": request,
-        "cards_list": cards_to_render,
-        "current_filename": filename,
-        "workout_data": spider_json,
-    }
-
-    # Zmieniamy zwracany szablon na naszą nową paczkę
-    return templates.TemplateResponse("_workout_content.html", context)
 
 
 # --- AUTO ZAPIS ---
@@ -1034,14 +1044,16 @@ async def list_view(request: Request, context_name: str, deleted: bool = False, 
     # 1. Wyciągamy wszystkie unikalne tagi do stworzenia przycisków
     all_tags = set()
     for f in files:
-        for t in f.get("tags", []):
-            all_tags.add(t)
+        tags_data = normalize_tags(f.get("tags", []))
+        for group_tags in tags_data.values():
+            for t in group_tags:
+                all_tags.add(t)
 
     sorted_tags = sorted(list(all_tags))
 
     # 2. Filtrowanie plików po wybranym tagu (jeśli ktoś kliknął przycisk)
     if tag:
-        files = [f for f in files if tag in f.get("tags", [])]
+        files = [f for f in files if tag in [t for group in normalize_tags(f.get("tags", [])).values() for t in group]]
 
     # 3. Dodatkowe filtrowanie po nazwie z pola tekstowego
     if q:
@@ -1062,64 +1074,201 @@ async def list_view(request: Request, context_name: str, deleted: bool = False, 
 
 
 # --- SYSTEM TAGÓW ---
+# --- SYSTEM TAGÓW Z GRUPAMI ---
 @app.post("/tags/add/{filename}")
 async def add_tag(request: Request, filename: str):
     form = await request.form()
-    # Pobieramy wpis, wywalamy spacje na końcach, zmieniamy na małe litery i wyrzucamy znak #
-    new_tag = form.get("tag_name", "").strip().lower().replace("#", "")
+    group_name = form.get("group_name", "Ogólne").strip()
+
+    # ZMIANA: Zostawiamy oryginalną wielkość liter i ewentualne znaki specjalne
+    new_tag = form.get("tag_name", "").strip()
 
     file_path = DATA_DIR / filename
     if not new_tag or not file_path.exists():
         return Response(status_code=204)
 
-    # 1. Dodajemy do Głównego Źródła (plik)
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Zgodność wsteczna: używamy 'tags' albo 'project_ids'
-    tags = data.get("tags", data.get("project_ids", []))
+    tags_dict = normalize_tags(data.get("tags", []))
 
-    if new_tag not in tags:
-        tags.append(new_tag)
-        data["tags"] = tags
+    if group_name not in tags_dict:
+        tags_dict[group_name] = []
+
+    if new_tag not in tags_dict[group_name]:
+        tags_dict[group_name].append(new_tag)
+        data["tags"] = tags_dict
+
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
-        # 2. Aktualizujemy Cache (index.json)
         index = load_index()
         if filename in index:
-            index[filename]["tags"] = tags
+            index[filename]["tags"] = tags_dict
             save_index(index)
 
-    all_tags = get_all_existing_tags()
+    file_context = data.get("file_context", filename.split("_")[0])
     return templates.TemplateResponse(
         "_tags_editor.html",
-        {"request": request, "current_filename": filename, "tags": tags, "all_available_tags": all_tags},
+        {
+            "request": request,
+            "current_filename": filename,
+            "tags": tags_dict,
+            "all_available_tags": get_all_existing_tags(file_context),
+        },
     )
 
 
-@app.delete("/tags/remove/{filename}/{tag_name}")
-async def remove_tag(request: Request, filename: str, tag_name: str):
+@app.delete("/tags/remove/{filename}/{group_name}/{tag_name}")
+async def remove_tag(request: Request, filename: str, group_name: str, tag_name: str):
     file_path = DATA_DIR / filename
     if file_path.exists():
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        tags = data.get("tags", data.get("project_ids", []))
-        if tag_name in tags:
-            tags.remove(tag_name)
-            data["tags"] = tags
+        tags_dict = normalize_tags(data.get("tags", []))
+        if group_name in tags_dict and tag_name in tags_dict[group_name]:
+            tags_dict[group_name].remove(tag_name)
+            data["tags"] = tags_dict
+
             with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
 
             index = load_index()
             if filename in index:
-                index[filename]["tags"] = tags
+                index[filename]["tags"] = tags_dict
                 save_index(index)
 
-        all_tags = get_all_existing_tags()
+        file_context = data.get("file_context", filename.split("_")[0])
         return templates.TemplateResponse(
             "_tags_editor.html",
-            {"request": request, "current_filename": filename, "tags": tags, "all_available_tags": all_tags},
+            {
+                "request": request,
+                "current_filename": filename,
+                "tags": tags_dict,
+                "all_available_tags": get_all_existing_tags(file_context),
+            },
+        )
+    return Response(status_code=404)
+
+
+@app.post("/tags/add_group/{filename}")
+async def add_tag_group(request: Request, filename: str):
+    new_group = request.headers.get("HX-Prompt", "").strip()
+    if not new_group:
+        return Response(status_code=204)
+
+    file_path = DATA_DIR / filename
+    if file_path.exists():
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        tags_dict = normalize_tags(data.get("tags", []))
+        if new_group not in tags_dict:
+            tags_dict[new_group] = []
+            data["tags"] = tags_dict
+
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+
+            index = load_index()
+            if filename in index:
+                index[filename]["tags"] = tags_dict
+                save_index(index)
+
+        file_context = data.get("file_context", filename.split("_")[0])
+        return templates.TemplateResponse(
+            "_tags_editor.html",
+            {
+                "request": request,
+                "current_filename": filename,
+                "tags": tags_dict,
+                "all_available_tags": get_all_existing_tags(file_context),
+            },
+        )
+    return Response(status_code=404)
+
+
+@app.delete("/tags/remove_group/{filename}/{group_name}")
+async def remove_tag_group(request: Request, filename: str, group_name: str):
+    file_path = DATA_DIR / filename
+    if file_path.exists():
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        tags_dict = normalize_tags(data.get("tags", []))
+        if group_name in tags_dict:
+            del tags_dict[group_name]
+            data["tags"] = tags_dict
+
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+
+            index = load_index()
+            if filename in index:
+                index[filename]["tags"] = tags_dict
+                save_index(index)
+
+        file_context = data.get("file_context", filename.split("_")[0])
+        return templates.TemplateResponse(
+            "_tags_editor.html",
+            {
+                "request": request,
+                "current_filename": filename,
+                "tags": tags_dict,
+                "all_available_tags": get_all_existing_tags(file_context),
+            },
+        )
+    return Response(status_code=404)
+
+
+@app.post("/tags/change_group/{filename}/{old_group_name}/{tag_name}")
+async def change_tag_group(request: Request, filename: str, old_group_name: str, tag_name: str):
+    # Pobieramy nową nazwę grupy z systemowego okienka (wywołanego przez HTMX)
+    new_group_name = request.headers.get("HX-Prompt", "").strip()
+
+    if not new_group_name:
+        return Response(status_code=204)
+
+    file_path = DATA_DIR / filename
+    if file_path.exists():
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        tags_dict = normalize_tags(data.get("tags", []))
+
+        # 1. Sprawdzamy czy stary tag i grupa istnieją
+        if old_group_name in tags_dict and tag_name in tags_dict[old_group_name]:
+            # 2. Usuwamy ze starej grupy
+            tags_dict[old_group_name].remove(tag_name)
+            # Automatyczne sprzątanie: jeśli stara grupa jest pusta, usuń ją
+            if not tags_dict[old_group_name]:
+                del tags_dict[old_group_name]
+
+            # 3. Dodajemy do nowej grupy
+            if new_group_name not in tags_dict:
+                tags_dict[new_group_name] = []
+            if tag_name not in tags_dict[new_group_name]:
+                tags_dict[new_group_name].append(tag_name)
+
+            data["tags"] = tags_dict
+
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+
+            index = load_index()
+            if filename in index:
+                index[filename]["tags"] = tags_dict
+                save_index(index)
+
+        file_context = data.get("file_context", filename.split("_")[0])
+        return templates.TemplateResponse(
+            "_tags_editor.html",
+            {
+                "request": request,
+                "current_filename": filename,
+                "tags": tags_dict,
+                "all_available_tags": get_all_existing_tags(file_context),
+            },
         )
     return Response(status_code=404)

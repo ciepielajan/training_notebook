@@ -1,61 +1,143 @@
+<style>
+    /* CSS pozwalający wejściowemu inputowi idealnie udawać tekst tagu */
+    .tag-input {
+        outline: none !important;
+        box-shadow: none !important;
+        width: 85px; 
+        font-weight: 500;
+    }
+    /* Placeholder przyjmuje kolor tekstu rodzica z lekką przezroczystością */
+    .tag-input::placeholder {
+        color: currentColor;
+        opacity: 0.65;
+    }
+</style>
+
 <div id="document-tags-container" class="d-flex align-items-center flex-wrap gap-2 mb-3">
     
-    <i class="bi bi-tags text-secondary me-1"></i>
+    {% set colors = ['primary', 'success', 'danger', 'warning text-dark', 'info text-dark', 'dark'] %}
     
-    {% for tag in tags %}
-        <span class="badge bg-primary text-white d-flex align-items-center rounded-pill px-3 py-2 shadow-sm" style="font-weight: 500;">
-            #{{ tag }}
-            <i class="bi bi-x-circle-fill ms-2 opacity-75" style="cursor: pointer; font-size: 0.9rem;"
-               hx-delete="/tags/remove/{{ current_filename }}/{{ tag }}"
-               hx-target="#document-tags-container"
-               hx-swap="outerHTML"
-               title="Usuń tag"></i>
-        </span>
+    {% for group_name, group_tags in tags.items() %}
+        
+        {% set color_class = 'secondary' if group_name == 'Ogólne' else colors[(group_name | length) % (colors | length)] %}
+        
+        {% for tag in group_tags %}
+            <span class="badge bg-{{ color_class }} d-flex align-items-center rounded-pill ps-3 pe-2 py-1 shadow-sm" 
+                  style="font-weight: 500; font-size: 0.85rem;" 
+                  title="Grupa: {{ group_name }}">
+                
+                {{ tag }}
+                
+                <div class="dropdown ms-1">
+                    <button class="btn btn-sm border-0 shadow-none p-0 text-reset opacity-75 d-flex align-items-center" 
+                            type="button" data-bs-toggle="dropdown" 
+                            onmouseover="this.classList.remove('opacity-75');"
+                            onmouseout="this.classList.add('opacity-75');"
+                            style="outline: none;">
+                        <i class="bi bi-chevron-down" style="font-size: 0.7rem; margin-left: 4px;"></i>
+                    </button>
+                    
+                    <ul class="dropdown-menu shadow-sm border-secondary-subtle" style="font-size: 0.85rem; min-width: 160px;">
+                        <li>
+                            <button type="button" class="dropdown-item fw-medium"
+                                    hx-post="/tags/change_group/{{ current_filename }}/{{ group_name | urlencode }}/{{ tag | urlencode }}"
+                                    hx-prompt="Wpisz nową grupę dla tagu '{{ tag }}':"
+                                    hx-target="#document-tags-container"
+                                    hx-swap="outerHTML">
+                                <i class="bi bi-folder-symlink me-2 text-secondary"></i> Zmień grupę
+                            </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button type="button" class="dropdown-item text-danger fw-bold"
+                                    hx-delete="/tags/remove/{{ current_filename }}/{{ group_name | urlencode }}/{{ tag | urlencode }}"
+                                    hx-target="#document-tags-container"
+                                    hx-swap="outerHTML">
+                                <i class="bi bi-trash me-2"></i> Usuń tag
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </span>
+        {% endfor %}
     {% endfor %}
 
-    <div class="d-flex align-items-center bg-light rounded-pill pe-1 shadow-sm border">
-        <form hx-post="/tags/add/{{ current_filename }}"
-              hx-target="#document-tags-container"
-              hx-swap="outerHTML"
-              class="m-0">
-            
-            <input type="text" name="tag_name" class="form-control form-control-sm border-0 bg-transparent px-3 shadow-none"
-                   placeholder="+ dodaj tag..." style="width: 120px; font-size: 0.85rem;" autocomplete="off"
-                   list="available-tags"> <datalist id="available-tags">
-                {% for t in all_available_tags %}
-                    {% if t not in tags %}
-                        <option value="{{ t }}"></option>
-                    {% endif %}
-                {% endfor %}
-            </datalist>
-        </form>
+    {% set existing_groups = all_available_tags.keys() | list %}
+    {% set default_group = existing_groups[0] if existing_groups else 'Ogólne' %}
+    
+    {% set default_color = 'secondary' if default_group == 'Ogólne' else colors[(default_group | length) % (colors | length)] %}
 
-        <div class="dropdown">
-            <button class="btn btn-sm text-secondary border-0 shadow-none rounded-circle px-2" type="button" data-bs-toggle="dropdown" title="Wybierz z listy">
-                <i class="bi bi-caret-down-fill" style="font-size: 0.7rem;"></i>
+    <form hx-post="/tags/add/{{ current_filename }}"
+          hx-target="#document-tags-container"
+          hx-swap="outerHTML"
+          class="badge bg-{{ default_color }} d-flex align-items-center rounded-pill ps-3 pe-2 py-1 shadow-sm m-0"
+          style="font-size: 0.85rem; transition: background-color 0.3s ease, color 0.3s ease;">
+
+        <input type="hidden" name="group_name" value="{{ default_group }}">
+
+        <input type="text" name="tag_name" class="tag-input border-0 bg-transparent text-reset p-0 m-0" 
+               placeholder="+ dodaj tag" required autocomplete="off" title="Dodajesz do: {{ default_group }}">
+
+        <div class="dropdown ms-1">
+            <button class="btn btn-sm border-0 shadow-none p-0 text-reset opacity-75 d-flex align-items-center" 
+                    type="button" data-bs-toggle="dropdown" 
+                    onmouseover="this.classList.remove('opacity-75');"
+                    onmouseout="this.classList.add('opacity-75');"
+                    style="outline: none;" title="Zmień grupę">
+                <i class="bi bi-chevron-down" style="font-size: 0.7rem; margin-left: 4px;"></i>
             </button>
-            <ul class="dropdown-menu shadow border-0" style="max-height: 250px; overflow-y: auto; font-size: 0.9rem;">
-                <li class="dropdown-header">Dostępne tagi</li>
-                {% set has_options = false %}
-                {% for t in all_available_tags %}
-                    {% if t not in tags %}
+
+            <ul class="dropdown-menu shadow-sm border-secondary-subtle" style="font-size: 0.85rem; min-width: 180px;">
+                <li class="dropdown-header">Wybierz grupę docelową</li>
+
+                {% set ns = namespace(added=false) %}
+                {% for g in existing_groups %}
+                    {% set g_color = 'secondary' if g == 'Ogólne' else colors[(g | length) % (colors | length)] %}
                     <li>
-                        <a class="dropdown-item py-2" href="#" 
-                           hx-post="/tags/add/{{ current_filename }}" 
-                           hx-vals='{"tag_name": "{{ t }}"}' 
-                           hx-target="#document-tags-container" 
-                           hx-swap="outerHTML">
-                            #{{ t }}
-                        </a>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2"
+                                onclick="
+                                    const form = this.closest('form');
+                                    form.querySelector('input[name=group_name]').value = `{{ g }}`;
+                                    form.className = 'badge bg-{{ g_color }} d-flex align-items-center rounded-pill ps-3 pe-2 py-1 shadow-sm m-0';
+                                    const tagInput = form.querySelector('input[name=tag_name]');
+                                    tagInput.title = `Dodajesz do: {{ g }}`;
+                                    tagInput.focus();
+                                ">
+                            <span class="badge bg-{{ g_color }} rounded-circle p-1 border border-light" style="width: 14px; height: 14px;"></span>
+                            {{ g }}
+                        </button>
                     </li>
-                    {% set has_options = true %}
-                    {% endif %}
+                    {% set ns.added = true %}
                 {% endfor %}
-                
-                {% if not all_available_tags or not has_options %}
-                    <li><span class="dropdown-item-text text-muted small">Brak innych tagów.</span></li>
+
+                {% if not ns.added %}
+                    <li>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2"
+                                onclick="
+                                    const form = this.closest('form');
+                                    form.querySelector('input[name=group_name]').value = 'Ogólne';
+                                    form.className = 'badge bg-secondary d-flex align-items-center rounded-pill ps-3 pe-2 py-1 shadow-sm m-0';
+                                    const tagInput = form.querySelector('input[name=tag_name]');
+                                    tagInput.title = 'Dodajesz do: Ogólne';
+                                    tagInput.focus();
+                                ">
+                            <span class="badge bg-secondary rounded-circle p-1 border border-light" style="width: 14px; height: 14px;"></span>
+                            Ogólne
+                        </button>
+                    </li>
                 {% endif %}
+
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <button type="button" class="dropdown-item text-primary fw-medium"
+                            hx-post="/tags/add_group/{{ current_filename }}"
+                            hx-prompt="Wpisz nazwę nowej kategorii tagów:"
+                            hx-target="#document-tags-container"
+                            hx-swap="outerHTML">
+                        <i class="bi bi-folder-plus me-2"></i> Nowa kategoria...
+                    </button>
+                </li>
             </ul>
         </div>
-    </div>
+    </form>
 </div>

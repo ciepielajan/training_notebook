@@ -94,6 +94,34 @@
                         </span>
                     </a>
 
+                    <div class="d-flex flex-wrap align-items-center justify-content-end gap-1 ms-3" style="max-width: 50%;">
+                        {% set tags_data = file.get('tags', file.get('project_ids', [])) %}
+                        {% set colors = ['primary', 'success', 'danger', 'warning text-dark', 'info text-dark', 'dark'] %}
+                        
+                        {% if tags_data is mapping %}
+                            {% for group_name, group_tags in tags_data.items() %}
+                                
+                                {% set color_class = 'secondary' if group_name == 'Ogólne' else colors[(group_name | length) % (colors | length)] %}
+                                
+                                {% for tag in group_tags %}
+                                    <span class="badge bg-{{ color_class }} rounded-pill shadow-sm" 
+                                          style="font-size: 0.7rem; font-weight: 500; letter-spacing: 0.3px;" 
+                                          title="Grupa: {{ group_name }}">
+                                        {{ tag }}
+                                    </span>
+                                {% endfor %}
+                                
+                            {% endfor %}
+                            
+                        {% elif tags_data is iterable and tags_data is not string %}
+                            {% for tag in tags_data %}
+                                <span class="badge bg-secondary rounded-pill shadow-sm" 
+                                      style="font-size: 0.7rem; font-weight: 500; letter-spacing: 0.3px;">
+                                    {{ tag }}
+                                </span>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
                     <div class="dropdown ms-3">
                         <button class="btn btn-sm text-secondary shadow-none p-1 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-three-dots-vertical fs-5"></i>
