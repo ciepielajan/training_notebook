@@ -12,84 +12,112 @@
     <input type="hidden" name="r{{ r }}c{{ c }}_id" class="item-id-input"
         value="{{ data['r' ~ r ~ 'c' ~ c ~ '_id'] | default('') }}">
 
-    {% set all_exercises = get_all_exercises() %}
-    
-    {% set ns = namespace(categories=[]) %}
-    {% for ex in all_exercises %}
-        {% if ex.category and ex.category not in ns.categories %}
-            {% set _ = ns.categories.append(ex.category) %}
-        {% endif %}
-    {% endfor %}
-
     <ul class="dropdown-menu shadow-sm pt-0 pb-0" 
-        style="min-width: 320px; z-index: 1050; max-height: 350px; overflow-y: auto; overflow-x: hidden;"
+        style="min-width: 350px; z-index: 1050; max-height: 400px; overflow-y: auto; overflow-x: hidden;"
         _="on filterItems
              set searchEl to the first .search-input in me
-             set catEl to the first .category-select in me
              set searchText to searchEl.value.toLowerCase()
-             set catFilter to catEl.value.toLowerCase()
+             set checkedBoxes to <.tag-check:checked/> in me
              
              for el in <.exercise-item/> in me
+                -- 1. Filtr tekstu (szuka w nazwie ćwiczenia)
                 set matchText to (el.textContent.toLowerCase() contains searchText)
-                set itemCat to el@data-category
-                set matchCat to (catFilter == '' or itemCat == catFilter)
                 
-                if matchText and matchCat
+                -- 2. Bezpieczne pobranie tagów elementu
+                set itemTags to el@data-tags
+                if itemTags is null
+                    set itemTags to ''
+                end
+                
+                -- 3. Filtr tagów (jeśli nic nie zaznaczono -> pokaż wszystko)
+                set matchTags to false
+                if checkedBoxes.length == 0
+                    set matchTags to true
+                else
+                    for box in checkedBoxes
+                        if itemTags contains box.value
+                            set matchTags to true
+                        end
+                    end
+                end
+                
+                -- 4. Pokaż element tylko, gdy pasuje do OBU filtrów
+                if matchText and matchTags
                     show el
                 else
                     hide el
                 end
              end">
 
-        <li class="position-sticky top-0 bg-white p-2 border-bottom d-flex gap-2" style="z-index: 10;"
+        <li class="position-sticky top-0 bg-white p-2 border-bottom" style="z-index: 10;"
             _="on click call event.stopPropagation()">
             
-            <input type="text" class="form-control form-control-sm shadow-none border-secondary-subtle search-input" 
-                   placeholder="Szukaj..."
-                   _="on input trigger filterItems on closest .dropdown-menu">
-                   
-            <select class="form-select form-select-sm shadow-none border-secondary-subtle category-select" 
-                    style="width: 130px; cursor: pointer;"
-                    _="on change trigger filterItems on closest .dropdown-menu">
-                <option value="">Wszystkie</option>
-                {% for cat in ns.categories|sort %}
-                    <option value="{{ cat }}">{{ cat|capitalize }}</option>
-                {% endfor %}
-            </select>
+            <div class="d-flex gap-2">
+                <input type="text" class="form-control form-control-sm shadow-none border-secondary-subtle search-input" 
+                       placeholder="Szukaj..."
+                       _="on input trigger filterItems on closest .dropdown-menu">
+                       
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#tags-collapse-{{ r }}-{{ c }}" aria-expanded="false">
+                    Tagi
+                </button>
+            </div>
+            
+            <div class="collapse mt-2" id="tags-collapse-{{ r }}-{{ c }}">
+                <ul class="list-group list-group-flush border rounded shadow-sm" style="max-height: 150px; overflow-y: auto;">
+                    {% for tag in all_available_tags %}
+                    <li class="list-group-item py-1 px-2 bg-light">
+                        <div class="form-check mb-0">
+                            <input class="form-check-input tag-check shadow-none" type="checkbox" value="{{ tag }}" id="tag-{{ r }}-{{ c }}-{{ tag }}"
+                                   _="on change trigger filterItems on closest .dropdown-menu">
+                            <label class="form-check-label w-100 text-dark" for="tag-{{ r }}-{{ c }}-{{ tag }}" style="font-size: 0.85rem; cursor: pointer;">
+                                #{{ tag }}
+                            </label>
+                        </div>
+                    </li>
+                    {% endfor %}
+                    {% if not all_available_tags %}
+                        <li class="list-group-item text-muted small text-center py-2">Brak tagów.</li>
+                    {% endif %}
+                </ul>
+            </div>
         </li>
 
-        {% for ex in all_exercises %}
-            <li class="exercise-item" data-category="{{ ex.category }}">
-                <button class="dropdown-item d-flex justify-content-between align-items-center py-2" type="button"
-                        _="on click 
-                           set the value of <.item-value-input/> in closest .dropdown to '{{ ex.name }}'
-                           set the value of <.item-id-input/> in closest .dropdown to '{{ ex.name }}'
-                           put '{{ ex.name }}' into <.item-name/> in closest .dropdown
-                           if window.autoSave call window.autoSave()">
-                           
-                    <span class="text-truncate me-2 d-flex align-items-center">
-                        <i class="bi bi-info-circle text-secondary me-2 fs-6" 
-                            title="Pokaż szczegóły ćwiczenia"
-                            hx-get="/exercise_details?name={{ ex.name }}"
-                            hx-target="#modal-container"
-                            hx-trigger="showModal"
-                            _="on click halt the event then trigger showModal"></i>
+        {% if exercises %}
+            {% for exercise in exercises %}
+                <li class="exercise-item" data-tags="{{ exercise.tags | join(',') | lower }}">
+                    <a class="dropdown-item py-2 d-flex align-items-center justify-content-between" href="#"
+                    onclick="selectItem('{{ r }}', '{{ c }}', '{{ exercise.name | replace('\'', '\\\'') }}')">
                         
-                        {% if ex.source == 'Systemowe' %}
-                            <i class="bi bi-heptagon-half me-2 text-primary"></i>
-                        {% else %}
-                            <i class="bi bi-person-fill me-2 text-success"></i>
-                        {% endif %}
-                        
-                        <span>{{ ex.name }}</span>
-                    </span>
-                    
-                    {% if ex.tags %}
-                        <span class="badge bg-light text-secondary border">{{ ex.tags[0] }}</span>
-                    {% endif %}
-                </button>
-            </li>
-        {% endfor %}
+                        <div class="d-flex align-items-center">
+                            <span class="info-icon me-2 text-secondary opacity-75" style="cursor: pointer; padding: 0 2px;"
+                                hx-get="/show_exercise_info/{{ exercise.filename }}" hx-target="#modal-body"
+                                _="on click call event.stopPropagation()">
+                                <i class="bi bi-info-circle fs-6"></i>
+                            </span>
+
+                            <span class="exercise-icon me-2 text-primary opacity-75">
+                                <i class="bi bi-circle-half fs-6"></i>
+                            </span>
+                            
+                            <span class="exercise-name fw-medium text-dark" style="font-size: 0.95rem;">
+                                {{ exercise.name }}
+                            </span>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-1 ms-3">
+                            {% for tag in exercise.tags %}
+                                <span class="badge bg-light text-secondary border rounded-pill px-2 py-1" style="font-size: 0.7rem; font-weight: 500;">
+                                    {{ tag }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </a>
+                </li>
+            {% endfor %}
+        {% else %}
+            <li><span class="dropdown-item-text text-muted small px-3 py-2">Baza ćwiczeń jest pusta.</span></li>
+        {% endif %}
 
         <li class="position-sticky bottom-0 bg-white p-1 border-top" style="z-index: 10;">
             <button class="dropdown-item text-primary fw-bold rounded py-2" type="button">

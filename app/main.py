@@ -22,6 +22,26 @@ from app.utils import (
 import yaml
 
 
+def get_db_exercises() -> list:
+    """Pobiera pełne obiekty ćwiczeń z bazy do dropdowna w tabeli (szanując strukturę index.json)"""
+    # Używamy naszej uniwersalnej metody, odrzucając te z Kosza
+    items = get_recent_files("item", include_deleted=False)
+
+    exercise_objects = []
+    for item in items:
+        # Pamiętamy o zgodności wstecznej tagów/project_ids wewnątrz notatki
+        exercise_objects.append(
+            {
+                "name": item["name"],
+                "filename": item["filename"],  # Potrzebujemy ID do otwarcia notatki w "i"
+                "tags": item.get("tags", []),
+            }
+        )
+
+    # Sortujemy alfabetycznie po nazwie
+    return sorted(exercise_objects, key=lambda x: x["name"].lower())
+
+
 def get_all_existing_tags() -> list:
     """Szybko wyciąga wszystkie unikalne tagi ze wszystkich plików w indeksie."""
     index = load_index()
@@ -209,6 +229,7 @@ async def load_file(request: Request, filename: str):
     file_context = spider_json.get("file_context", filename.split("_")[0])
     tags = spider_json.get("tags", spider_json.get("project_ids", []))
     all_tags = get_all_existing_tags()
+    db_exercises = get_db_exercises()
 
     # Tytuł pobieramy już bezpiecznie prosto z JSON-a
     display_name = spider_json.get("title", "Bez nazwy")
@@ -222,6 +243,7 @@ async def load_file(request: Request, filename: str):
         "file_context": file_context,
         "tags": tags,
         "all_available_tags": all_tags,
+        "exercises": db_exercises,
     }
     return templates.TemplateResponse("_workout_content.html", context)
 
@@ -1086,5 +1108,8 @@ async def remove_tag(request: Request, filename: str, tag_name: str):
                 save_index(index)
 
         all_tags = get_all_existing_tags()
-        return templates.TemplateResponse("_tags_editor.html", {"request": request, "current_filename": filename, "tags": tags, "all_available_tags": all_tags})
+        return templates.TemplateResponse(
+            "_tags_editor.html",
+            {"request": request, "current_filename": filename, "tags": tags, "all_available_tags": all_tags},
+        )
     return Response(status_code=404)
