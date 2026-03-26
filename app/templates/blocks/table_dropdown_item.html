@@ -91,7 +91,8 @@
                         
                         <div class="d-flex align-items-center">
                             <span class="info-icon me-2 text-secondary opacity-75" style="cursor: pointer; padding: 0 2px;"
-                                hx-get="/show_exercise_info/{{ exercise.filename }}" hx-target="#modal-body"
+                                hx-get="/item_modal/{{ exercise.filename }}" 
+                                hx-target="#modal-container"
                                 _="on click call event.stopPropagation()">
                                 <i class="bi bi-info-circle fs-6"></i>
                             </span>

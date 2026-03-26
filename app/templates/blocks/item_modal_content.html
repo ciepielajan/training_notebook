@@ -1,0 +1,54 @@
+<div class="modal fade" id="exerciseModal" tabindex="-1" aria-hidden="true"
+     _="on load call window.bootstrap.Modal.getOrCreateInstance(me).show() 
+        on hidden.bs.modal remove me">
+           
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg bg-light">
+      
+      <div class="modal-header border-bottom-0 pb-0 bg-white rounded-top">
+        <h4 class="modal-title fw-bold text-dark">
+            <i class="bi bi-box-seam text-success me-2"></i>{{ display_name }}
+        </h4>
+        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body pt-3">
+        <div class="mb-4">
+            {% for tag in tags %}
+                <span class="badge bg-primary text-white rounded-pill px-3 py-2 me-1 shadow-sm" style="font-weight: 500;">
+                    #{{ tag }}
+                </span>
+            {% else %}
+                <span class="badge bg-white text-secondary border px-3 py-2 rounded-pill shadow-sm">Brak tagów</span>
+            {% endfor %}
+        </div>
+        
+        <h6 class="text-secondary fw-bold mb-2 ps-1" style="font-size: 0.85rem; text-transform: uppercase;">
+            Szczegóły / Budowa elementu
+        </h6>
+        
+        <div class="bg-white rounded-3 shadow-sm border p-3">
+            <div id="modal-fields-container" class="container px-0 readonly-mode">
+                {% include "_cards_list.html" %}
+            </div>
+            {% if not cards_list %}
+                <p class="text-muted fst-italic text-center mb-0 py-3">Baza nie zawiera szczegółowych danych.</p>
+            {% endif %}
+        </div>
+
+      </div>
+      
+      <div class="modal-footer border-top-0 pt-0 bg-light">
+        <button type="button" class="btn btn-secondary rounded-pill px-4 fw-medium" data-bs-dismiss="modal">Zamknij</button>
+        <button type="button" class="btn btn-primary rounded-pill px-4 fw-medium d-flex align-items-center" 
+                data-bs-dismiss="modal"
+                hx-get="/load_file/{{ filename }}" 
+                hx-target="#form"
+                _="on click call window.bootstrap.Modal.getInstance(document.getElementById('exerciseModal')).hide()">
+            <i class="bi bi-pencil-square me-2"></i> Edytuj w pełnym oknie
+        </button>
+      </div>
+      
+    </div>
+  </div>
+</div>

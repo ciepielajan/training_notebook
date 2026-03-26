@@ -1,15 +1,32 @@
-<div class="container-fluid py-4" style="max-width: 800px; margin: 0 auto;">
+<div class="container-fluid py-4" style="max-width: 800px; margin: 0 auto;"
+     hx-trigger="refreshListView from:body"
+     hx-get="/list_view/{{ context_name }}?deleted={{ 'true' if is_trash_view else 'false' }}{% if search_query %}&q={{ search_query }}{% endif %}{% if active_tag %}&tag={{ active_tag }}{% endif %}"
+     hx-target="#form">
     
     <div class="d-flex justify-content-between align-items-center mb-3 px-2">
-        <h4 class="mb-0 fw-bold text-dark">
-            {% if is_trash_view %}
-                <i class="bi bi-trash3 text-danger me-2"></i>Kosz
-            {% elif context_name == 'item' %}
-                <i class="bi bi-box-seam text-success me-2"></i>Baza Elementów
-            {% else %}
-                <i class="bi bi-journal-text text-primary me-2"></i>Wszystkie Notatki
+        
+        <div class="d-flex align-items-center gap-3">
+            <h4 class="mb-0 fw-bold text-dark">
+                {% if is_trash_view %}
+                    <i class="bi bi-trash3 text-danger me-2"></i>Kosz
+                {% elif context_name == 'item' %}
+                    <i class="bi bi-box-seam text-success me-2"></i>Baza Elementów
+                {% else %}
+                    <i class="bi bi-journal-text text-primary me-2"></i>Wszystkie Notatki
+                {% endif %}
+            </h4>
+            
+            {% if not is_trash_view %}
+            <button class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm d-flex align-items-center"
+                    hx-get="/new/{{ context_name }}"
+                    hx-swap="none"
+                    hx-on::after-request="htmx.trigger('body', 'refreshListView')">
+                <i class="bi bi-plus-lg me-1"></i> 
+                {% if context_name == 'item' %}Dodaj element{% else %}Dodaj trening{% endif %}
+            </button>
             {% endif %}
-        </h4>
+        </div>
+
         <span class="badge bg-light text-secondary border rounded-pill">{{ files | length }} elementów</span>
     </div>
 

@@ -106,3 +106,15 @@ document.body.addEventListener('htmx:load', function(evt) {
         }
     });
 });
+
+// Automatyczne dopasowanie wysokości textarea po pełnym otwarciu modala 
+// (kiedy element jest już widoczny i przeglądarka potrafi obliczyć jego scrollHeight)
+document.addEventListener('shown.bs.modal', function(evt) {
+    const textareas = evt.target.querySelectorAll('textarea');
+    textareas.forEach(ta => {
+        if (ta.value.trim() !== '') {
+            ta.style.height = 'auto'; // Resetujemy wysokość
+            ta.style.height = ta.scrollHeight + 'px'; // Przypisujemy fizyczną wysokość tekstu
+        }
+    });
+});

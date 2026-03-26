@@ -997,25 +997,35 @@ async def save_settings(request: Request):
 # ==========================================
 # MODALE I SZCZEGÓŁY
 # ==========================================
-@app.get("/exercise_details", response_class=HTMLResponse)
-async def exercise_details(request: Request, name: str):
-
-    exercises = get_all_exercises()
-    tags = []
-
-    for ex in exercises:
-        if ex["name"] == name:
-            # Wstrzykujemy źródło na pierwsze miejsce listy tagów
-            tags = [ex["source"]] + ex["tags"]
-            break
-
-    return templates.TemplateResponse(
-        "blocks/exercise_modal.html",
-        {"request": request, "name": name, "tags": tags},
-    )
 
 
-# --- WIDOK PEŁNEJ LISTY Z WYSZUKIWARKĄ I TAGAMI ---
+@app.get("/item_modal/{filename}", response_class=HTMLResponse)
+async def item_modal(request: Request, filename: str):
+    file_path = DATA_DIR / filename
+    spider_json = {}
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            spider_json = json.load(f)
+        cards_to_render = process_spider_json(spider_json)
+    except (FileNotFoundError, json.JSONDecodeError):
+        cards_to_render = []
+
+    display_name = spider_json.get("title", "Nieznane ćwiczenie")
+    tags = spider_json.get("tags", spider_json.get("project_ids", []))
+
+    context = {
+        "request": request,
+        "filename": filename,
+        "display_name": display_name,
+        "tags": tags,
+        "cards_list": cards_to_render,
+        "options": SETTINGS.get("options", {}),
+    }
+
+    return templates.TemplateResponse("blocks/item_modal_content.html", context)
+
+
 # --- WIDOK PEŁNEJ LISTY Z WYSZUKIWARKĄ I TAGAMI ---
 @app.get("/list_view/{context_name}", response_class=HTMLResponse)
 async def list_view(request: Request, context_name: str, deleted: bool = False, q: str = None, tag: str = None):

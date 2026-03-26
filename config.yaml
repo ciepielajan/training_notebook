@@ -14,18 +14,6 @@ block_names:
   text_2: Nagłówek H2
   text_3: Nagłówek H3
   text_4: Nagłówek H4
-database:
-  system_items: |-
-    Wyciskanie sztangi leżąc, klatka, sztanga
-    Martwy ciąg, plecy, sztanga
-    Przysiady ze sztangą, nogi, sztanga
-    Wyciskanie żołnierskie, barki, sztanga
-    Podciąganie na drążku, plecy, własna masa
-    Pompki z obciążeniem oburącz, klatka, własna masa
-  user_items: |-
-    Ulubione pompki z obciążeniem, klatka
-    Sprinty pod górę, kondycja
-    Nowe,brak,brak
-    Hej,brak,sztanga
+
 options:
   units: x, kg, lbs, km, m, s, min, h, %, bpm, kcal
