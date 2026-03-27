@@ -91,6 +91,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["SETTINGS"] = SETTINGS
 templates.env.globals["get_all_exercises"] = get_all_exercises
+templates.env.globals["get_db_exercises"] = get_db_exercises
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
