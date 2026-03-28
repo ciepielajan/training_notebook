@@ -45,17 +45,12 @@
     {% if all_tags and not is_trash_view %}
     <div class="px-2 mb-3 d-flex flex-wrap gap-2">
         
-        <a href="#" class="badge {% if not active_tag %}bg-dark text-white{% else %}bg-white text-dark border{% endif %} text-decoration-none rounded-pill px-3 py-2 shadow-sm"
-           hx-get="/list_view/{{ context_name }}?q={{ search_query }}" hx-target="#form">
-           Wszystkie
-        </a>
-
-        {% for t in all_tags %}
-        <a href="#" class="badge {% if active_tag == t %}bg-primary text-white{% else %}bg-white text-primary border{% endif %} text-decoration-none rounded-pill px-3 py-2 shadow-sm"
-           style="transition: 0.2s;"
-           hx-get="/list_view/{{ context_name }}?tag={{ t }}&q={{ search_query }}" hx-target="#form">
-            #{{ t }}
-        </a>
+        {% for tag in all_tags %}
+            <a href="#" class="badge {% if active_tag == tag.get('name') %} bg-white text-{{ tag.get('color') }} border {% else %} bg-{{ tag.get('color') }} text-white {% endif %} text-decoration-none rounded-pill px-3 py-2 shadow-sm"
+                style="transition: 0.2s;"
+                hx-get="/list_view/{{ context_name }}?tag={{ tag.get('name') }}&q={{ search_query }}" hx-target="#form">
+                    {{ tag.get('name') }}
+            </a>
         {% endfor %}
         
     </div>
@@ -94,33 +89,17 @@
                         </span>
                     </a>
 
-                    <div class="d-flex flex-wrap align-items-center justify-content-end gap-1 ms-3" style="max-width: 50%;">
-                        {% set tags_data = file.get('tags', file.get('project_ids', [])) %}
-                        {% set colors = ['primary', 'success', 'danger', 'warning text-dark', 'info text-dark', 'dark'] %}
-                        
-                        {% if tags_data is mapping %}
-                            {% for group_name, group_tags in tags_data.items() %}
-                                
-                                {% set color_class = 'secondary' if group_name == 'Ogólne' else colors[(group_name | length) % (colors | length)] %}
-                                
-                                {% for tag in group_tags %}
-                                    <span class="badge bg-{{ color_class }} rounded-pill shadow-sm" 
-                                          style="font-size: 0.7rem; font-weight: 500; letter-spacing: 0.3px;" 
-                                          title="Grupa: {{ group_name }}">
-                                        {{ tag }}
-                                    </span>
-                                {% endfor %}
-                                
-                            {% endfor %}
+                    <div class="d-flex flex-wrap align-items-center justify-content-end gap-1 ms-3" style="max-width: 50%;">                       
+                        {% for tag in file.get('tags', []) %}
                             
-                        {% elif tags_data is iterable and tags_data is not string %}
-                            {% for tag in tags_data %}
-                                <span class="badge bg-secondary rounded-pill shadow-sm" 
-                                      style="font-size: 0.7rem; font-weight: 500; letter-spacing: 0.3px;">
-                                    {{ tag }}
-                                </span>
-                            {% endfor %}
-                        {% endif %}
+                            <span class="badge bg-{{ tag['color'] }} rounded-pill shadow-sm" 
+                                    style="font-size: 0.7rem; font-weight: 500; letter-spacing: 0.3px;" 
+                                    title="Grupa: {{ tag['group'] }}">
+                                {{ tag['name'] }}
+                            </span>
+                            
+                        {% endfor %}
+                        
                     </div>
                     <div class="dropdown ms-3">
                         <button class="btn btn-sm text-secondary shadow-none p-1 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false">

@@ -12,12 +12,15 @@ from pathlib import Path
 from app.utils import (
     SETTINGS,
     DATA_DIR,
+    RECENT_NOTES,
+    RECENT_ITEMS,
     get_header_level,
-    get_recent_files,
     process_spider_json,
-    get_all_exercises,
     save_index,
     load_index,
+    tags_to_list,
+    get_all_existing_tags,
+    get_recent_files,
 )
 import yaml
 
@@ -42,38 +45,13 @@ def get_db_exercises() -> list:
     return sorted(exercise_objects, key=lambda x: x["name"].lower())
 
 
-def get_all_existing_tags(context_name: str) -> dict:
-    """
-    Wyciąga unikalne tagi, filtrując je po kontekście (note / item).
-    Zwraca słownik: { "Nazwa Grupy": ["tag1", "tag2"] }
-    """
-    index = load_index()
-    all_tags = {}
-
-    for filename, v in index.items():
-        # Separacja: notatki widzą tylko tagi z notatek, itemy z itemów
-        if not filename.startswith(context_name):
-            continue
-
-        if isinstance(v, dict):
-            # Zgodność wsteczna
-            file_tags = normalize_tags(v.get("tags", []))
-
-            for group, tags_list in file_tags.items():
-                if group not in all_tags:
-                    all_tags[group] = set()
-                all_tags[group].update(tags_list)
-
-    return {k: sorted(list(v)) for k, v in all_tags.items()}
-
-
-def normalize_tags(tags_data) -> dict:
-    """Migruje stare płaskie listy tagów do nowej struktury opartej na grupach."""
-    if isinstance(tags_data, dict):
-        return tags_data
-    if isinstance(tags_data, list):
-        return {"Ogólne": tags_data} if tags_data else {}
-    return {}
+# def normalize_tags(tags_data) -> dict:
+#     """Migruje stare płaskie listy tagów do nowej struktury opartej na grupach."""
+#     if isinstance(tags_data, dict):
+#         return tags_data
+#     if isinstance(tags_data, list):
+#         return {"Ogólne": tags_data} if tags_data else {}
+#     return {}
 
 
 def multiline_presenter(dumper, data):
@@ -89,8 +67,8 @@ yaml.representer.SafeRepresenter.add_representer(str, multiline_presenter)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.add_extension("jinja2.ext.loopcontrols")
 templates.env.globals["SETTINGS"] = SETTINGS
-templates.env.globals["get_all_exercises"] = get_all_exercises
 templates.env.globals["get_db_exercises"] = get_db_exercises
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -263,8 +241,7 @@ async def load_file(request: Request, filename: str):
         cards_to_render = []
 
     file_context = spider_json.get("file_context", filename.split("_")[0])
-    tags = normalize_tags(spider_json.get("tags", spider_json.get("project_ids", [])))
-    all_tags = get_all_existing_tags(file_context)
+    tags, groups_tags = tags_to_list(spider_json.get("tags", {}))
     db_exercises = get_db_exercises()
 
     # Tytuł pobieramy już bezpiecznie prosto z JSON-a
@@ -278,7 +255,6 @@ async def load_file(request: Request, filename: str):
         "workout_data": spider_json,
         "file_context": file_context,
         "tags": tags,
-        "all_available_tags": all_tags,
         "exercises": db_exercises,
     }
     return templates.TemplateResponse("_workout_content.html", context)
@@ -461,8 +437,6 @@ async def duplicate_file(filename: str):
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    recent_notes = get_recent_files("note")
-    recent_items = get_recent_files("item")
 
     spider_json = {
         "items": [
@@ -477,7 +451,7 @@ async def index(request: Request):
                 "id": secrets.token_hex(4),
                 "type": "text",
                 "data": "",
-                "head": f"Masz zapisanych {len(recent_notes)} notatek i {len(recent_items)} elementów bazy.",
+                "head": f"Masz zapisanych {len(RECENT_NOTES)} notatek i {len(RECENT_ITEMS)} elementów bazy.",
                 "size": "fs-6",
             },
         ]
@@ -487,12 +461,9 @@ async def index(request: Request):
     context = {
         "request": request,
         "cards_list": cards_to_render,
-        "recent_notes": recent_notes,
-        "recent_items": recent_items,
         "current_filename": "",
         "file_context": "note",
-        "tags": {},  # <--- DODANO PUSTE TAGI
-        "all_available_tags": get_all_existing_tags("note"),  # <--- DODANO BAZĘ TAGÓW
+        "tags": {},
     }
     return templates.TemplateResponse("index.html", context)
 
@@ -1042,19 +1013,11 @@ async def item_modal(request: Request, filename: str):
 async def list_view(request: Request, context_name: str, deleted: bool = False, q: str = None, tag: str = None):
     files = get_recent_files(context_name, include_deleted=deleted)
 
-    # 1. Wyciągamy wszystkie unikalne tagi do stworzenia przycisków
-    all_tags = set()
-    for f in files:
-        tags_data = normalize_tags(f.get("tags", []))
-        for group_tags in tags_data.values():
-            for t in group_tags:
-                all_tags.add(t)
-
-    sorted_tags = sorted(list(all_tags))
+    all_tags, groups_tags = get_all_existing_tags(files)
 
     # 2. Filtrowanie plików po wybranym tagu (jeśli ktoś kliknął przycisk)
     if tag:
-        files = [f for f in files if tag in [t for group in normalize_tags(f.get("tags", [])).values() for t in group]]
+        files = [f for f in files if tag in [t.get("name") for t in f.get("tags", [])]]
 
     # 3. Dodatkowe filtrowanie po nazwie z pola tekstowego
     if q:
@@ -1068,7 +1031,7 @@ async def list_view(request: Request, context_name: str, deleted: bool = False, 
         "file_context": "dashboard",
         "current_filename": "",
         "search_query": q or "",
-        "all_tags": sorted_tags,
+        "all_tags": all_tags,
         "active_tag": tag,
     }
     return templates.TemplateResponse("_list_view.html", context)

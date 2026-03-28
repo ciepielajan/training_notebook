@@ -19,17 +19,10 @@ def load_settings(path: str = "config.yaml") -> dict:
         return {}
 
 
-# Globalna inicjalizacja konfiguracji
-SETTINGS = load_settings()
-PATHS = SETTINGS.get("paths", {})
-DATA_DIR = Path(PATHS.get("data_dir")).resolve()
-BLOCKS_DIR = Path(PATHS.get("blocks_dir")).resolve()
-INDEX_FILE = DATA_DIR / "index.json"
-
-
 def load_index() -> dict:
     """Ładuje indeks plików (mapa: nazwa_pliku -> ładny_tytuł)."""
     if INDEX_FILE.exists():
+        print(f"Wczytuje dane z {INDEX_FILE}")
         with open(INDEX_FILE, "r", encoding="utf-8") as f:
             try:
                 return json.load(f)
@@ -38,18 +31,57 @@ def load_index() -> dict:
     return {}
 
 
+def get_all_existing_tags(files: str) -> dict:
+    """ """
+    all_tags = []
+    all_groups = []
+
+    for f in files:
+        all_tags.extend(f.get("tags", []))
+        all_groups.extend(f.get("groups_tags", []))
+
+    return sorted(all_tags, key=lambda x: (x["order"], x["name"])), sorted(
+        all_groups, key=lambda x: (x["order"], x["name"])
+    )
+
+
 def save_index(index_data: dict):
     """Zapisuje zaktualizowany indeks na dysk."""
     with open(INDEX_FILE, "w", encoding="utf-8") as f:
         json.dump(index_data, f, ensure_ascii=False, indent=4)
 
 
+def tags_to_list(tags_data: dict) -> list:
+    tags = []
+    groups = {}
+
+    for group_name, group in tags_data.items():
+        order = group.get("order", 999)
+        color = group.get("color", "info")
+        for tag in group.get("items"):
+            tags.append(
+                {
+                    "name": tag,
+                    "group": group_name,
+                    "order": order,
+                    "color": color,
+                }
+            )
+            groups[order] = {
+                "name": group_name,
+                "order": order,
+                "color": color,
+            }
+    return sorted(tags, key=lambda x: (x["order"], x["name"])), list(groups.values())
+
+
 def get_recent_files(file_prefix: str, include_deleted: bool = False) -> list:
     """Zwraca listę z indeksu, obsługując miękkie usuwanie i przypinanie."""
-    index = load_index()
+
+    # index = load_index()
     filtered = []
 
-    for k, v in index.items():
+    for k, v in INDEX.items():
         if not k.startswith(file_prefix):
             continue
 
@@ -64,12 +96,15 @@ def get_recent_files(file_prefix: str, include_deleted: bool = False) -> list:
         if not is_deleted and include_deleted:
             continue
 
+        tags, groups_tags = tags_to_list(v.get("tags", {}))
+
         filtered.append(
             {
                 "filename": k,
                 "name": v.get("title", "Bez nazwy"),
                 "is_favorite": v.get("is_favorite", False),
-                "tags": v.get("tags", v.get("project_ids", [])),
+                "tags": tags,
+                "groups_tags": groups_tags,
             }
         )
 
@@ -165,36 +200,44 @@ def process_spider_json(spider_data: dict) -> list:
     return processed_cards
 
 
-def get_all_exercises() -> list:
-    """
-    Pobiera i parsuje ćwiczenia systemowe oraz użytkownika.
-    Zwraca zunifikowaną listę słowników gotową do użycia w całej aplikacji.
-    """
-    sys_raw = SETTINGS.get("database", {}).get("system_items", "")
-    usr_raw = SETTINGS.get("database", {}).get("user_items", "")
-
-    exercises = []
-
-    for source_label, raw_text in [("Systemowe", sys_raw), ("Własne", usr_raw)]:
-        if not raw_text:
-            continue
-
-        for line in raw_text.split("\n"):
-            if not line.strip():
-                continue
-
-            parts = [p.strip() for p in line.split(",")]
-            name = parts[0]
-            tags = [t for t in parts[1:] if t]  # Wyciągamy tagi i ignorujemy puste
-
-            # Pierwszy tag traktujemy jako główną kategorię (do filtru w UI)
-            category = tags[0].lower() if tags else ""
-
-            exercises.append({"name": name, "source": source_label, "tags": tags, "category": category})
-
-    return exercises
+# Globalna inicjalizacja konfiguracji
+SETTINGS = load_settings()
+PATHS = SETTINGS.get("paths", {})
+DATA_DIR = Path(PATHS.get("data_dir")).resolve()
+BLOCKS_DIR = Path(PATHS.get("blocks_dir")).resolve()
+INDEX_FILE = DATA_DIR / "index.json"
+INDEX = load_index()
+RECENT_NOTES = get_recent_files("note")
+RECENT_ITEMS = get_recent_files("item")
+SETTINGS["tags_notes"], SETTINGS["groups_tags_notes"] = get_all_existing_tags(RECENT_NOTES)
+SETTINGS["tags_items"], SETTINGS["groups_tags_items"] = get_all_existing_tags(RECENT_ITEMS)
 
 
+# def get_all_exercises() -> list:
+#     """
+#     Pobiera i parsuje ćwiczenia systemowe oraz użytkownika.
+#     Zwraca zunifikowaną listę słowników gotową do użycia w całej aplikacji.
+#     """
+#     sys_raw = SETTINGS.get("database", {}).get("system_items", "")
+#     usr_raw = SETTINGS.get("database", {}).get("user_items", "")
 
+#     exercises = []
 
+#     for source_label, raw_text in [("Systemowe", sys_raw), ("Własne", usr_raw)]:
+#         if not raw_text:
+#             continue
 
+#         for line in raw_text.split("\n"):
+#             if not line.strip():
+#                 continue
+
+#             parts = [p.strip() for p in line.split(",")]
+#             name = parts[0]
+#             tags = [t for t in parts[1:] if t]  # Wyciągamy tagi i ignorujemy puste
+
+#             # Pierwszy tag traktujemy jako główną kategorię (do filtru w UI)
+#             category = tags[0].lower() if tags else ""
+
+#             exercises.append({"name": name, "source": source_label, "tags": tags, "category": category})
+
+#     return exercises
