@@ -1,14 +1,14 @@
-from fastapi import UploadFile, File, status
+from typing import List
+from fastapi import Query, UploadFile, File, status
 from fastapi.responses import JSONResponse, Response
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from app.models import WorkoutNote
 import datetime
 import secrets
 import json
-import shutil
-from pathlib import Path
 from app.utils import (
     SETTINGS,
     DATA_DIR,
@@ -233,28 +233,45 @@ async def new_file(request: Request, context_name: str):
 async def load_file(request: Request, filename: str):
     file_path = DATA_DIR / filename
     spider_json = {}
+    validated_workout = None
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            spider_json = json.load(f)
+            raw_data = json.load(f)
+
+        # 1. Pydantic robi magię: weryfikuje i naprawia braki / stare tagi
+        validated_workout = WorkoutNote.model_validate(raw_data)
+
+        # 2. Zrzucamy do słownika dla starych funkcji i szablonów Jinja2
+        spider_json = validated_workout.model_dump()
         cards_to_render = process_spider_json(spider_json)
     except (FileNotFoundError, json.JSONDecodeError):
         cards_to_render = []
 
-    file_context = spider_json.get("file_context", filename.split("_")[0])
-    tags, groups_tags = tags_to_list(spider_json.get("tags", {}))
-    db_exercises = get_db_exercises()
+    if validated_workout:
+        file_context = validated_workout.file_context
+        display_name = validated_workout.title
 
-    # Tytuł pobieramy już bezpiecznie prosto z JSON-a
-    display_name = spider_json.get("title", "Bez nazwy")
+        # Przekazujemy zwalidowany słownik obiektów TagGroup do funkcji
+        # (Dzięki temu `group.order` wewnątrz `tags_to_list` zadziała poprawnie)
+        tags, groups_tags = tags_to_list(validated_workout.tags)
+    else:
+        # Awaryjny fallback, gdyby plik był totalnie uszkodzony
+        file_context = filename.split("_")[0]
+        display_name = "Bez nazwy"
+        tags, groups_tags = [], {}
+
+    db_exercises = get_db_exercises()
+    all_tags = get_all_existing_tags(RECENT_NOTES)
 
     context = {
         "request": request,
         "cards_list": cards_to_render,
         "current_filename": filename,
         "display_name": display_name,
-        "workout_data": spider_json,
+        "workout_data": spider_json,  # Szablony nadal dostają bezpieczny SŁOWNIK
         "file_context": file_context,
         "tags": tags,
+        "all_available_tags": all_tags,
         "exercises": db_exercises,
     }
     return templates.TemplateResponse("_workout_content.html", context)
@@ -274,8 +291,8 @@ async def delete_file(filename: str):
 
     index = load_index()
     if filename in index:
-        if isinstance(index[filename], str):
-            index[filename] = {"title": index[filename]}
+        # if isinstance(index[filename], str):
+        #     index[filename] = {"title": index[filename]}
         index[filename]["is_deleted"] = True
         save_index(index)
 
@@ -297,8 +314,8 @@ async def restore_file(filename: str):
 
     index = load_index()
     if filename in index:
-        if isinstance(index[filename], str):
-            index[filename] = {"title": index[filename]}
+        # if isinstance(index[filename], str):
+        #     index[filename] = {"title": index[filename]}
         index[filename]["is_deleted"] = False
         save_index(index)
 
@@ -337,9 +354,9 @@ async def toggle_favorite(filename: str):
 
     index = load_index()
     if filename in index:
-        if isinstance(index[filename], str):
-            index[filename] = {"title": index[filename]}
-        index[filename]["is_favorite"] = not index[filename].get("is_favorite", False)
+        # if isinstance(index[filename], str):
+        #     index[filename] = {"title": index[filename]}
+        index[filename]["is_favorite"] = not index[filename].is_favorite
         save_index(index)
 
     response = Response(status_code=200)
@@ -371,14 +388,14 @@ async def rename_file(request: Request, filename: str):
         # 2. Zmieniamy tytuł w cache'u (index.json) szanując strukturę metadanych
         index = load_index()
         if filename in index:
-            # Zabezpieczenie migracyjne na wypadek starych stringów
-            if isinstance(index[filename], str):
-                index[filename] = {
-                    "title": index[filename],
-                    "is_deleted": False,
-                    "is_favorite": False,
-                    "project_ids": [],
-                }
+            # # Zabezpieczenie migracyjne na wypadek starych stringów
+            # if isinstance(index[filename], str):
+            #     index[filename] = {
+            #         "title": index[filename],
+            #         "is_deleted": False,
+            #         "is_favorite": False,
+            #         "project_ids": [],
+            #     }
 
             index[filename]["title"] = safe_name
             save_index(index)
@@ -474,32 +491,43 @@ async def save(request: Request):
     form = await request.form()
     json_body = form.get("json_body")
     current_filename = form.get("current_filename", "").strip()
-    file_context = form.get("file_context", "note").strip()
+    # file_context = form.get("file_context", "note").strip()
 
     if not json_body or not current_filename:
         return JSONResponse(content={"status": "error", "message": "Brak danych"}, status_code=400)
 
     try:
-        new_data_structure = json.loads(json_body)
+        new_workout = WorkoutNote.model_validate_json(json_body)
+
         file_path = DATA_DIR / current_filename
 
-        # Bezpiecznie wczytujemy STARE metadane, żeby JS ich nie nadpisał
+        # 2. Bezpiecznie wczytujemy STARE metadane z dysku
         if file_path.exists():
             with open(file_path, "r", encoding="utf-8") as f:
-                existing_data = json.load(f)
+                # Wczytujemy starą wersję przez Pydantic, żeby ją od razu "wyczyścić"
+                existing_workout = WorkoutNote.model_validate_json(f.read())
         else:
-            existing_data = {"title": "Bez nazwy", "is_deleted": False, "is_favorite": False, "project_ids": []}
+            existing_workout = WorkoutNote(title="Bez nazwy")
 
-        # Aktualizujemy TYLKO drzewo bloków i kontekst
-        existing_data["items"] = new_data_structure.get("items", [])
-        existing_data["file_context"] = file_context
+        # 3. Aktualizujemy drzewo bloków i kontekst
+        existing_workout.items = new_workout.items
+        existing_workout.file_context = new_workout.file_context
+
+        # Jeśli z frontendu przyszły jakieś tagi, zawodnicy czy pogoda, też je nadpisujemy
+        existing_workout.athletes = new_workout.athletes
+        existing_workout.weather_temp = new_workout.weather_temp
+        existing_workout.weather_icon = new_workout.weather_icon
+        existing_workout.place = new_workout.place
+        existing_workout.date = new_workout.date
+        existing_workout.time = new_workout.time
 
         # Nadpisujemy dokument
         with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(existing_data, f, ensure_ascii=False, indent=4)
+            f.write(existing_workout.model_dump_json(indent=4, by_alias=True))
 
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
+        print(f"⚠️ Błąd w /save: {e}")
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
 
 
@@ -1010,14 +1038,16 @@ async def item_modal(request: Request, filename: str):
 
 # --- WIDOK PEŁNEJ LISTY Z WYSZUKIWARKĄ I TAGAMI ---
 @app.get("/list_view/{context_name}", response_class=HTMLResponse)
-async def list_view(request: Request, context_name: str, deleted: bool = False, q: str = None, tag: str = None):
+async def list_view(
+    request: Request, context_name: str, deleted: bool = False, q: str = None, tags: List[str] = Query(default=[])
+):
     files = get_recent_files(context_name, include_deleted=deleted)
 
     all_tags, groups_tags = get_all_existing_tags(files)
 
     # 2. Filtrowanie plików po wybranym tagu (jeśli ktoś kliknął przycisk)
-    if tag:
-        files = [f for f in files if tag in [t.get("name") for t in f.get("tags", [])]]
+    if tags:
+        files = [f for f in files if any(tag in [t.get("name") for t in f.get("tags", [])] for tag in tags)]
 
     # 3. Dodatkowe filtrowanie po nazwie z pola tekstowego
     if q:
@@ -1032,7 +1062,7 @@ async def list_view(request: Request, context_name: str, deleted: bool = False, 
         "current_filename": "",
         "search_query": q or "",
         "all_tags": all_tags,
-        "active_tag": tag,
+        "active_tags": tags,
     }
     return templates.TemplateResponse("_list_view.html", context)
 
@@ -1043,8 +1073,6 @@ async def list_view(request: Request, context_name: str, deleted: bool = False, 
 async def add_tag(request: Request, filename: str):
     form = await request.form()
     group_name = form.get("group_name", "Ogólne").strip()
-
-    # ZMIANA: Zostawiamy oryginalną wielkość liter i ewentualne znaki specjalne
     new_tag = form.get("tag_name", "").strip()
 
     file_path = DATA_DIR / filename
@@ -1054,13 +1082,17 @@ async def add_tag(request: Request, filename: str):
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    tags_dict = normalize_tags(data.get("tags", []))
+    tags_dict = data.get("tags", {})
 
     if group_name not in tags_dict:
-        tags_dict[group_name] = []
+        tags_dict[group_name] = {
+            "order": len(tags_dict) + 1,
+            "color": "secondary",  # Domyślny kolor dla nowej grupy
+            "items": [],
+        }
 
-    if new_tag not in tags_dict[group_name]:
-        tags_dict[group_name].append(new_tag)
+    if new_tag not in tags_dict[group_name]["items"]:
+        tags_dict[group_name]["items"].append(new_tag)
         data["tags"] = tags_dict
 
         with open(file_path, "w", encoding="utf-8") as f:

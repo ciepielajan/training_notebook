@@ -15,6 +15,9 @@
     "python.terminal.activateEnvironment": true,
 
     // Usunięcie blokady na systemowy manager - pozwoli to na wykrycie Poetry
-    "python.defaultInterpreterPath": "", 
+    "python.defaultInterpreterPath": "",
+    "python-envs.defaultEnvManager": "ms-python.python:poetry",
+    "python-envs.defaultPackageManager": "ms-python.python:poetry",
+    
 
 }

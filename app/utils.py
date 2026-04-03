@@ -1,9 +1,9 @@
 import json
 import os
-from urllib.parse import unquote
 import yaml
 import secrets
 from pathlib import Path
+from app.models import IndexDB, IndexEntry
 
 
 def load_settings(path: str = "config.yaml") -> dict:
@@ -19,13 +19,14 @@ def load_settings(path: str = "config.yaml") -> dict:
         return {}
 
 
-def load_index() -> dict:
+def load_index() -> dict[str, IndexEntry]:
     """Ładuje indeks plików (mapa: nazwa_pliku -> ładny_tytuł)."""
     if INDEX_FILE.exists():
         print(f"Wczytuje dane z {INDEX_FILE}")
         with open(INDEX_FILE, "r", encoding="utf-8") as f:
             try:
-                return json.load(f)
+                raw_data = json.load(f)
+                return IndexDB.model_validate(raw_data)
             except json.JSONDecodeError:
                 return {}
     return {}
@@ -45,10 +46,11 @@ def get_all_existing_tags(files: str) -> dict:
     )
 
 
-def save_index(index_data: dict):
+def save_index(index_data: dict[str, IndexEntry]):
     """Zapisuje zaktualizowany indeks na dysk."""
     with open(INDEX_FILE, "w", encoding="utf-8") as f:
-        json.dump(index_data, f, ensure_ascii=False, indent=4)
+        json_str = IndexDB(index_data).model_dump_json(indent=4)
+        f.write(json_str)
 
 
 def tags_to_list(tags_data: dict) -> list:
@@ -56,9 +58,9 @@ def tags_to_list(tags_data: dict) -> list:
     groups = {}
 
     for group_name, group in tags_data.items():
-        order = group.get("order", 999)
-        color = group.get("color", "info")
-        for tag in group.get("items"):
+        order = group.order
+        color = group.color
+        for tag in group.items:
             tags.append(
                 {
                     "name": tag,
@@ -81,28 +83,23 @@ def get_recent_files(file_prefix: str, include_deleted: bool = False) -> list:
     # index = load_index()
     filtered = []
 
-    for k, v in INDEX.items():
+    for k, v in INDEX.root.items():
         if not k.startswith(file_prefix):
             continue
 
-        # Zabezpieczenie (w locie transformuje stare wpisy ze stringów na słowniki)
-        if isinstance(v, str):
-            v = {"title": v, "is_deleted": False, "is_favorite": False, "project_ids": []}
-
         # Filtrowanie Kosza
-        is_deleted = v.get("is_deleted", False)
-        if is_deleted and not include_deleted:
+        if v.is_deleted and not include_deleted:
             continue
-        if not is_deleted and include_deleted:
+        if not v.is_deleted and include_deleted:
             continue
 
-        tags, groups_tags = tags_to_list(v.get("tags", {}))
+        tags, groups_tags = tags_to_list(v.tags)
 
         filtered.append(
             {
                 "filename": k,
-                "name": v.get("title", "Bez nazwy"),
-                "is_favorite": v.get("is_favorite", False),
+                "name": v.title,
+                "is_favorite": v.is_favorite,
                 "tags": tags,
                 "groups_tags": groups_tags,
             }
