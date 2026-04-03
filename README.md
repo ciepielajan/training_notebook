@@ -63,3 +63,19 @@ training_notebook/
 └── README.md
 ```
 
+
+## Mapa Interakcji HTMX
+
+| Wyzwalacz (Lokalizacja) | Akcja / Endpoint | Przesyłane Dane | Cel (hx-target) | Zwracany Fragment |
+| :--- | :--- | :--- | :--- | :--- |
+| Menu boczne () | `GET /new/{context}` | brak | `#form` | `_workout_content.html` |
+| Menu boczne () | `GET /list_view/{context}` | `q`, `tag`, `deleted` | `#form` | `_list_view.html` |
+| Menu boczne () | `GET /settings` | brak | `#form` | `settings.html` |
+| Opcje wiersza () | `POST /card/transform/{uid}` | `new_type`, `new_size` | `closest .exercise-row` | `_card.html` |
+| Opcje wiersza () | `POST /card/to_clipboard/{uid}` | `json_body` | (OOB Swap) | Pusta odpowiedź / `_card.html` |
+| Opcje wiersza () | `POST /card/paste/{uid}` | brak | `closest .exercise-row` | `_card.html` |
+| Nagłówek karty () | `POST /card/toggle/{uid}` | `collapsed`, `level` | `closest .exercise-row` | `_card.html` |
+| Menu tabeli () | `POST /card/table/action/{uid}` | `action`, `num_rows/cols` | `#table-{unique_id}` | `blocks/table.html` |
+| Edytor tagów () | `POST /tags/add/{filename}` | `tag_name` | `#document-tags-container` | `_tags_editor.html` |
+| Edytor tagów () | `DELETE /tags/remove/...` | brak | `#document-tags-container` | `_tags_editor.html` |
+| Lista plików () | `GET /load_file/{filename}` | brak | `#form` | `_workout_content.html` |
