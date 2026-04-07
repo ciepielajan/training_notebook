@@ -46,7 +46,7 @@
             </div>
         </div>
 
-        {% if all_tags and not is_trash_view %}
+        {% if SETTINGS.get('tags_notes', []).values() and not is_trash_view %}
         <div class="px-2 mb-3 d-flex flex-wrap gap-2">
             
             <button type="button" class="btn btn-sm {% if not active_tags %}btn-dark text-white{% else %}btn-outline-dark{% endif %} rounded-pill px-3 py-1 shadow-sm"
@@ -54,7 +54,7 @@
                Wszystkie
             </button>
 
-            {% for tag in all_tags %}
+            {% for tag in SETTINGS.get('tags_notes', []).values() %}
                 <input type="checkbox" class="btn-check" id="tag-{{ loop.index }}" name="tags" value="{{ tag.get('name') }}" 
                        {% if tag.get('name') in active_tags %}checked{% endif %}
                        hx-get="/list_view/{{ context_name }}"

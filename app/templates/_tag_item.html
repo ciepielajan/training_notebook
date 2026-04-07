@@ -1,0 +1,22 @@
+<span class="badge bg-{{ color }} d-flex align-items-center rounded-pill ps-3 pe-1 py-1 shadow-sm tag-item-wrapper me-1 mb-2" 
+      data-group-name="{{ group_name }}" 
+      data-color="{{ color }}"
+      style="font-weight: 500; font-size: 0.85rem;">
+    
+    <span class="tag-item-value" style="display:none;">{{ tag_name }}</span>
+    
+    <input type="hidden" name="existing_tags" class="htmx-tag-state" 
+           value="{{ group_name }}|||{{ color }}|||{{ tag_name }}">
+    
+    {{ tag_name }}
+    
+    <button type="button" class="btn btn-sm border-0 shadow-none p-0 ms-1 text-reset opacity-75 d-flex align-items-center" 
+            hx-delete="/tags/remove_quick" 
+            hx-target="closest .badge" 
+            hx-swap="outerHTML"
+            onmouseover="this.classList.remove('opacity-75');"
+            onmouseout="this.classList.add('opacity-75');"
+            title="Usuń tag">
+        <i class="bi bi-x-circle-fill" style="font-size: 0.85rem;"></i>
+    </button>
+</span>

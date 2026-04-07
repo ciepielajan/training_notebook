@@ -1,75 +1,84 @@
 <style>
-    /* CSS pozwalający wejściowemu inputowi idealnie udawać tekst tagu */
-    .tag-input {
-        outline: none !important;
-        box-shadow: none !important;
-        width: 85px; 
-        font-weight: 500;
-    }
-    /* Placeholder przyjmuje kolor tekstu rodzica z lekką przezroczystością */
-    .tag-input::placeholder {
-        color: currentColor;
-        opacity: 0.65;
-    }
+    .tag-input { outline: none !important; box-shadow: none !important; width: 85px; font-weight: 500; }
+    .tag-input::placeholder { color: currentColor; opacity: 0.65; }
+    /* Styl, żeby tag grupy delikatnie wyróżniał się od zwykłych tagów */
+    .group-header-wrapper { border: 1px solid rgba(255,255,255,0.4); }
 </style>
 
-<div id="document-tags-container" class="d-flex align-items-center flex-wrap gap-2 mb-3">
+<div id="document-tags-container" class="d-flex align-items-center flex-wrap mb-3">
+    
+    {% set grouped_tags = tags | groupby('group') %}
+    {% for group in grouped_tags %}
+        {% set group_name = group.grouper %}
+        {% set first_tag = group.list[0] %}
+        {% set color = first_tag.color %}
         
-    {% for tag in tags %}
-                
-        <span class="badge bg-{{ tag['color'] }} d-flex align-items-center rounded-pill ps-3 pe-2 py-1 shadow-sm" 
-                style="font-weight: 500; font-size: 0.85rem;" 
-                title="Grupa: {{ tag['group'] }}">
+        <span class="badge bg-{{ color }} d-flex align-items-center rounded-pill ps-3 pe-2 py-1 shadow-sm group-header-wrapper me-1 mb-2" 
+              style="font-weight: 700; font-size: 0.85rem;">
             
-            {{ tag['name'] }}
+            <i class="bi bi-folder2-open me-2 opacity-75"></i>
+            {{ group_name }}
             
             <div class="dropdown ms-1">
                 <button class="btn btn-sm border-0 shadow-none p-0 text-reset opacity-75 d-flex align-items-center" 
                         type="button" data-bs-toggle="dropdown" 
                         onmouseover="this.classList.remove('opacity-75');"
                         onmouseout="this.classList.add('opacity-75');"
-                        style="outline: none;">
-                    <i class="bi bi-chevron-down" style="font-size: 0.7rem; margin-left: 4px;"></i>
+                        title="Opcje grupy">
+                    <i class="bi bi-three-dots-vertical" style="font-size: 0.85rem; margin-left: 4px;"></i>
                 </button>
-                
-                <ul class="dropdown-menu shadow-sm border-secondary-subtle" style="font-size: 0.85rem; min-width: 160px;">
+                <ul class="dropdown-menu shadow-sm border-secondary-subtle" style="font-size: 0.85rem;">
                     <li>
-                        <button type="button" class="dropdown-item fw-medium"
-                                hx-post="/tags/change_group/{{ current_filename }}/{{ tag['group'] }}/{{ tag['name'] }}"
-                                hx-prompt="Wpisz nową grupę dla tagu '{{ tag['name']  }}':"
-                                hx-target="#document-tags-container"
-                                hx-swap="outerHTML">
-                            <i class="bi bi-folder-symlink me-2 text-secondary"></i> Zmień grupę
+                        <button type="button" class="dropdown-item d-flex align-items-center">
+                            <i class="bi bi-arrow-left text-secondary me-2"></i> Przesuń w lewo
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" class="dropdown-item d-flex align-items-center">
+                            <i class="bi bi-arrow-right text-secondary me-2"></i> Przesuń w prawo
                         </button>
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                        <button type="button" class="dropdown-item text-danger fw-bold"
-                                hx-delete="/tags/remove/{{ current_filename }}/{{ tag['group'] }}/{{ tag['name'] }}"
-                                hx-target="#document-tags-container"
-                                hx-swap="outerHTML">
-                            <i class="bi bi-trash me-2"></i> Usuń tag
+                        <button type="button" class="dropdown-item d-flex align-items-center fw-medium">
+                            <i class="bi bi-pencil-square text-primary me-2"></i> Zmień nazwę
                         </button>
                     </li>
                 </ul>
             </div>
         </span>
+
+        {% for tag_item in group.list %}
+            {% set tag_name = tag_item.name %}
+            {% set group_name = tag_item.group %}
+            {% set color = tag_item.color %}
+            {% include '_tag_item.html' %}
+        {% endfor %}
         
     {% endfor %}
 
     {% set default_group = 'Ogólne' %}
     {% set default_color = 'secondary' %}
 
-    <form hx-post="/tags/add/{{ current_filename }}"
+    <form hx-post="/tags/add_quick"
           hx-target="#document-tags-container"
           hx-swap="outerHTML"
-          class="badge bg-{{ default_color }} d-flex align-items-center rounded-pill ps-3 pe-2 py-1 shadow-sm m-0"
-          style="font-size: 0.85rem; transition: background-color 0.3s ease, color 0.3s ease;">
+          hx-include=".htmx-tag-state"
+          class="badge bg-{{ default_color }} d-flex align-items-center rounded-pill ps-3 pe-2 py-1 shadow-sm mb-2"
+          style="font-size: 0.85rem; transition: background-color 0.3s ease;">
 
         <input type="hidden" name="group_name" value="{{ default_group }}">
+        <input type="hidden" name="color" value="{{ default_color }}">
 
-        <input type="text" name="tag_name" class="tag-input border-0 bg-transparent text-reset p-0 m-0" 
-               placeholder="+ dodaj tag" required autocomplete="off" title="Dodajesz do: {{ default_group }}">
+        <input type="text" name="tag_name" list="global-tags-list" 
+               class="tag-input border-0 bg-transparent text-reset p-0 m-0" 
+               placeholder="+ dodaj tag" required title="Dodajesz do: {{ default_group }}">
+
+        <datalist id="global-tags-list">
+            {% for global_tag in SETTINGS.get('tags_notes', []).keys() %}
+                <option value="{{ global_tag }}"></option>
+            {% endfor %}
+        </datalist>
 
         <div class="dropdown ms-1">
             <button class="btn btn-sm border-0 shadow-none p-0 text-reset opacity-75 d-flex align-items-center" 
@@ -83,52 +92,23 @@
             <ul class="dropdown-menu shadow-sm border-secondary-subtle" style="font-size: 0.85rem; min-width: 180px;">
                 <li class="dropdown-header">Wybierz grupę docelową</li>
 
-                {% set ns = namespace(added=false) %}
-                {% for group in SETTINGS['groups_tags_notes'] %}
+                {% for group in SETTINGS.get('groups_tags_notes', []).values() %}
                     <li>
                         <button type="button" class="dropdown-item d-flex align-items-center gap-2"
                                 onclick="
                                     const form = this.closest('form');
                                     form.querySelector('input[name=group_name]').value = `{{ group['name'] }}`;
-                                    form.className = 'badge bg-{{ group.get('color') }} d-flex align-items-center rounded-pill ps-3 pe-2 py-1 shadow-sm m-0';
+                                    form.querySelector('input[name=color]').value = `{{ group.get('color', 'secondary') }}`;
+                                    form.className = 'badge bg-{{ group.get('color', 'secondary') }} d-flex align-items-center rounded-pill ps-3 pe-2 py-1 shadow-sm mb-2';
                                     const tagInput = form.querySelector('input[name=tag_name]');
                                     tagInput.title = `Dodajesz do: {{ group['name'] }}`;
                                     tagInput.focus();
                                 ">
-                            <span class="badge bg-{{ group.get('color') }} rounded-circle p-1 border border-light" style="width: 14px; height: 14px;"></span>
+                            <span class="badge bg-{{ group.get('color', 'secondary') }} rounded-circle p-1 border border-light" style="width: 14px; height: 14px;"></span>
                             {{ group['name'] }}
                         </button>
                     </li>
-                    {% set ns.added = true %}
                 {% endfor %}
-
-                {% if not ns.added %}
-                    <li>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2"
-                                onclick="
-                                    const form = this.closest('form');
-                                    form.querySelector('input[name=group_name]').value = 'Ogólne';
-                                    form.className = 'badge bg-secondary d-flex align-items-center rounded-pill ps-3 pe-2 py-1 shadow-sm m-0';
-                                    const tagInput = form.querySelector('input[name=tag_name]');
-                                    tagInput.title = 'Dodajesz do: Ogólne';
-                                    tagInput.focus();
-                                ">
-                            <span class="badge bg-secondary rounded-circle p-1 border border-light" style="width: 14px; height: 14px;"></span>
-                            Ogólne
-                        </button>
-                    </li>
-                {% endif %}
-
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <button type="button" class="dropdown-item text-primary fw-medium"
-                            hx-post="/tags/add_group/{{ current_filename }}"
-                            hx-prompt="Wpisz nazwę nowej kategorii tagów:"
-                            hx-target="#document-tags-container"
-                            hx-swap="outerHTML">
-                        <i class="bi bi-folder-plus me-2"></i> Nowa kategoria...
-                    </button>
-                </li>
             </ul>
         </div>
     </form>

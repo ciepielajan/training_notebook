@@ -2,7 +2,7 @@
 
 {# Grupowanie tagów na podstawie przypisań do ćwiczeń #}
 {% set exercise_groups = {} %}
-{% for exercise in exercises %}
+{% for exercise in SETTINGS["exercises"] %}
     {% set ex_tags = exercise.tags %}
     {% if ex_tags|length > 0 %}
         {% set group = ex_tags[0] %}

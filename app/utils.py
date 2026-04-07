@@ -34,15 +34,49 @@ def load_index() -> dict[str, IndexEntry]:
 
 def get_all_existing_tags(files: str) -> dict:
     """ """
-    all_tags = []
-    all_groups = []
+    all_tags = {}
+    all_groups = {}
 
     for f in files:
-        all_tags.extend(f.get("tags", []))
-        all_groups.extend(f.get("groups_tags", []))
+        for tag in f.get("tags", []):
+            all_tags[tag["name"]] = tag
+        for group in f.get("groups_tags", []):
+            all_groups[group["name"]] = group
 
-    return sorted(all_tags, key=lambda x: (x["order"], x["name"])), sorted(
-        all_groups, key=lambda x: (x["order"], x["name"])
+    sorted_tags_dict = dict(
+        sorted(
+            all_tags.items(),
+            # item[0] to klucz (tag["name"])
+            # item[1] to wartość (cały słownik tag)
+            key=lambda item: (item[1]["group"].lower(), item[1]["name"].lower()),
+        )
+    )
+
+    # Analogicznie, jeśli chcesz posortować all_groups alfabetycznie po nazwie:
+    sorted_groups_dict = dict(sorted(all_groups.items(), key=lambda item: item[1]["name"].lower()))
+    return sorted_tags_dict, sorted_groups_dict
+
+
+def tags_to_list(tags_data: dict) -> list:
+    tags = []
+    groups = {}
+
+    for group_name, group in tags_data.items():
+        color = group.color
+        for tag in group.items:
+            tags.append(
+                {
+                    "name": tag,
+                    "group": group_name,
+                    "color": color,
+                }
+            )
+            groups[group_name] = {
+                "name": group_name,
+                "color": color,
+            }
+    return sorted(tags, key=lambda x: (x["group"].lower(), x["name"].lower())), sorted(
+        groups.values(), key=lambda x: x["name"].lower()
     )
 
 
@@ -51,30 +85,6 @@ def save_index(index_data: dict[str, IndexEntry]):
     with open(INDEX_FILE, "w", encoding="utf-8") as f:
         json_str = IndexDB(index_data).model_dump_json(indent=4)
         f.write(json_str)
-
-
-def tags_to_list(tags_data: dict) -> list:
-    tags = []
-    groups = {}
-
-    for group_name, group in tags_data.items():
-        order = group.order
-        color = group.color
-        for tag in group.items:
-            tags.append(
-                {
-                    "name": tag,
-                    "group": group_name,
-                    "order": order,
-                    "color": color,
-                }
-            )
-            groups[order] = {
-                "name": group_name,
-                "order": order,
-                "color": color,
-            }
-    return sorted(tags, key=lambda x: (x["order"], x["name"])), list(groups.values())
 
 
 def get_recent_files(file_prefix: str, include_deleted: bool = False) -> list:

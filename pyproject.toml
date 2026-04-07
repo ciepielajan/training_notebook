@@ -19,6 +19,7 @@ dvc = {extras = ["gdrive"], version = "3.56.0"}
 jupyterlab = "^4.0.2"
 pytest = "^9.0.2"
 httpx = "<0.28.0"
+polyfactory = "^3.3.0"
 
 
 
