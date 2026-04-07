@@ -4,7 +4,6 @@ from typing_extensions import Annotated
 
 
 class TagGroup(BaseModel):
-    order: int = 99
     color: str = "secondary"
     items: List[str]
 
