@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from app.models import WorkoutNote
+from app.models import TagGroup, WorkoutNote
 import datetime
 import secrets
 import json
@@ -18,7 +18,6 @@ from app.utils import (
     process_spider_json,
     save_index,
     load_index,
-    tags_to_list,
     get_all_existing_tags,
     get_recent_files,
 )
@@ -202,6 +201,7 @@ def create_and_render_file(request: Request, file_data: dict, file_prefix: str):
     save_index(index)
 
     cards_to_render = process_spider_json(file_data)
+    all_available_tags, all_available_groups = get_all_existing_tags(file_prefix)
 
     context = {
         "request": request,
@@ -211,7 +211,8 @@ def create_and_render_file(request: Request, file_data: dict, file_prefix: str):
         "workout_data": file_data,
         "file_context": file_prefix,
         "tags": {},  # <--- DODANO PUSTE TAGI
-        "all_available_tags": get_all_existing_tags(file_prefix),  # <--- DODANO BAZĘ TAGÓW
+        "all_available_tags": all_available_tags,
+        "all_available_groups": all_available_groups,
     }
 
     response = templates.TemplateResponse("_workout_content.html", context)
@@ -250,14 +251,12 @@ async def load_file(request: Request, filename: str):
     if validated_workout:
         file_context = validated_workout.file_context
         display_name = validated_workout.title
-
-        # Przekazujemy zwalidowany słownik obiektów TagGroup do funkcji
-        tags, groups_tags = tags_to_list(validated_workout.tags)
+        tags = validated_workout.tags
     else:
         # Awaryjny fallback, gdyby plik był totalnie uszkodzony
         file_context = filename.split("_")[0]
         display_name = "Bez nazwy"
-        tags, groups_tags = [], {}
+        tags = {}
 
     db_exercises = get_db_exercises()
 
@@ -509,6 +508,8 @@ async def save(request: Request):
         # 3. Aktualizujemy drzewo bloków i kontekst
         existing_workout.items = new_workout.items
         existing_workout.file_context = new_workout.file_context
+
+        existing_workout.tags = new_workout.tags
 
         # Jeśli z frontendu przyszły jakieś tagi, zawodnicy czy pogoda, też je nadpisujemy
         existing_workout.athletes = new_workout.athletes
@@ -1076,32 +1077,32 @@ async def add_tag_quick(request: Request):
     row_tags = form.getlist("existing_tags")
     row_tags.append(f"{group_name}|||{color}|||{new_tag}")
 
-    tags = {}
-    # groups = {}
+    temp_groups = {}
     for raw_tag in row_tags:
         try:
             g_name, g_color, t_name = raw_tag.split("|||")
-            tags[f"{g_name}_{t_name}"] = {"name": t_name, "group": g_name, "color": g_color}
-            # groups[g_name] = {"name": g_name, "color": g_color}
 
+            if g_name not in temp_groups:
+                temp_groups[g_name] = {"color": g_color, "items": set()}
+
+            temp_groups[g_name]["items"].add(t_name)
         except ValueError:
             continue
 
-    tags = sorted(tags.values(), key=lambda x: (x["group"].lower(), x["name"].lower()))
-    # sorted_groups = sorted(groups.values(), key=lambda x: (x.get("name", "")))
+    groups = {
+        name: TagGroup(color=data["color"], items=sorted(list(data["items"]), key=str.lower))
+        for name, data in temp_groups.items()
+    }
 
-    if not f"{group_name}_{new_tag}" in tags:
-        if not f"{group_name}_{new_tag}" in SETTINGS["tags_notes"]:
-            SETTINGS["tags_notes"][new_tag] = {"name": new_tag, "group": group_name, "color": color}
-            SETTINGS["tags_notes"] = dict(
-                sorted(
-                    SETTINGS["tags_notes"].items(),
-                    key=lambda item: (item[1]["group"].lower(), item[1]["name"].lower()),
-                )
-            )
-            # SETTINGS["groups_tags_notes"] = sorted_groups
+    if not new_tag in SETTINGS["tags_notes"]:
+        SETTINGS["tags_notes"].append(new_tag)
 
-    return templates.TemplateResponse("_tags_editor.html", {"request": request, "tags": tags})
+    if group_name in SETTINGS["groups_tags_notes"] and new_tag not in SETTINGS["groups_tags_notes"][group_name].items:
+        SETTINGS["groups_tags_notes"][group_name].items.append(new_tag)
+        SETTINGS["groups_tags_notes"][group_name].items = sorted(
+            SETTINGS["groups_tags_notes"][group_name].items, key=lambda item: item.lower()
+        )
+    return templates.TemplateResponse("_tags_editor.html", {"request": request, "tags": groups})
 
 
 # To pozwala na to, że HTMX usunie tag z ekranu i nie zgłosi błędu 404

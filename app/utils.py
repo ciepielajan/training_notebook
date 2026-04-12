@@ -32,52 +32,57 @@ def load_index() -> dict[str, IndexEntry]:
     return {}
 
 
+# TODO
+## robimy tak że by metodach był ten sam format co w bazie
+### czyli pogrupownaie po grupach i w nich lista tagów
+# klucz to nazwa grupy a wartość to lista tagów
+# obok słownik z ustawieniami grupy  (color) chyba tylko bo to i tak trzeba bezdie do ustawien kiedyś przenieść
+# wiec może wyjebać to też z jsona i z modeli
+## TAK TO POWYZEJ WSZYSTKO PRAWDA I TODO
+# widk _list_view i _tags_editor do poprawy.
+## wygwalić grupowanie jinj2 i zroibć
+### pętle po grupach a potem pętle po tagach
+#### color zabierany ma być z setigns
+
+
 def get_all_existing_tags(files: str) -> dict:
     """ """
-    all_tags = {}
     all_groups = {}
-
     for f in files:
-        for tag in f.get("tags", []):
-            all_tags[tag["name"]] = tag
-        for group in f.get("groups_tags", []):
-            all_groups[group["name"]] = group
+        for group_name, group in f.get("tags", {}).items():
+            if group_name not in all_groups:
+                all_groups[group_name] = group
+            else:
+                all_groups[group_name] = all_groups[group_name] + group
 
-    sorted_tags_dict = dict(
-        sorted(
-            all_tags.items(),
-            # item[0] to klucz (tag["name"])
-            # item[1] to wartość (cały słownik tag)
-            key=lambda item: (item[1]["group"].lower(), item[1]["name"].lower()),
-        )
-    )
+    all_tags = []
+    for group in all_groups.values():
+        all_tags.extend(group.items)
 
-    # Analogicznie, jeśli chcesz posortować all_groups alfabetycznie po nazwie:
-    sorted_groups_dict = dict(sorted(all_groups.items(), key=lambda item: item[1]["name"].lower()))
-    return sorted_tags_dict, sorted_groups_dict
+    return all_tags, all_groups
 
 
-def tags_to_list(tags_data: dict) -> list:
-    tags = []
-    groups = {}
+# def tags_to_list(tags_data: dict) -> list:
+#     tags = []
+#     groups = {}
 
-    for group_name, group in tags_data.items():
-        color = group.color
-        for tag in group.items:
-            tags.append(
-                {
-                    "name": tag,
-                    "group": group_name,
-                    "color": color,
-                }
-            )
-            groups[group_name] = {
-                "name": group_name,
-                "color": color,
-            }
-    return sorted(tags, key=lambda x: (x["group"].lower(), x["name"].lower())), sorted(
-        groups.values(), key=lambda x: x["name"].lower()
-    )
+#     for group_name, group in tags_data.items():
+#         color = group.color
+#         for tag in group.items:
+#             tags.append(
+#                 {
+#                     "name": tag,
+#                     "group": group_name,
+#                     "color": color,
+#                 }
+#             )
+#             groups[group_name] = {
+#                 "name": group_name,
+#                 "color": color,
+#             }
+#     return sorted(tags, key=lambda x: (x["group"].lower(), x["name"].lower())), sorted(
+#         groups.values(), key=lambda x: x["name"].lower()
+#     )
 
 
 def save_index(index_data: dict[str, IndexEntry]):
@@ -103,17 +108,9 @@ def get_recent_files(file_prefix: str, include_deleted: bool = False) -> list:
         if not v.is_deleted and include_deleted:
             continue
 
-        tags, groups_tags = tags_to_list(v.tags)
+        # tags, groups_tags = tags_to_list(v.tags)
 
-        filtered.append(
-            {
-                "filename": k,
-                "name": v.title,
-                "is_favorite": v.is_favorite,
-                "tags": tags,
-                "groups_tags": groups_tags,
-            }
-        )
+        filtered.append({"filename": k, "name": v.title, "is_favorite": v.is_favorite, "tags": v.tags})
 
     # Sortowanie: 1. Ulubione na górze, 2. Data modyfikacji dyskowej
     filtered.sort(

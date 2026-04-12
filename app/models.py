@@ -7,6 +7,13 @@ class TagGroup(BaseModel):
     color: str = "secondary"
     items: List[str]
 
+    def __add__(self, other: "TagGroup") -> "TagGroup":
+        if self.color != other.color:
+            raise ValueError("Nie można łączyć grup o różnych kolorach!")
+
+        merged_items = sorted(set(self.items + other.items), key=str.lower)
+        return TagGroup(color=self.color, items=merged_items)
+
 
 # 1. Wyciągnięta logika migracji (czysta funkcja Pythona)
 def migrate_legacy_tags(value: Any) -> Any:
